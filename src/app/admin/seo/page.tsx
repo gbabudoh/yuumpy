@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Save } from 'lucide-react';
+import { Search, Save, EyeOff } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
 interface SEOSettings {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Package, Filter } from 'lucide-react';
+import { Plus, Edit, Package, Filter, Search, Trash2 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
 interface Category {

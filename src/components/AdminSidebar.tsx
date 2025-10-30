@@ -117,18 +117,8 @@ const navigation = [
     icon: Settings,
     current: false
   },
-  {
-    name: 'Upload Test',
-    href: '/admin/upload-test',
-    icon: Upload,
-    current: false
-  },
-  {
-    name: 'Fix Database',
-    href: '/admin/fix-database',
-    icon: Database,
-    current: false
-  }
+
+
 ];
 
 export default function AdminSidebar() {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Calendar } from 'lucide-react';
+import { Plus, Edit, Calendar, PoundSterling, Eye, EyeOff, Trash2 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
 interface BannerAd {
@@ -406,7 +406,7 @@ export default function BannerAdsPage() {
                 <p className="text-3xl font-bold text-gray-900">{bannerAds.length}</p>
               </div>
               <div className="bg-blue-100 p-3 rounded-lg">
-                <DollarSign className="w-6 h-6 text-blue-600" />
+                <PoundSterling className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
@@ -443,7 +443,7 @@ export default function BannerAdsPage() {
                 <p className="text-3xl font-bold text-gray-900">£2,450</p>
               </div>
               <div className="bg-purple-100 p-3 rounded-lg">
-                <DollarSign className="w-6 h-6 text-purple-600" />
+                <PoundSterling className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </div>
@@ -458,7 +458,7 @@ export default function BannerAdsPage() {
           {bannerAds.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <DollarSign className="w-12 h-12 text-gray-400" />
+                <PoundSterling className="w-12 h-12 text-gray-400" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No Banner Ads</h3>
               <p className="text-gray-600 mb-6">Create your first banner ad to start earning revenue</p>

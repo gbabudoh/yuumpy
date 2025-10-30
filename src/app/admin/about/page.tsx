@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Save, X } from 'lucide-react';
+import { FileText, Save, X, Eye } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
 interface PageContent {
