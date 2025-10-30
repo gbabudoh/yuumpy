@@ -1,0 +1,12 @@
+{
+  "name": "Google",
+  "short_description": "Google",
+  "price": 100.00,
+  "affiliate_url": "https://github.com/",
+  "category_id": 44,
+  "subcategory_id": 45,
+  "brand_id": 20,
+  "is_active": true,
+  "is_featured": false,
+  "is_bestseller": false
+}

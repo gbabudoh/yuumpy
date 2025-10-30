@@ -1,0 +1,12 @@
+{
+  "name": "Wireless Bluetooth Headphones",
+  "short_description": "Premium wireless headphones with noise cancellation",
+  "price": 99.99,
+  "affiliate_url": "https://example.com/affiliate/headphones",
+  "category_id": 44,
+  "subcategory_id": 47,
+  "brand_id": 19,
+  "is_active": true,
+  "is_featured": true,
+  "is_bestseller": true
+}

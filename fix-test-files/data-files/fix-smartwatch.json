@@ -1,0 +1,12 @@
+{
+  "name": "Smart Fitness Watch - Updated",
+  "short_description": "Track your fitness with this updated smart watch",
+  "price": 189.99,
+  "affiliate_url": "https://example.com/affiliate/smartwatch-updated",
+  "category_id": 44,
+  "subcategory_id": 48,
+  "brand_id": 19,
+  "is_active": true,
+  "is_featured": true,
+  "is_bestseller": false
+}
