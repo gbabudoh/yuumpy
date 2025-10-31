@@ -81,7 +81,6 @@ export default function CategoryCard({ category }: CategoryCardProps) {
                 }}
                 loading="lazy"
                 decoding="async"
-                alt=""
               />
             ) : (
               <span className="text-3xl sm:text-4xl md:text-6xl group-hover:scale-110 transition-transform duration-300">

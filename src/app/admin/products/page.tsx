@@ -45,6 +45,7 @@ interface Category {
   name: string;
   parent_id: number | null;
   parent_name: string | null;
+  category_id?: number;
 }
 
 interface Brand {

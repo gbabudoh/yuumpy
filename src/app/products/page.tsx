@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MagnifyingGlassIcon, FunnelIcon, Squares2X2Icon, ListBulletIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Header from '@/components/Header';
@@ -37,7 +39,7 @@ interface Brand {
   product_count: number;
 }
 
-export default function ProductsPage() {
+function ProductsPageContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -63,7 +65,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     // Initialize search term from URL parameters
-    const searchParam = searchParams.get('search');
+    const searchParam = searchParams?.get('search');
     if (searchParam) {
       setSearchTerm(searchParam);
     }
@@ -71,12 +73,12 @@ export default function ProductsPage() {
     fetchProducts();
     fetchCategories();
     fetchBrands();
-  }, []);
+  }, [searchParams]);
 
   // Handle search param changes
   useEffect(() => {
-    const searchParam = searchParams.get('search');
-    const filterParam = searchParams.get('filter');
+    const searchParam = searchParams?.get('search');
+    const filterParam = searchParams?.get('filter');
     
     if (searchParam !== searchTerm) {
       setSearchTerm(searchParam || '');
@@ -596,5 +598,26 @@ export default function ProductsPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading products...</p>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <ProductsPageContent />
+    </Suspense>
   );
 }
