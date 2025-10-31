@@ -1,6 +1,8 @@
+'use client';
+
 import { StarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import { query } from '@/lib/database';
+import { useEffect, useState } from 'react';
 
 // Components
 import Header from '@/components/Header';
@@ -9,73 +11,101 @@ import ProductCard from '@/components/ProductCard';
 import CategoryCard from '@/components/CategoryCard';
 import Footer from '@/components/Footer';
 
-// Fetch featured products directly from database
-async function getFeaturedProducts() {
-  try {
-    const sql = `
-      SELECT p.id, p.name, p.slug, p.price, p.original_price, p.image_url, 
-             p.is_featured, p.is_bestseller, p.affiliate_url
-      FROM products p
-      WHERE p.is_featured = 1 AND p.is_active = 1
-      ORDER BY p.created_at DESC
-      LIMIT 8
-    `;
-    
-    const products = await query(sql) as any[];
-    
-    return products.map((product: any) => ({
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      price: parseFloat(product.price) || 0,
-      originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
-      image_url: product.image_url || '',
-      isFeatured: Boolean(product.is_featured),
-      isBestseller: Boolean(product.is_bestseller),
-      affiliate_url: product.affiliate_url
-    }));
-  } catch (error) {
-    console.error('Error fetching featured products:', error);
-    return [];
-  }
+interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  price: number;
+  originalPrice?: number;
+  image_url: string;
+  isFeatured: boolean;
+  isBestseller: boolean;
+  affiliate_url?: string;
 }
 
-async function getCategories() {
-  try {
-    const sql = `
-      SELECT c.*, 
-             COALESCE(COUNT(DISTINCT p1.id), 0) + COALESCE(COUNT(DISTINCT p2.id), 0) as product_count
-      FROM categories c
-      LEFT JOIN products p1 ON c.id = p1.category_id AND p1.is_active = 1
-      LEFT JOIN products p2 ON c.id = p2.secondary_category_id AND p2.is_active = 1
-      WHERE c.is_active = 1 AND c.parent_id IS NULL
-      GROUP BY c.id 
-      ORDER BY c.sort_order ASC, c.name ASC
-    `;
-    
-    const categories = await query(sql) as any[];
-    
-    return categories.map((category: any) => ({
-      id: category.id,
-      name: category.name,
-      slug: category.slug,
-      description: category.description,
-      image_url: category.image_url,
-      icon_url: category.icon_url,
-      product_count: category.product_count || 0,
-      is_active: category.is_active
-    }));
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    return [];
-  }
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  image_url?: string;
+  icon_url?: string;
+  product_count: number;
+  is_active: boolean;
 }
 
+export default function Home() {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function Home() {
-  const featuredProducts = await getFeaturedProducts();
-  const categories = await getCategories();
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch featured products
+        const productsResponse = await fetch('/api/products?featured=true');
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          const products = Array.isArray(productsData) ? productsData : (productsData.products || []);
+          
+          const mappedProducts = products.map((product: any) => ({
+            id: product.id,
+            name: product.name,
+            slug: product.slug,
+            price: parseFloat(product.price) || 0,
+            originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
+            image_url: product.image_url || '',
+            isFeatured: Boolean(product.is_featured),
+            isBestseller: Boolean(product.is_bestseller),
+            affiliate_url: product.affiliate_url
+          }));
+          
+          setFeaturedProducts(mappedProducts);
+        }
+
+        // Fetch categories
+        const categoriesResponse = await fetch('/api/categories?parent_only=true');
+        if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json();
+          const mappedCategories = categoriesData.map((category: any) => ({
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            description: category.description,
+            image_url: category.image_url,
+            icon_url: category.icon_url,
+            product_count: category.product_count || 0,
+            is_active: category.is_active
+          }));
+          
+          setCategories(mappedCategories);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
   const bestsellers = featuredProducts.filter(p => p.isBestseller);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -96,9 +126,15 @@ export default async function Home() {
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
-            {categories.map((category) => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <CategoryCard key={category.id} category={category} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-500">No categories found. Please check your database connection.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -124,9 +160,15 @@ export default async function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {featuredProducts.length > 0 ? (
+              featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-500">No featured products found. Please check your database connection.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -152,9 +194,15 @@ export default async function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
-            {bestsellers.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {bestsellers.length > 0 ? (
+              bestsellers.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-500">No bestseller products found. Please check your database connection.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
