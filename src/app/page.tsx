@@ -1,5 +1,6 @@
 import { StarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { query } from '@/lib/database';
 
 // Components
 import Header from '@/components/Header';
@@ -8,61 +9,66 @@ import ProductCard from '@/components/ProductCard';
 import CategoryCard from '@/components/CategoryCard';
 import Footer from '@/components/Footer';
 
-// Fetch featured products from API
+// Fetch featured products directly from database
 async function getFeaturedProducts() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products?featured=true`, {
-      cache: 'no-store'
-    });
+    const sql = `
+      SELECT p.id, p.name, p.slug, p.price, p.original_price, p.image_url, 
+             p.is_featured, p.is_bestseller, p.affiliate_url
+      FROM products p
+      WHERE p.is_featured = 1 AND p.is_active = 1
+      ORDER BY p.created_at DESC
+      LIMIT 8
+    `;
     
-    if (response.ok) {
-      const data = await response.json();
-      const products = Array.isArray(data) ? data : (data.products || []);
-      
-      return products.map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        price: parseFloat(product.price) || 0,
-        originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
-        image_url: product.image_url || '',
-        isFeatured: Boolean(product.is_featured),
-        isBestseller: Boolean(product.is_bestseller)
-      }));
-    }
+    const products = await query(sql) as any[];
+    
+    return products.map((product: any) => ({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: parseFloat(product.price) || 0,
+      originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
+      image_url: product.image_url || '',
+      isFeatured: Boolean(product.is_featured),
+      isBestseller: Boolean(product.is_bestseller),
+      affiliate_url: product.affiliate_url
+    }));
   } catch (error) {
     console.error('Error fetching featured products:', error);
+    return [];
   }
-  
-  // Fallback to empty array if API fails
-  return [];
 }
 
 async function getCategories() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/categories?parent_only=true`, {
-      cache: 'no-store'
-    });
+    const sql = `
+      SELECT c.*, 
+             COALESCE(COUNT(DISTINCT p1.id), 0) + COALESCE(COUNT(DISTINCT p2.id), 0) as product_count
+      FROM categories c
+      LEFT JOIN products p1 ON c.id = p1.category_id AND p1.is_active = 1
+      LEFT JOIN products p2 ON c.id = p2.secondary_category_id AND p2.is_active = 1
+      WHERE c.is_active = 1 AND c.parent_id IS NULL
+      GROUP BY c.id 
+      ORDER BY c.sort_order ASC, c.name ASC
+    `;
     
-    if (response.ok) {
-      const categories = await response.json();
-      return categories.map((category: any) => ({
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-        description: category.description,
-        image_url: category.image_url,
-        icon_url: category.icon_url,
-        product_count: category.product_count || 0,
-        is_active: category.is_active
-      }));
-    }
+    const categories = await query(sql) as any[];
+    
+    return categories.map((category: any) => ({
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      image_url: category.image_url,
+      icon_url: category.icon_url,
+      product_count: category.product_count || 0,
+      is_active: category.is_active
+    }));
   } catch (error) {
     console.error('Error fetching categories:', error);
+    return [];
   }
-  
-  // Fallback to empty array if API fails
-  return [];
 }
 
 
