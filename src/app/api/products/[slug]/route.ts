@@ -159,6 +159,8 @@ export async function PUT(
       slug,
       description,
       short_description,
+      long_description,
+      product_review,
       price,
       original_price,
       affiliate_url,
@@ -295,7 +297,7 @@ export async function PUT(
 
     const sql = `
       UPDATE products SET
-        name = ?, slug = ?, description = ?, short_description = ?,
+        name = ?, slug = ?, description = ?, short_description = ?, long_description = ?, product_review = ?,
         price = ?, original_price = ?, affiliate_url = ?, affiliate_partner_name = ?, external_purchase_info = ?, image_url = ?,
         category_id = ?, subcategory_id = ?, brand_id = ?, is_featured = ?, is_bestseller = ?, is_active = ?,
         meta_title = ?, meta_description = ?,
@@ -309,6 +311,8 @@ export async function PUT(
       newSlug || null,
       description || null,
       short_description || null,
+      long_description || null,
+      product_review || null,
       price || null,
       original_price || null,
       affiliate_url || null,

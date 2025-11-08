@@ -15,6 +15,8 @@ interface Product {
   slug: string;
   description: string;
   short_description: string;
+  long_description?: string;
+  product_review?: string;
   price: number;
   original_price?: number;
   affiliate_url: string;
@@ -287,15 +289,35 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
 
-        {/* Product Description */}
-        <div className="mt-16">
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Product Description</h2>
-            <div className="prose max-w-none">
-              <p className="text-gray-700 leading-relaxed">{product.description}</p>
+        {/* Long Product Description */}
+        {product.long_description && (
+          <div className="mt-16">
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                <span className="mr-3">📝</span>
+                Product Description
+              </h2>
+              <div className="prose max-w-none">
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">{product.long_description}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Product Review / Expert Insight */}
+        {product.product_review && (
+          <div className="mt-8">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-8 border border-blue-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                <span className="mr-3">⭐</span>
+                Expert Review & Insights
+              </h2>
+              <div className="prose max-w-none">
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">{product.product_review}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <Footer />

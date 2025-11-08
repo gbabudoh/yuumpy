@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
     console.log('Products API - Subcategories:', subcategories);
 
     let sql = `
-      SELECT p.id, p.name, p.slug, p.description, p.short_description, p.price, p.original_price, 
+      SELECT p.id, p.name, p.slug, p.description, p.short_description, p.long_description, p.product_review,
+             p.price, p.original_price, 
              p.affiliate_url, p.affiliate_partner_name, p.external_purchase_info, p.image_url, p.gallery,
              p.category_id, p.subcategory_id, p.brand_id, p.is_featured, p.is_bestseller, p.is_active, 
              p.meta_title, p.meta_description, p.created_at,
@@ -311,6 +312,8 @@ export async function POST(request: NextRequest) {
       slug,
       description,
       short_description,
+      long_description,
+      product_review,
       price,
       original_price,
       affiliate_url,
@@ -358,11 +361,11 @@ export async function POST(request: NextRequest) {
 
     const sql = `
       INSERT INTO products (
-        name, slug, description, short_description, price, original_price,
+        name, slug, description, short_description, long_description, product_review, price, original_price,
         affiliate_url, affiliate_partner_name, external_purchase_info, image_url, category_id, subcategory_id, brand_id, is_featured, is_bestseller,
         meta_title, meta_description, banner_ad_title, banner_ad_description, banner_ad_image_url, banner_ad_link_url,
         banner_ad_duration, banner_ad_is_repeating, banner_ad_start_date, banner_ad_end_date, banner_ad_is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const result = await query(sql, [
@@ -370,6 +373,8 @@ export async function POST(request: NextRequest) {
       productSlug || null,
       description || null,
       short_description || null,
+      long_description || null,
+      product_review || null,
       price || null,
       original_price || null,
       affiliate_url || null,

@@ -13,6 +13,8 @@ interface Product {
   price: number;
   original_price?: number;
   short_description: string;
+  long_description?: string;
+  product_review?: string;
   affiliate_url: string;
   affiliate_partner_name?: string;
   external_purchase_info?: string;
@@ -68,6 +70,8 @@ export default function ProductsPage() {
     price: '',
     original_price: '',
     short_description: '',
+    long_description: '',
+    product_review: '',
     affiliate_url: '',
     affiliate_partner_name: '',
     external_purchase_info: '',
@@ -347,6 +351,8 @@ export default function ProductsPage() {
       const productData = {
         name: formData.name?.trim() || '',
         short_description: formData.short_description?.trim() || '',
+        long_description: formData.long_description?.trim() || '',
+        product_review: formData.product_review?.trim() || '',
         description: formData.short_description?.trim() || '',
         price: cleanPrice,
         original_price: cleanOriginalPrice,
@@ -515,6 +521,8 @@ export default function ProductsPage() {
       price: product.price.toString(),
       original_price: product.original_price?.toString() || '',
       short_description: product.short_description,
+      long_description: product.long_description || '',
+      product_review: product.product_review || '',
       affiliate_url: product.affiliate_url,
       affiliate_partner_name: product.affiliate_partner_name || '',
       external_purchase_info: product.external_purchase_info || '',
@@ -623,6 +631,8 @@ export default function ProductsPage() {
       price: '',
       original_price: '',
       short_description: '',
+      long_description: '',
+      product_review: '',
       affiliate_url: '',
       affiliate_partner_name: '',
       external_purchase_info: '',
@@ -1001,16 +1011,45 @@ export default function ProductsPage() {
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Brief Description *
+                        Short Description *
                       </label>
                       <textarea
                         required
-                        rows={3}
+                        rows={2}
                         value={formData.short_description}
                         onChange={(e) => setFormData({...formData, short_description: e.target.value})}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter brief product description"
+                        placeholder="Brief one-liner about the product (displays at top of product page)"
                       />
+                      <p className="text-xs text-gray-500 mt-1">This appears near the product image and buy button</p>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Long Description
+                      </label>
+                      <textarea
+                        rows={6}
+                        value={formData.long_description}
+                        onChange={(e) => setFormData({...formData, long_description: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Detailed product description with features, specifications, benefits, use cases, etc."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Comprehensive product information for customers</p>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Product Review / Expert Insight
+                      </label>
+                      <textarea
+                        rows={5}
+                        value={formData.product_review}
+                        onChange={(e) => setFormData({...formData, product_review: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Editorial review, expert opinion, pros/cons, recommendations to help customers make informed decisions"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Provides additional insights and recommendations</p>
                     </div>
 
                     <div className="md:col-span-2">
