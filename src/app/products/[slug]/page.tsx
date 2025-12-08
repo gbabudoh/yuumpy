@@ -245,12 +245,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {/* Price */}
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-gray-900">
-                  £{Number(product.price) % 1 === 0 ? Number(product.price).toFixed(0) : Number(product.price).toFixed(2)}
+                <span className="text-5xl font-bold text-gray-900 whitespace-nowrap">
+                  £{Math.floor(Number(product.price)) === Number(product.price) ? Math.floor(Number(product.price)) : Number(product.price).toFixed(2)}
                 </span>
                 {product.original_price && (
-                  <span className="text-2xl text-gray-400 line-through">
-                    £{Number(product.original_price) % 1 === 0 ? Number(product.original_price).toFixed(0) : Number(product.original_price).toFixed(2)}
+                  <span className="text-2xl text-gray-400 line-through whitespace-nowrap">
+                    £{Math.floor(Number(product.original_price)) === Number(product.original_price) ? Math.floor(Number(product.original_price)) : Number(product.original_price).toFixed(2)}
                   </span>
                 )}
               </div>
