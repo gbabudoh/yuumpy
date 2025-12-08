@@ -215,55 +215,59 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <span className="text-gray-900 font-medium truncate">{product.name}</span>
             </nav>
 
-            {/* Category Badge */}
-            <div className="flex items-center gap-2">
+            {/* Layer 1: Category & Status Badges */}
+            <div className="flex items-center gap-2 flex-wrap pb-4 border-b border-gray-100">
               <Link 
                 href={`/categories/${product.category_slug}`}
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+                className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
                 {product.category_name.replace(/00/g, '')}
               </Link>
-              {product.is_featured && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+              {Boolean(product.is_featured) && (
+                <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-amber-500 text-white">
                   ⭐ Featured
                 </span>
               )}
-              {product.is_bestseller && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              {Boolean(product.is_bestseller) && (
+                <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-green-600 text-white">
                   🔥 Bestseller
                 </span>
               )}
             </div>
 
-            {/* Product Title */}
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+            {/* Layer 2: Product Title */}
+            <div className="py-3">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-snug">
                 {product.name}
               </h1>
             </div>
 
-            {/* Price */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-gray-900">
-                  £{Number(product.price).toFixed(2)}
-                </span>
+            {/* Layer 3: Price Section */}
+            <div className="py-4 border-y border-gray-200">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-gray-900">
+                    £{Number(product.price).toFixed(2)}
+                  </span>
+                  {product.original_price && (
+                    <span className="text-lg text-gray-400 line-through">
+                      £{Number(product.original_price).toFixed(2)}
+                    </span>
+                  )}
+                </div>
                 {product.original_price && (
-                  <span className="text-2xl text-gray-400 line-through">
-                    £{Number(product.original_price).toFixed(2)}
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold bg-red-600 text-white">
+                    Save {discountPercentage}%
                   </span>
                 )}
               </div>
-              {product.original_price && (
-                <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg">
-                  Save {discountPercentage}%
-                </span>
-              )}
             </div>
 
-            {/* Short Description */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-lg text-gray-700 leading-relaxed">{product.short_description}</p>
+            {/* Layer 4: Short Description */}
+            <div className="py-4">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {product.short_description}
+              </p>
             </div>
 
             {/* Actions */}
