@@ -100,6 +100,8 @@ export default function ProductsPage() {
   const [bannerAdImagePreview, setBannerAdImagePreview] = useState<string | null>(null);
   const [selectedBannerAdImage, setSelectedBannerAdImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [selectedGalleryImages, setSelectedGalleryImages] = useState<File[]>([]);
 
   useEffect(() => {
     fetchProducts();
@@ -233,6 +235,8 @@ export default function ProductsPage() {
       
       let imageUrl = imagePreview || '';
       let bannerAdImageUrl = bannerAdImagePreview || '';
+      let finalGalleryImages: string[] = [...galleryImages];
+      const uploadedGalleryUrls: string[] = [];
       
       // Upload new product image if selected
       if (selectedImage) {
@@ -265,6 +269,42 @@ export default function ProductsPage() {
         }
       }
 
+      // Upload new gallery images if selected
+      if (selectedGalleryImages.length > 0) {
+        setUploading(true);
+        try {
+          for (const file of selectedGalleryImages) {
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+            uploadFormData.append('folder', 'yuumpy/products/gallery');
+            
+            const uploadResponse = await fetch('/api/upload', {
+              method: 'POST',
+              body: uploadFormData
+            });
+            
+            if (uploadResponse.ok) {
+              const uploadResult = await uploadResponse.json();
+              uploadedGalleryUrls.push(uploadResult.url);
+              console.log('Gallery image uploaded successfully:', uploadResult.url);
+            } else {
+              const errorResult = await uploadResponse.json().catch(() => ({ error: 'Unknown upload error' }));
+              console.error('Gallery upload API error:', errorResult);
+              throw new Error(errorResult.error || errorResult.details || 'Failed to upload gallery image');
+            }
+          }
+        } catch (uploadError) {
+          console.error('Gallery upload error:', uploadError);
+          alert(`Failed to upload gallery images: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+          return;
+        } finally {
+          setUploading(false);
+        }
+      }
+
+      // Combine existing gallery images with newly uploaded ones
+      finalGalleryImages = [...galleryImages, ...uploadedGalleryUrls];
+
       // Upload new banner ad image if selected
       if (selectedBannerAdImage) {
         setUploading(true);
@@ -296,14 +336,14 @@ export default function ProductsPage() {
         }
       }
       
-      await submitProduct(url, method, imageUrl, bannerAdImageUrl);
+      await submitProduct(url, method, imageUrl, bannerAdImageUrl, finalGalleryImages);
     } catch (error) {
       console.error('Error saving product:', error);
       alert('An error occurred while saving the product');
     }
   };
 
-  const submitProduct = async (url: string, method: string, imageUrl: string, bannerAdImageUrl: string) => {
+  const submitProduct = async (url: string, method: string, imageUrl: string, bannerAdImageUrl: string, galleryUrls: string[]) => {
     try {
       console.log('Form data before processing:', formData);
 
@@ -363,6 +403,7 @@ export default function ProductsPage() {
         subcategory_id: cleanSubcategoryId, // Use subcategory ID if selected
         brand_id: cleanBrandId,
         image_url: imageUrl?.trim() || null,
+        gallery: galleryUrls.length > 0 ? JSON.stringify(galleryUrls) : null,
         is_featured: Boolean(formData.is_featured),
         is_bestseller: Boolean(formData.is_bestseller),
         is_active: Boolean(formData.is_active),
@@ -548,6 +589,18 @@ export default function ProductsPage() {
     setSelectedImage(null);
     setBannerAdImagePreview(product.banner_ad_image_url || null);
     setSelectedBannerAdImage(null);
+    // Parse gallery from JSON string if it exists
+    let parsedGallery: string[] = [];
+    if (product.gallery) {
+      try {
+        parsedGallery = typeof product.gallery === 'string' ? JSON.parse(product.gallery) : product.gallery;
+      } catch (e) {
+        console.error('Failed to parse gallery:', e);
+        parsedGallery = [];
+      }
+    }
+    setGalleryImages(parsedGallery);
+    setSelectedGalleryImages([]);
     setShowForm(true);
   };
 
@@ -625,6 +678,34 @@ export default function ProductsPage() {
     }
   };
 
+  const handleGalleryImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Validate files
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        alert(`${file.name} is not an image file`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`${file.name} is too large (max 5MB)`);
+        return false;
+      }
+      return true;
+    });
+
+    setSelectedGalleryImages(prev => [...prev, ...validFiles]);
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setGalleryImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeSelectedGalleryImage = (index: number) => {
+    setSelectedGalleryImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -660,6 +741,8 @@ export default function ProductsPage() {
     setSelectedImage(null);
     setBannerAdImagePreview(null);
     setSelectedBannerAdImage(null);
+    setGalleryImages([]);
+    setSelectedGalleryImages([]);
     setEditingProduct(null);
     setShowForm(false);
   };
@@ -1161,6 +1244,71 @@ export default function ProductsPage() {
                           />
                           <p className="text-xs text-gray-500 mt-1">
                             Upload a product image (JPG, PNG, GIF, max 5MB)
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Gallery Images (for thumbnail gallery)
+                      </label>
+                      <div className="space-y-4">
+                        {/* Existing Gallery Images */}
+                        {galleryImages.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {galleryImages.map((img, index) => (
+                              <div key={index} className="relative">
+                                <img
+                                  src={img}
+                                  alt={`Gallery ${index + 1}`}
+                                  className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeGalleryImage(index)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* New Gallery Images Preview */}
+                        {selectedGalleryImages.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {selectedGalleryImages.map((file, index) => (
+                              <div key={index} className="relative">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`New ${index + 1}`}
+                                  className="w-20 h-20 object-cover rounded-lg border border-green-300"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeSelectedGalleryImage(index)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* File Upload */}
+                        <div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleGalleryImagesChange}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Upload multiple gallery images (JPG, PNG, GIF, max 5MB each). These will appear as thumbnails.
                           </p>
                         </div>
                       </div>

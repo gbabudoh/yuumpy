@@ -18,7 +18,7 @@ export default function ProductImageGallery({ images, productName }: ProductImag
     <div className="flex gap-4">
       {/* Thumbnail Gallery - Vertical on Left */}
       <div className="flex flex-col gap-3 w-20">
-        {displayImages.slice(0, 4).map((image, index) => (
+        {displayImages.slice(0, 5).map((image, index) => (
           <button
             key={index}
             onClick={() => setSelectedImage(index)}

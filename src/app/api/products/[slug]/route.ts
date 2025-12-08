@@ -167,6 +167,7 @@ export async function PUT(
       affiliate_partner_name,
       external_purchase_info,
       image_url,
+      gallery,
       category_id,
       subcategory_id,
       brand_id,
@@ -298,7 +299,7 @@ export async function PUT(
     const sql = `
       UPDATE products SET
         name = ?, slug = ?, description = ?, short_description = ?, long_description = ?, product_review = ?,
-        price = ?, original_price = ?, affiliate_url = ?, affiliate_partner_name = ?, external_purchase_info = ?, image_url = ?,
+        price = ?, original_price = ?, affiliate_url = ?, affiliate_partner_name = ?, external_purchase_info = ?, image_url = ?, gallery = ?,
         category_id = ?, subcategory_id = ?, brand_id = ?, is_featured = ?, is_bestseller = ?, is_active = ?,
         meta_title = ?, meta_description = ?,
         banner_ad_title = ?, banner_ad_description = ?, banner_ad_image_url = ?, banner_ad_link_url = ?,
@@ -319,6 +320,7 @@ export async function PUT(
       affiliate_partner_name || null,
       external_purchase_info || null,
       image_url || null,
+      gallery || null,
       category_id || null,
       subcategory_id || null,
       brand_id || null,

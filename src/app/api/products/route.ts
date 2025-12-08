@@ -320,6 +320,7 @@ export async function POST(request: NextRequest) {
       affiliate_partner_name,
       external_purchase_info,
       image_url,
+      gallery,
       category_id,
       subcategory_id,
       brand_id,
@@ -362,10 +363,10 @@ export async function POST(request: NextRequest) {
     const sql = `
       INSERT INTO products (
         name, slug, description, short_description, long_description, product_review, price, original_price,
-        affiliate_url, affiliate_partner_name, external_purchase_info, image_url, category_id, subcategory_id, brand_id, is_featured, is_bestseller,
+        affiliate_url, affiliate_partner_name, external_purchase_info, image_url, gallery, category_id, subcategory_id, brand_id, is_featured, is_bestseller,
         meta_title, meta_description, banner_ad_title, banner_ad_description, banner_ad_image_url, banner_ad_link_url,
         banner_ad_duration, banner_ad_is_repeating, banner_ad_start_date, banner_ad_end_date, banner_ad_is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const result = await query(sql, [
@@ -381,6 +382,7 @@ export async function POST(request: NextRequest) {
       affiliate_partner_name || null,
       external_purchase_info || null,
       image_url || null,
+      gallery || null,
       category_id || null,
       subcategory_id || null,
       brand_id || null,

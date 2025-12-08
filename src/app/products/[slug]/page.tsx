@@ -25,7 +25,7 @@ interface Product {
   affiliate_partner_name?: string;
   external_purchase_info?: string;
   image_url: string;
-  gallery?: string[];
+  gallery?: string | string[];
   category_name: string;
   category_slug: string;
   brand_name?: string;
@@ -154,7 +154,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const fallbackImage = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600';
   const mainImage = product.image_url || fallbackImage;
-  const galleryImages = product.gallery?.filter(img => img && img.trim() !== '') || [];
+  
+  // Parse gallery from JSON string if it exists
+  let galleryImages: string[] = [];
+  if (product.gallery) {
+    try {
+      const parsed = typeof product.gallery === 'string' ? JSON.parse(product.gallery) : product.gallery;
+      galleryImages = Array.isArray(parsed) ? parsed.filter(img => img && img.trim() !== '') : [];
+    } catch (e) {
+      console.error('Failed to parse gallery:', e);
+      galleryImages = [];
+    }
+  }
+  
   const images = [mainImage, ...galleryImages];
 
   return (
