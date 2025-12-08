@@ -476,11 +476,13 @@ export default function ProductsPage() {
         const errorMessage = responseData?.error || 'Failed to save product';
         const errorDetails = responseData?.details || '';
         console.error('Save error:', responseData);
+        console.error('Response status:', response.status);
+        console.error('Full response:', response);
         
         if (errorDetails.includes('foreign key constraint')) {
           alert('Database constraint error: The selected category or subcategory may not exist. Please try selecting a different category or contact support.');
         } else {
-          alert(`${errorMessage}${errorDetails ? '\n\nDetails: ' + errorDetails : ''}`);
+          alert(`${errorMessage}${errorDetails ? '\n\nDetails: ' + errorDetails : ''}\n\nCheck console for more details.`);
         }
       }
     } catch (error) {
