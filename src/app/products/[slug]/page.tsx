@@ -6,6 +6,7 @@ import { ExternalLink, Shield } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductBannerAd from '@/components/ProductBannerAd';
+import ProductTabs from '@/components/ProductTabs';
 import { generateMetadata as generateSEOMetadata, generateStructuredData } from '@/lib/seo';
 import { query } from '@/lib/database';
 
@@ -289,35 +290,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
 
-        {/* Long Product Description */}
-        {product.long_description && (
-          <div className="mt-16">
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <span className="mr-3">📝</span>
-                Product Description
-              </h2>
-              <div className="prose max-w-none">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-line">{product.long_description}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Product Review / Expert Insight */}
-        {product.product_review && (
-          <div className="mt-8">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-8 border border-blue-100">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <span className="mr-3">⭐</span>
-                Expert Review & Insights
-              </h2>
-              <div className="prose max-w-none">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-line">{product.product_review}</p>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Product Details Tabs */}
+        <ProductTabs 
+          longDescription={product.long_description}
+          productReview={product.product_review}
+        />
       </div>
 
       <Footer />
