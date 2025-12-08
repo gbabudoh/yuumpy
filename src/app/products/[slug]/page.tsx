@@ -189,17 +189,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="container mx-auto px-4 py-4 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
           {/* Product Images */}
           <div>
             <ProductImageGallery images={images} productName={product.name} />
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
-            {/* Breadcrumb */}
-            <nav className="flex items-center space-x-2 text-sm">
+          <div className="space-y-4 md:space-y-6">
+            {/* Breadcrumb - Hidden on mobile */}
+            <nav className="hidden md:flex items-center space-x-2 text-sm">
               <Link href="/" className="text-gray-500 hover:text-blue-600 transition-colors">
                 Home
               </Link>
@@ -219,7 +219,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </nav>
 
             {/* Layer 1: Category & Status Badges */}
-            <div className="flex items-center gap-2 flex-wrap pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-2 flex-wrap pb-3 md:pb-4 border-b border-gray-100">
               <Link 
                 href={`/categories/${product.category_slug}`}
                 className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
@@ -239,27 +239,27 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {/* Layer 2: Product Title */}
-            <div className="py-3">
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-snug">
+            <div className="py-2 md:py-3">
+              <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
                 {product.name}
               </h1>
             </div>
 
             {/* Layer 3: Price Section */}
-            <div className="py-4 border-y border-gray-200">
-              <div className="flex items-center gap-4 flex-wrap">
+            <div className="py-3 md:py-4 border-y border-gray-200">
+              <div className="flex items-center gap-3 md:gap-4 flex-wrap">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-gray-900">
+                  <span className="text-2xl md:text-3xl font-bold text-gray-900">
                     £{Number(product.price).toFixed(2)}
                   </span>
                   {product.original_price && (
-                    <span className="text-lg text-gray-400 line-through">
+                    <span className="text-base md:text-lg text-gray-400 line-through">
                       £{Number(product.original_price).toFixed(2)}
                     </span>
                   )}
                 </div>
                 {product.original_price && (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold bg-red-600 text-white">
+                  <span className="inline-flex items-center px-2.5 md:px-3 py-1 md:py-1.5 rounded-md text-xs font-bold bg-red-600 text-white">
                     Save {discountPercentage}%
                   </span>
                 )}
@@ -267,44 +267,42 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {/* Layer 4: Short Description */}
-            <div className="py-4">
-              <p className="text-sm text-gray-600 leading-relaxed">
+            <div className="py-3 md:py-4">
+              <p className="text-sm md:text-base text-gray-600 leading-relaxed">
                 {product.short_description}
               </p>
             </div>
 
             {/* Actions */}
-            <div className="space-y-4">
-              <div className="flex space-x-4">
-                <a
-                  href={product.affiliate_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 text-white py-4 px-6 rounded-lg font-semibold text-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer hover:bg-purple-700"
-                  style={{ backgroundColor: '#8827ee' }}
-                >
-                  <span>Buy Now</span>
-                  <ExternalLink className="w-5 h-5" />
-                </a>
-              </div>
+            <div className="space-y-3 md:space-y-4">
+              <a
+                href={product.affiliate_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full text-white py-3 md:py-4 px-6 rounded-lg font-semibold text-base md:text-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer hover:bg-purple-700"
+                style={{ backgroundColor: '#8827ee' }}
+              >
+                <span>Buy Now</span>
+                <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
+              </a>
             </div>
 
             {/* Features */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
-                <Shield className="w-6 h-6 text-blue-600" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+              <div className="flex items-start space-x-3 p-3 md:p-4 bg-blue-50 rounded-lg">
+                <Shield className="w-5 h-5 md:w-6 md:h-6 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-gray-900">Affiliate Partner</h4>
-                  <p className="text-sm text-gray-600">
+                  <h4 className="font-semibold text-sm md:text-base text-gray-900">Affiliate Partner</h4>
+                  <p className="text-xs md:text-sm text-gray-600 mt-1">
                     {product.affiliate_partner_name || 'This product is sold by our trusted affiliate partner'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3 p-4 bg-orange-50 rounded-lg">
-                <ExternalLink className="w-6 h-6 text-orange-600" />
+              <div className="flex items-start space-x-3 p-3 md:p-4 bg-orange-50 rounded-lg">
+                <ExternalLink className="w-5 h-5 md:w-6 md:h-6 text-orange-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-gray-900">External Purchase</h4>
-                  <p className="text-sm text-gray-600">
+                  <h4 className="font-semibold text-sm md:text-base text-gray-900">External Purchase</h4>
+                  <p className="text-xs md:text-sm text-gray-600 mt-1">
                     {product.external_purchase_info || 'You will be redirected to complete your purchase'}
                   </p>
                 </div>
