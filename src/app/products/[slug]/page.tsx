@@ -209,7 +209,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 href={`/categories/${product.category_slug}`} 
                 className="text-gray-500 hover:text-blue-600 transition-colors"
               >
-                {product.category_name.replace(/^00/, '')}
+                {product.category_name.replace(/00/g, '')}
               </Link>
               <span className="text-gray-300">/</span>
               <span className="text-gray-900 font-medium truncate">{product.name}</span>
@@ -221,7 +221,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 href={`/categories/${product.category_slug}`}
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
               >
-                {product.category_name.replace(/^00/, '')}
+                {product.category_name.replace(/00/g, '')}
               </Link>
               {product.is_featured && (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
