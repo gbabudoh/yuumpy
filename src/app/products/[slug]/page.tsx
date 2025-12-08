@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductBannerAd from '@/components/ProductBannerAd';
 import ProductTabs from '@/components/ProductTabs';
+import ProductImageGallery from '@/components/ProductImageGallery';
 import { generateMetadata as generateSEOMetadata, generateStructuredData } from '@/lib/seo';
 import { query } from '@/lib/database';
 
@@ -179,18 +180,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
-          <div className="space-y-4">
-            {/* Main Image */}
-            <div className="aspect-square bg-white rounded-xl shadow-lg overflow-hidden">
-              <Image
-                src={images[0] || fallbackImage}
-                alt={product.name}
-                width={600}
-                height={600}
-                className="w-full h-full object-cover"
-                priority
-              />
-            </div>
+          <div>
+            <ProductImageGallery images={images} productName={product.name} />
           </div>
 
           {/* Product Info */}
