@@ -26,26 +26,26 @@ export default function ProductTabs({ longDescription, productReview }: ProductT
             {longDescription && (
               <button
                 onClick={() => setActiveTab('description')}
-                className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                className={`flex items-center px-6 py-4 text-lg font-semibold border-b-2 transition-colors ${
                   activeTab === 'description'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-blue-700 hover:border-blue-300'
                 }`}
               >
-                <span className="mr-2">📝</span>
+                <span className="mr-2 text-xl">📝</span>
                 Product Description
               </button>
             )}
             {productReview && (
               <button
                 onClick={() => setActiveTab('review')}
-                className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                className={`flex items-center px-6 py-4 text-lg font-semibold border-b-2 transition-colors ${
                   activeTab === 'review'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-blue-700 hover:border-blue-300'
                 }`}
               >
-                <span className="mr-2">⭐</span>
+                <span className="mr-2 text-xl">⭐</span>
                 Expert Review & Insights
               </button>
             )}
