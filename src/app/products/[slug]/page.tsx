@@ -196,42 +196,75 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {/* Product Info */}
           <div className="space-y-6">
             {/* Breadcrumb */}
-            <nav className="flex items-center space-x-2 text-sm text-gray-600">
-              <Link href="/" className="hover:text-blue-600">Home</Link>
-              <span>/</span>
-              <Link href="/products" className="hover:text-blue-600">Products</Link>
-              <span>/</span>
-              <Link href={`/categories/${product.category_slug}`} className="hover:text-blue-600">
+            <nav className="flex items-center space-x-2 text-sm">
+              <Link href="/" className="text-gray-500 hover:text-blue-600 transition-colors">
+                Home
+              </Link>
+              <span className="text-gray-300">/</span>
+              <Link href="/products" className="text-gray-500 hover:text-blue-600 transition-colors">
+                Products
+              </Link>
+              <span className="text-gray-300">/</span>
+              <Link 
+                href={`/categories/${product.category_slug}`} 
+                className="text-gray-500 hover:text-blue-600 transition-colors"
+              >
                 {product.category_name}
               </Link>
-              <span>/</span>
-              <span className="text-gray-900">{product.name}</span>
+              <span className="text-gray-300">/</span>
+              <span className="text-gray-900 font-medium truncate">{product.name}</span>
             </nav>
+
+            {/* Category Badge */}
+            <div className="flex items-center gap-2">
+              <Link 
+                href={`/categories/${product.category_slug}`}
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+              >
+                {product.category_name}
+              </Link>
+              {product.is_featured && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  ⭐ Featured
+                </span>
+              )}
+              {product.is_bestseller && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  🔥 Bestseller
+                </span>
+              )}
+            </div>
 
             {/* Product Title */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+                {product.name}
+              </h1>
             </div>
 
             {/* Price */}
-            <div className="flex items-center space-x-4">
-              <span className="text-4xl font-bold text-gray-900">
-                £{Number(product.price).toFixed(2)}
-              </span>
-              {product.original_price && (
-                <>
-                  <span className="text-2xl text-gray-500 line-through">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-baseline gap-2">
+                <span className="text-5xl font-bold text-gray-900">
+                  £{Number(product.price).toFixed(2)}
+                </span>
+                {product.original_price && (
+                  <span className="text-2xl text-gray-400 line-through">
                     £{Number(product.original_price).toFixed(2)}
                   </span>
-                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-semibold">
-                    Save {discountPercentage}%
-                  </span>
-                </>
+                )}
+              </div>
+              {product.original_price && (
+                <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg">
+                  Save {discountPercentage}%
+                </span>
               )}
             </div>
 
             {/* Short Description */}
-            <p className="text-lg text-gray-700">{product.short_description}</p>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-lg text-gray-700 leading-relaxed">{product.short_description}</p>
+            </div>
 
             {/* Actions */}
             <div className="space-y-4">
