@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FileText, Star } from 'lucide-react';
 
 interface ProductTabsProps {
   longDescription?: string;
@@ -32,7 +33,7 @@ export default function ProductTabs({ longDescription, productReview }: ProductT
                     : 'border-transparent text-gray-500 hover:text-blue-700 hover:border-blue-300'
                 }`}
               >
-                <span className="mr-2 text-xl">📝</span>
+                <FileText className="mr-2 w-5 h-5" />
                 Product Description
               </button>
             )}
@@ -45,7 +46,7 @@ export default function ProductTabs({ longDescription, productReview }: ProductT
                     : 'border-transparent text-gray-500 hover:text-blue-700 hover:border-blue-300'
                 }`}
               >
-                <span className="mr-2 text-xl">⭐</span>
+                <Star className="mr-2 w-5 h-5" />
                 Expert Review & Insights
               </button>
             )}
