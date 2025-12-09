@@ -10,65 +10,89 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ suggestions: [] });
     }
 
-    const searchTerm = q.trim();
+    const searchTerm = q.trim().toLowerCase();
     const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0);
     
-    // Get product suggestions with enhanced search
+    // Get product suggestions with comprehensive search across all fields
     const productSuggestions = await query(`
-      SELECT DISTINCT p.name, p.slug, 'product' as type, p.price, p.image_url
+      SELECT DISTINCT p.name, p.slug, 'product' as type, p.price, p.image_url, p.category_id,
+             c.name as category_name, b.name as brand_name
       FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN brands b ON p.brand_id = b.id
       WHERE p.is_active = 1 
         AND (
-          p.name LIKE ? OR 
-          p.name LIKE ? OR
-          p.short_description LIKE ? OR
-          p.description LIKE ?
+          LOWER(p.name) LIKE ? OR 
+          LOWER(p.short_description) LIKE ? OR
+          LOWER(p.description) LIKE ? OR
+          LOWER(p.long_description) LIKE ? OR
+          LOWER(p.product_review) LIKE ? OR
+          LOWER(c.name) LIKE ? OR
+          LOWER(b.name) LIKE ? OR
+          LOWER(p.slug) LIKE ?
         )
       ORDER BY 
-        CASE WHEN p.name = ? THEN 1 
-             WHEN p.name LIKE ? THEN 2 
-             ELSE 3 END,
+        CASE 
+          WHEN LOWER(p.name) = ? THEN 1 
+          WHEN LOWER(p.name) LIKE ? THEN 2 
+          WHEN LOWER(p.short_description) LIKE ? THEN 3
+          ELSE 4 
+        END,
         p.is_featured DESC,
+        p.is_bestseller DESC,
         p.created_at DESC
       LIMIT 8
     `, [
       `%${searchTerm}%`, 
-      `${searchTerm}%`, 
+      `%${searchTerm}%`, 
       `%${searchTerm}%`, 
       `%${searchTerm}%`,
+      `%${searchTerm}%`,
+      `%${searchTerm}%`,
+      `%${searchTerm}%`,
+      `%${searchTerm}%`,
       searchTerm,
-      `${searchTerm}%`
+      `${searchTerm}%`,
+      `%${searchTerm}%`
     ]);
 
-    // Get category suggestions (reduced limit to prioritize products)
+    // Get category suggestions with case-insensitive search
     const categorySuggestions = await query(`
       SELECT DISTINCT c.name, c.slug, 'category' as type
       FROM categories c
       WHERE c.is_active = 1 
         AND (
-          c.name LIKE ? OR 
-          c.name LIKE ?
+          LOWER(c.name) LIKE ? OR 
+          LOWER(c.description) LIKE ?
         )
       ORDER BY 
-        CASE WHEN c.name = ? THEN 1 ELSE 2 END,
+        CASE 
+          WHEN LOWER(c.name) = ? THEN 1 
+          WHEN LOWER(c.name) LIKE ? THEN 2
+          ELSE 3 
+        END,
         c.name
-      LIMIT 2
-    `, [`%${searchTerm}%`, `${searchTerm}%`, searchTerm]);
+      LIMIT 3
+    `, [`%${searchTerm}%`, `%${searchTerm}%`, searchTerm, `${searchTerm}%`]);
 
-    // Get brand suggestions (reduced limit to prioritize products)
+    // Get brand suggestions with case-insensitive search
     const brandSuggestions = await query(`
       SELECT DISTINCT b.name, b.slug, 'brand' as type
       FROM brands b
       WHERE b.is_active = 1 
         AND (
-          b.name LIKE ? OR 
-          b.name LIKE ?
+          LOWER(b.name) LIKE ? OR 
+          LOWER(b.description) LIKE ?
         )
       ORDER BY 
-        CASE WHEN b.name = ? THEN 1 ELSE 2 END,
+        CASE 
+          WHEN LOWER(b.name) = ? THEN 1 
+          WHEN LOWER(b.name) LIKE ? THEN 2
+          ELSE 3 
+        END,
         b.name
-      LIMIT 2
-    `, [`%${searchTerm}%`, `${searchTerm}%`, searchTerm]);
+      LIMIT 3
+    `, [`%${searchTerm}%`, `%${searchTerm}%`, searchTerm, `${searchTerm}%`]);
 
     // Combine and format suggestions (products first)
     const suggestions = [

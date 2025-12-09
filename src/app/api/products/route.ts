@@ -72,48 +72,50 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      // Enhanced search across multiple fields with better matching
-      const searchTerm = search.trim();
+      // Advanced search across all text fields with intelligent matching
+      const searchTerm = search.trim().toLowerCase();
       
       // Split search term into individual words for better matching
       const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0);
       
       if (searchWords.length === 1) {
-        // Single word search - exact match first, then partial match
+        // Single word search - comprehensive field coverage
         const word = searchWords[0];
         whereConditions.push(`(
-          p.name LIKE ? OR 
-          p.name LIKE ? OR
-          p.description LIKE ? OR 
-          p.description LIKE ? OR
-          p.short_description LIKE ? OR
-          p.short_description LIKE ? OR
-          c.name LIKE ? OR
-          c.name LIKE ? OR
-          b.name LIKE ? OR
-          b.name LIKE ? OR
-          s.name LIKE ? OR
-          s.name LIKE ?
+          LOWER(p.name) LIKE ? OR 
+          LOWER(p.description) LIKE ? OR
+          LOWER(p.short_description) LIKE ? OR
+          LOWER(p.long_description) LIKE ? OR
+          LOWER(p.product_review) LIKE ? OR
+          LOWER(c.name) LIKE ? OR
+          LOWER(b.name) LIKE ? OR
+          LOWER(s.name) LIKE ? OR
+          LOWER(p.slug) LIKE ?
         )`);
         
-        // Add exact match first (higher priority)
-        params.push(word, `%${word}%`, word, `%${word}%`, word, `%${word}%`, word, `%${word}%`, word, `%${word}%`, word, `%${word}%`);
+        // Add wildcard search for all fields
+        const wildcardWord = `%${word}%`;
+        params.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
       } else {
-        // Multi-word search - all words must be found somewhere
+        // Multi-word search - each word must be found in at least one field
         const wordConditions = searchWords.map(() => `(
-          p.name LIKE ? OR 
-          p.description LIKE ? OR
-          p.short_description LIKE ? OR
-          c.name LIKE ? OR
-          b.name LIKE ? OR
-          s.name LIKE ?
+          LOWER(p.name) LIKE ? OR 
+          LOWER(p.description) LIKE ? OR
+          LOWER(p.short_description) LIKE ? OR
+          LOWER(p.long_description) LIKE ? OR
+          LOWER(p.product_review) LIKE ? OR
+          LOWER(c.name) LIKE ? OR
+          LOWER(b.name) LIKE ? OR
+          LOWER(s.name) LIKE ? OR
+          LOWER(p.slug) LIKE ?
         )`).join(' AND ');
         
         whereConditions.push(`(${wordConditions})`);
         
         // For each word, add all field variations
         searchWords.forEach(word => {
-          params.push(`%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`, `%${word}%`);
+          const wildcardWord = `%${word}%`;
+          params.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
         });
       }
     }
@@ -255,8 +257,43 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      countWhereConditions.push('(p.name LIKE ? OR p.description LIKE ?)');
-      countParams.push(`%${search}%`, `%${search}%`);
+      // Match the same advanced search logic for count query
+      const searchTerm = search.trim().toLowerCase();
+      const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0);
+      
+      if (searchWords.length === 1) {
+        const word = searchWords[0];
+        countWhereConditions.push(`(
+          LOWER(p.name) LIKE ? OR 
+          LOWER(p.description) LIKE ? OR
+          LOWER(p.short_description) LIKE ? OR
+          LOWER(p.long_description) LIKE ? OR
+          LOWER(p.product_review) LIKE ? OR
+          LOWER(c.name) LIKE ? OR
+          LOWER(b.name) LIKE ? OR
+          LOWER(s.name) LIKE ? OR
+          LOWER(p.slug) LIKE ?
+        )`);
+        const wildcardWord = `%${word}%`;
+        countParams.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
+      } else {
+        const wordConditions = searchWords.map(() => `(
+          LOWER(p.name) LIKE ? OR 
+          LOWER(p.description) LIKE ? OR
+          LOWER(p.short_description) LIKE ? OR
+          LOWER(p.long_description) LIKE ? OR
+          LOWER(p.product_review) LIKE ? OR
+          LOWER(c.name) LIKE ? OR
+          LOWER(b.name) LIKE ? OR
+          LOWER(s.name) LIKE ? OR
+          LOWER(p.slug) LIKE ?
+        )`).join(' AND ');
+        countWhereConditions.push(`(${wordConditions})`);
+        searchWords.forEach(word => {
+          const wildcardWord = `%${word}%`;
+          countParams.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
+        });
+      }
     }
 
     if (minPrice) {
@@ -307,6 +344,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('POST /api/products - Received body:', body);
     const {
       name,
       slug,
@@ -326,6 +364,7 @@ export async function POST(request: NextRequest) {
       brand_id,
       is_featured,
       is_bestseller,
+      is_active,
       meta_title,
       meta_description,
       // Banner ad fields
@@ -363,10 +402,10 @@ export async function POST(request: NextRequest) {
     const sql = `
       INSERT INTO products (
         name, slug, description, short_description, long_description, product_review, price, original_price,
-        affiliate_url, affiliate_partner_name, external_purchase_info, image_url, gallery, category_id, subcategory_id, brand_id, is_featured, is_bestseller,
+        affiliate_url, affiliate_partner_name, external_purchase_info, image_url, gallery, category_id, subcategory_id, brand_id, is_featured, is_bestseller, is_active,
         meta_title, meta_description, banner_ad_title, banner_ad_description, banner_ad_image_url, banner_ad_link_url,
         banner_ad_duration, banner_ad_is_repeating, banner_ad_start_date, banner_ad_end_date, banner_ad_is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const result = await query(sql, [
@@ -388,6 +427,7 @@ export async function POST(request: NextRequest) {
       brand_id || null,
       is_featured !== undefined ? (is_featured ? 1 : 0) : 0,
       is_bestseller !== undefined ? (is_bestseller ? 1 : 0) : 0,
+      is_active !== undefined ? (is_active ? 1 : 0) : 1,
       meta_title || null,
       meta_description || null,
       // Banner ad fields
@@ -408,8 +448,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error creating product:', error);
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Failed to create product' },
+      { 
+        error: 'Failed to create product',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
