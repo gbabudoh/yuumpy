@@ -21,7 +21,8 @@ import {
   Mail,
   Search,
   UserCog,
-  Upload
+  Upload,
+  ShoppingCart
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -37,6 +38,12 @@ const navigation = [
     name: 'Products',
     href: '/admin/products',
     icon: Package,
+    current: false
+  },
+  {
+    name: 'Orders',
+    href: '/admin/orders',
+    icon: ShoppingCart,
     current: false
   },
   {

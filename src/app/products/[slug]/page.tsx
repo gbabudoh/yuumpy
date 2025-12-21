@@ -24,6 +24,9 @@ interface Product {
   affiliate_url: string;
   affiliate_partner_name?: string;
   external_purchase_info?: string;
+  purchase_type?: 'affiliate' | 'direct';
+  product_condition?: 'new' | 'refurbished' | 'used';
+  stock_quantity?: number;
   image_url: string;
   gallery?: string | string[];
   category_name: string;
@@ -226,14 +229,29 @@ export default async function ProductPage({ params }: ProductPageProps) {
               >
                 {product.category_name.replace(/00/g, '')}
               </Link>
+              {(!product.product_condition || product.product_condition === 'new') && (
+                <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-green-100 text-green-800">
+                  New
+                </span>
+              )}
+              {product.product_condition === 'refurbished' && (
+                <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-blue-100 text-blue-800">
+                  Refurbished
+                </span>
+              )}
+              {product.product_condition === 'used' && (
+                <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-amber-100 text-amber-800">
+                  Used
+                </span>
+              )}
               {Boolean(product.is_featured) && (
                 <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-amber-500 text-white">
-                  ⭐ Featured
+                  Featured
                 </span>
               )}
               {Boolean(product.is_bestseller) && (
                 <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-green-600 text-white">
-                  🔥 Bestseller
+                  Bestseller
                 </span>
               )}
             </div>
@@ -247,7 +265,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {/* Layer 3: Price Section */}
             <div className="py-3 md:py-4 border-y border-gray-200">
-              <div className="flex items-center gap-3 md:gap-4 flex-wrap">
+              <div className="flex items-baseline gap-3 md:gap-4 flex-wrap">
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl md:text-3xl font-bold text-gray-900">
                     £{Number(product.price).toFixed(2)}
@@ -275,38 +293,74 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {/* Actions */}
             <div className="space-y-3 md:space-y-4">
-              <a
-                href={product.affiliate_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full text-white py-3 md:py-4 px-6 rounded-lg font-semibold text-base md:text-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer hover:bg-purple-700"
-                style={{ backgroundColor: '#8827ee' }}
-              >
-                <span>Buy Now</span>
-                <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
-              </a>
+              {(product.purchase_type === 'direct' || !product.affiliate_url) ? (
+                <Link
+                  href={`/checkout/${product.slug}`}
+                  className="w-full text-white py-3 md:py-4 px-6 rounded-lg font-semibold text-base md:text-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer hover:opacity-90"
+                  style={{ backgroundColor: '#16a34a' }}
+                >
+                  <span>Buy Now</span>
+                  <Shield className="w-4 h-4 md:w-5 md:h-5" />
+                </Link>
+              ) : (
+                <a
+                  href={product.affiliate_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full text-white py-3 md:py-4 px-6 rounded-lg font-semibold text-base md:text-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer hover:bg-purple-700"
+                  style={{ backgroundColor: '#8827ee' }}
+                >
+                  <span>Buy Now</span>
+                  <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
+                </a>
+              )}
             </div>
 
             {/* Features */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-              <div className="flex items-start space-x-3 p-3 md:p-4 bg-blue-50 rounded-lg">
-                <Shield className="w-5 h-5 md:w-6 md:h-6 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-sm md:text-base text-gray-900">Affiliate Partner</h4>
-                  <p className="text-xs md:text-sm text-gray-600 mt-1">
-                    {product.affiliate_partner_name || 'This product is sold by our trusted affiliate partner'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3 p-3 md:p-4 bg-orange-50 rounded-lg">
-                <ExternalLink className="w-5 h-5 md:w-6 md:h-6 text-orange-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-sm md:text-base text-gray-900">External Purchase</h4>
-                  <p className="text-xs md:text-sm text-gray-600 mt-1">
-                    {product.external_purchase_info || 'You will be redirected to complete your purchase'}
-                  </p>
-                </div>
-              </div>
+              {(product.purchase_type === 'direct' || !product.affiliate_url) ? (
+                <>
+                  <div className="flex items-start space-x-3 p-3 md:p-4 bg-green-50 rounded-lg">
+                    <Shield className="w-5 h-5 md:w-6 md:h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-sm md:text-base text-gray-900">Secure Checkout</h4>
+                      <p className="text-xs md:text-sm text-gray-600 mt-1">
+                        Pay securely with Stripe on Yuumpy
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3 p-3 md:p-4 bg-green-50 rounded-lg">
+                    <Shield className="w-5 h-5 md:w-6 md:h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-sm md:text-base text-gray-900">Order Tracking</h4>
+                      <p className="text-xs md:text-sm text-gray-600 mt-1">
+                        Track your order status in your account
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-start space-x-3 p-3 md:p-4 bg-blue-50 rounded-lg">
+                    <Shield className="w-5 h-5 md:w-6 md:h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-sm md:text-base text-gray-900">Affiliate Partner</h4>
+                      <p className="text-xs md:text-sm text-gray-600 mt-1">
+                        {product.affiliate_partner_name || 'This product is sold by our trusted affiliate partner'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3 p-3 md:p-4 bg-orange-50 rounded-lg">
+                    <ExternalLink className="w-5 h-5 md:w-6 md:h-6 text-orange-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-sm md:text-base text-gray-900">External Purchase</h4>
+                      <p className="text-xs md:text-sm text-gray-600 mt-1">
+                        {product.external_purchase_info || 'You will be redirected to complete your purchase'}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Product Banner Ad */}

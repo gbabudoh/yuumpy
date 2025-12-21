@@ -57,7 +57,9 @@ export default function Home() {
             image_url: product.image_url || '',
             isFeatured: Boolean(product.is_featured),
             isBestseller: Boolean(product.is_bestseller),
-            affiliate_url: product.affiliate_url
+            affiliate_url: product.affiliate_url,
+            purchase_type: product.purchase_type,
+            product_condition: product.product_condition
           }));
           
           setFeaturedProducts(mappedProducts);

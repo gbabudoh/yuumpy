@@ -31,6 +31,10 @@ export async function POST(request: NextRequest) {
         const failedPayment = event.data.object as Stripe.PaymentIntent;
         await handlePaymentFailure(failedPayment);
         break;
+      case 'checkout.session.completed':
+        const session = event.data.object as Stripe.Checkout.Session;
+        await handleCheckoutSessionCompleted(session);
+        break;
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -82,5 +86,44 @@ async function handlePaymentFailure(paymentIntent: Stripe.PaymentIntent) {
     console.log('Payment failed:', paymentIntent.id);
   } catch (error) {
     console.error('Error handling payment failure:', error);
+  }
+}
+
+async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+  try {
+    const orderId = session.metadata?.order_id;
+    const orderNumber = session.metadata?.order_number;
+    const productId = session.metadata?.product_id;
+
+    if (!orderId) {
+      console.log('No order_id in session metadata, skipping order update');
+      return;
+    }
+
+    // Update order payment status
+    await query(
+      `UPDATE orders 
+       SET payment_status = 'paid', 
+           order_status = 'confirmed',
+           stripe_payment_intent_id = ?
+       WHERE id = ?`,
+      [session.payment_intent, orderId]
+    );
+
+    // Update stock quantity if applicable
+    if (productId) {
+      await query(
+        `UPDATE products 
+         SET stock_quantity = stock_quantity - (
+           SELECT quantity FROM order_items WHERE order_id = ? AND product_id = ?
+         )
+         WHERE id = ? AND stock_quantity IS NOT NULL`,
+        [orderId, productId, productId]
+      );
+    }
+
+    console.log('Checkout session completed for order:', orderNumber);
+  } catch (error) {
+    console.error('Error handling checkout session:', error);
   }
 }

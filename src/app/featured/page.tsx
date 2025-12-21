@@ -26,7 +26,10 @@ async function getFeaturedProducts() {
         originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
         image_url: product.image_url || '',
         isFeatured: Boolean(product.is_featured),
-        isBestseller: Boolean(product.is_bestseller)
+        isBestseller: Boolean(product.is_bestseller),
+        affiliate_url: product.affiliate_url,
+        purchase_type: product.purchase_type,
+        product_condition: product.product_condition
       }));
     }
   } catch (error) {

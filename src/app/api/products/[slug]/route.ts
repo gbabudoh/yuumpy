@@ -166,6 +166,9 @@ export async function PUT(
       affiliate_url,
       affiliate_partner_name,
       external_purchase_info,
+      purchase_type,
+      product_condition,
+      stock_quantity,
       image_url,
       gallery,
       category_id,
@@ -191,9 +194,17 @@ export async function PUT(
     console.log('Parsed body data:', body);
 
     // Validate required fields
-    if (!name || !short_description || !price || !affiliate_url || !category_id) {
+    if (!name || !short_description || !price || !category_id) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, short_description, price, affiliate_url, category_id' },
+        { error: 'Missing required fields: name, short_description, price, category_id' },
+        { status: 400 }
+      );
+    }
+
+    // Validate affiliate_url for affiliate products only
+    if (purchase_type === 'affiliate' && !affiliate_url) {
+      return NextResponse.json(
+        { error: 'Affiliate URL is required for affiliate products' },
         { status: 400 }
       );
     }
@@ -296,10 +307,25 @@ export async function PUT(
     // Generate slug if not provided
     const newSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
+    // SQL with new columns (purchase_type, product_condition, stock_quantity)
     const sql = `
       UPDATE products SET
         name = ?, slug = ?, description = ?, short_description = ?, long_description = ?, product_review = ?,
-        price = ?, original_price = ?, affiliate_url = ?, affiliate_partner_name = ?, external_purchase_info = ?, image_url = ?, gallery = ?,
+        price = ?, original_price = ?, affiliate_url = ?, affiliate_partner_name = ?, external_purchase_info = ?,
+        purchase_type = ?, product_condition = ?, stock_quantity = ?, image_url = ?, gallery = ?,
+        category_id = ?, subcategory_id = ?, brand_id = ?, is_featured = ?, is_bestseller = ?, is_active = ?,
+        meta_title = ?, meta_description = ?,
+        banner_ad_title = ?, banner_ad_description = ?, banner_ad_image_url = ?, banner_ad_link_url = ?,
+        banner_ad_duration = ?, banner_ad_is_repeating = ?, banner_ad_start_date = ?, banner_ad_end_date = ?, banner_ad_is_active = ?
+      WHERE slug = ?
+    `;
+
+    // Fallback SQL without new columns
+    const fallbackSql = `
+      UPDATE products SET
+        name = ?, slug = ?, description = ?, short_description = ?, long_description = ?, product_review = ?,
+        price = ?, original_price = ?, affiliate_url = ?, affiliate_partner_name = ?, external_purchase_info = ?,
+        image_url = ?, gallery = ?,
         category_id = ?, subcategory_id = ?, brand_id = ?, is_featured = ?, is_bestseller = ?, is_active = ?,
         meta_title = ?, meta_description = ?,
         banner_ad_title = ?, banner_ad_description = ?, banner_ad_image_url = ?, banner_ad_link_url = ?,
@@ -316,7 +342,44 @@ export async function PUT(
       product_review || null,
       price || null,
       original_price || null,
-      affiliate_url || null,
+      affiliate_url || '',
+      affiliate_partner_name || null,
+      external_purchase_info || null,
+      purchase_type || 'affiliate',
+      product_condition || 'new',
+      stock_quantity || null,
+      image_url || null,
+      gallery || null,
+      category_id || null,
+      subcategory_id || null,
+      brand_id || null,
+      is_featured !== undefined ? (is_featured ? 1 : 0) : 0,
+      is_bestseller !== undefined ? (is_bestseller ? 1 : 0) : 0,
+      is_active !== undefined ? (is_active ? 1 : 0) : 1,
+      meta_title || null,
+      meta_description || null,
+      banner_ad_title || null,
+      banner_ad_description || null,
+      banner_ad_image_url || null,
+      banner_ad_link_url || null,
+      banner_ad_duration || '1_week',
+      banner_ad_is_repeating !== undefined ? (banner_ad_is_repeating ? 1 : 0) : 0,
+      banner_ad_start_date || null,
+      banner_ad_end_date || null,
+      banner_ad_is_active !== undefined ? (banner_ad_is_active ? 1 : 0) : 0,
+      productSlug
+    ];
+
+    const fallbackParams = [
+      name || null,
+      newSlug || null,
+      description || null,
+      short_description || null,
+      long_description || null,
+      product_review || null,
+      price || null,
+      original_price || null,
+      affiliate_url || '',
       affiliate_partner_name || null,
       external_purchase_info || null,
       image_url || null,
@@ -329,7 +392,6 @@ export async function PUT(
       is_active !== undefined ? (is_active ? 1 : 0) : 1,
       meta_title || null,
       meta_description || null,
-      // Banner ad fields
       banner_ad_title || null,
       banner_ad_description || null,
       banner_ad_image_url || null,
@@ -341,6 +403,9 @@ export async function PUT(
       banner_ad_is_active !== undefined ? (banner_ad_is_active ? 1 : 0) : 0,
       productSlug
     ];
+
+    // Flag to track which SQL to use
+    let useFallback = false;
 
     console.log('SQL params:', sqlParams);
     
@@ -395,7 +460,19 @@ export async function PUT(
     }
 
     try {
-      const result = await query(sql, sqlParams);
+      let result;
+      try {
+        result = await query(sql, sqlParams);
+      } catch (columnError: any) {
+        // If columns don't exist, use fallback SQL without purchase_type/stock_quantity
+        if (columnError.message?.includes('Unknown column')) {
+          console.log('Using fallback SQL without purchase_type/stock_quantity columns');
+          result = await query(fallbackSql, fallbackParams);
+          useFallback = true;
+        } else {
+          throw columnError;
+        }
+      }
       console.log('✅ Product update successful:', result);
       
       // Get updated categorization info for confirmation
@@ -423,7 +500,7 @@ export async function PUT(
           brand: categoryInfo?.brand_name || 'None'
         }
       });
-    } catch (updateError) {
+    } catch (updateError: any) {
       console.error('Update error:', updateError);
       
       // If it's a foreign key constraint error, try without subcategory_id

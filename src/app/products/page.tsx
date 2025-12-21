@@ -18,6 +18,8 @@ interface Product {
   price: number;
   original_price?: number;
   affiliate_url: string;
+  purchase_type?: 'affiliate' | 'direct';
+  product_condition?: 'new' | 'refurbished' | 'used';
   image_url: string;
   category_name: string;
   category_slug: string;
@@ -52,6 +54,7 @@ function ProductsPageContent() {
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Handle category checkbox changes
@@ -68,9 +71,10 @@ function ProductsPageContent() {
     const searchParam = searchParams?.get('search');
     if (searchParam) {
       setSearchTerm(searchParam);
+    } else {
+      // Only fetch products if no search param (otherwise the other useEffect will handle it)
+      fetchProducts();
     }
-    
-    fetchProducts();
     fetchCategories();
     fetchBrands();
   }, [searchParams]);
@@ -93,7 +97,7 @@ function ProductsPageContent() {
   // Refetch products when filters change
   useEffect(() => {
     fetchProducts();
-  }, [searchTerm, selectedCategories, selectedBrands, priceRange, sortBy]);
+  }, [searchTerm, selectedCategories, selectedBrands, selectedConditions, priceRange, sortBy]);
 
   const fetchProducts = async () => {
     try {
@@ -148,8 +152,12 @@ function ProductsPageContent() {
     }
   };
 
-  // Products are now filtered by the API, so we just use the products directly
-  const sortedProducts = products.sort((a, b) => {
+  // Filter products by condition (client-side) and sort
+  const filteredProducts = selectedConditions.length > 0
+    ? products.filter(p => selectedConditions.includes(p.product_condition || 'new'))
+    : products;
+  
+  const sortedProducts = filteredProducts.sort((a, b) => {
     switch (sortBy) {
       case 'price-low':
         return Number(a.price) - Number(b.price);
@@ -183,6 +191,7 @@ function ProductsPageContent() {
     setPriceRange({ min: '', max: '' });
     setSelectedBrands([]);
     setSelectedFeatures([]);
+    setSelectedConditions([]);
     setSortBy('name');
   };
 
@@ -340,6 +349,30 @@ function ProductsPageContent() {
                 </div>
               </div>
 
+              {/* Product Condition */}
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Product Condition</h3>
+                <div className="space-y-2">
+                  {['new', 'refurbished', 'used'].map((condition) => (
+                    <label key={condition} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedConditions.includes(condition)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedConditions([...selectedConditions, condition]);
+                          } else {
+                            setSelectedConditions(selectedConditions.filter(c => c !== condition));
+                          }
+                        }}
+                        className="mr-3 text-blue-600 focus:ring-blue-500 rounded"
+                      />
+                      <span className="text-sm text-gray-700 capitalize">{condition}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {/* Clear Filters */}
               <button
                 onClick={clearFilters}
@@ -458,7 +491,9 @@ function ProductsPageContent() {
                       image_url: product.image_url || '',
                       isFeatured: Boolean(product.is_featured),
                       isBestseller: Boolean(product.is_bestseller),
-                      affiliate_url: product.affiliate_url
+                      affiliate_url: product.affiliate_url,
+                      purchase_type: (product as any).purchase_type,
+                      product_condition: (product as any).product_condition
                     }} 
                   />
                 ))}

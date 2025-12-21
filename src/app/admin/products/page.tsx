@@ -18,6 +18,9 @@ interface Product {
   affiliate_url: string;
   affiliate_partner_name?: string;
   external_purchase_info?: string;
+  purchase_type?: 'affiliate' | 'direct';
+  product_condition?: 'new' | 'refurbished' | 'used';
+  stock_quantity?: number;
   image_url: string;
   gallery?: string[];
   category_name: string;
@@ -75,6 +78,9 @@ export default function ProductsPage() {
     affiliate_url: '',
     affiliate_partner_name: '',
     external_purchase_info: '',
+    purchase_type: 'affiliate' as 'affiliate' | 'direct',
+    product_condition: 'new' as 'new' | 'refurbished' | 'used',
+    stock_quantity: '',
     main_category_id: '',
     category_id: '',
     subcategory_id: '',
@@ -365,8 +371,8 @@ export default function ProductsPage() {
         return;
       }
 
-      if (!formData.affiliate_url?.trim()) {
-        alert('Please enter an affiliate URL');
+      if (formData.purchase_type === 'affiliate' && !formData.affiliate_url?.trim()) {
+        alert('Please enter an affiliate URL for affiliate products');
         return;
       }
 
@@ -380,12 +386,14 @@ export default function ProductsPage() {
         return;
       }
 
-      // Validate URL format
-      try {
-        new URL(formData.affiliate_url);
-      } catch {
-        alert('Please enter a valid affiliate URL (must start with http:// or https://)');
-        return;
+      // Validate URL format only for affiliate products
+      if (formData.purchase_type === 'affiliate' && formData.affiliate_url?.trim()) {
+        try {
+          new URL(formData.affiliate_url);
+        } catch {
+          alert('Please enter a valid affiliate URL (must start with http:// or https://)');
+          return;
+        }
       }
 
       const productData = {
@@ -399,6 +407,9 @@ export default function ProductsPage() {
         affiliate_url: formData.affiliate_url?.trim() || '',
         affiliate_partner_name: formData.affiliate_partner_name?.trim() || '',
         external_purchase_info: formData.external_purchase_info?.trim() || '',
+        purchase_type: formData.purchase_type || 'affiliate',
+        product_condition: formData.product_condition || 'new',
+        stock_quantity: formData.stock_quantity ? parseInt(formData.stock_quantity) : null,
         category_id: cleanCategoryId, // Always use main category ID
         subcategory_id: cleanSubcategoryId, // Use subcategory ID if selected
         brand_id: cleanBrandId,
@@ -569,6 +580,9 @@ export default function ProductsPage() {
       affiliate_url: product.affiliate_url,
       affiliate_partner_name: product.affiliate_partner_name || '',
       external_purchase_info: product.external_purchase_info || '',
+      purchase_type: product.purchase_type || 'affiliate',
+      product_condition: product.product_condition || 'new',
+      stock_quantity: product.stock_quantity?.toString() || '',
       main_category_id: mainCategoryId,
       category_id: categoryId,
       subcategory_id: product.subcategory_id?.toString() || '',
@@ -719,6 +733,9 @@ export default function ProductsPage() {
       affiliate_url: '',
       affiliate_partner_name: '',
       external_purchase_info: '',
+      purchase_type: 'affiliate',
+      product_condition: 'new',
+      stock_quantity: '',
       main_category_id: '',
       category_id: '',
       subcategory_id: '',
@@ -975,7 +992,55 @@ export default function ProductsPage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         <span className="flex items-center">
-                          📂 Main Category *
+                          � Purchase Type *
+                          <span className="ml-2 text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded">Important</span>
+                        </span>
+                      </label>
+                      <select
+                        required
+                        value={formData.purchase_type}
+                        onChange={(e) => setFormData({...formData, purchase_type: e.target.value as 'affiliate' | 'direct'})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="affiliate">Affiliate (Redirect to partner)</option>
+                        <option value="direct">Direct Sale (Buy on Yuumpy)</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formData.purchase_type === 'affiliate' 
+                          ? 'Customer will be redirected to affiliate partner to complete purchase'
+                          : 'Customer will checkout and pay directly on Yuumpy with Stripe'
+                        }
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Product Condition *
+                      </label>
+                      <select
+                        required
+                        value={formData.product_condition}
+                        onChange={(e) => setFormData({...formData, product_condition: e.target.value as 'new' | 'refurbished' | 'used'})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="new">New</option>
+                        <option value="refurbished">Refurbished</option>
+                        <option value="used">Used</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formData.product_condition === 'new' 
+                          ? 'Brand new, unused product in original packaging'
+                          : formData.product_condition === 'refurbished'
+                          ? 'Professionally restored to working condition with warranty'
+                          : 'Previously owned, may show signs of use'
+                        }
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <span className="flex items-center">
+                          📁 Main Category *
                           <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">Primary</span>
                         </span>
                       </label>
@@ -1137,75 +1202,129 @@ export default function ProductsPage() {
                       <p className="text-xs text-gray-500 mt-1">Provides additional insights and recommendations</p>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Affiliate URL *
-                      </label>
-                      <input
-                        type="url"
-                        required
-                        value={formData.affiliate_url}
-                        onChange={(e) => setFormData({...formData, affiliate_url: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="https://example.com/affiliate-link"
-                      />
-                    </div>
+                    {/* Affiliate Product Fields */}
+                    {formData.purchase_type === 'affiliate' && (
+                      <>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Affiliate URL *
+                          </label>
+                          <input
+                            type="url"
+                            required={formData.purchase_type === 'affiliate'}
+                            value={formData.affiliate_url}
+                            onChange={(e) => setFormData({...formData, affiliate_url: e.target.value})}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="https://example.com/affiliate-link"
+                          />
+                        </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Affiliate Partner Name
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.affiliate_partner_name}
-                        onChange={(e) => setFormData({...formData, affiliate_partner_name: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., Amazon, Best Buy, Target, etc."
-                      />
-                    </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Affiliate Partner Name
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.affiliate_partner_name}
+                            onChange={(e) => setFormData({...formData, affiliate_partner_name: e.target.value})}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="e.g., Amazon, Best Buy, Target, etc."
+                          />
+                        </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        External Purchase Information
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={formData.external_purchase_info}
-                        onChange={(e) => setFormData({...formData, external_purchase_info: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., You will be redirected to Amazon to complete your purchase securely"
-                      />
-                    </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            External Purchase Information
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={formData.external_purchase_info}
+                            onChange={(e) => setFormData({...formData, external_purchase_info: e.target.value})}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="e.g., You will be redirected to Amazon to complete your purchase securely"
+                          />
+                        </div>
 
-                    {/* Affiliate Information Section */}
-                    <div className="md:col-span-2">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h3 className="text-lg font-semibold text-blue-900 mb-3">Affiliate Information</h3>
-                        <div className="space-y-3">
-                          <div className="flex items-start space-x-3">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                            <p className="text-sm text-blue-800">
-                              <strong>Affiliate Partner:</strong> This product is sold by our trusted affiliate partner. 
-                              Customers will be redirected to complete their purchase on the partner's website.
-                            </p>
-                          </div>
-                          <div className="flex items-start space-x-3">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                            <p className="text-sm text-blue-800">
-                              <strong>External Purchase:</strong> When customers click "Buy Now", they will be redirected 
-                              to the affiliate's website to complete their purchase securely.
-                            </p>
-                          </div>
-                          <div className="flex items-start space-x-3">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                            <p className="text-sm text-blue-800">
-                              <strong>Customer Notice:</strong> This information will be displayed to customers 
-                              so they understand they're being redirected to an external site.
-                            </p>
+                        {/* Affiliate Information Section */}
+                        <div className="md:col-span-2">
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h3 className="text-lg font-semibold text-blue-900 mb-3">Affiliate Information</h3>
+                            <div className="space-y-3">
+                              <div className="flex items-start space-x-3">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                <p className="text-sm text-blue-800">
+                                  <strong>Affiliate Partner:</strong> This product is sold by our trusted affiliate partner. 
+                                  Customers will be redirected to complete their purchase on the partner's website.
+                                </p>
+                              </div>
+                              <div className="flex items-start space-x-3">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                <p className="text-sm text-blue-800">
+                                  <strong>External Purchase:</strong> When customers click "Buy Now", they will be redirected 
+                                  to the affiliate's website to complete their purchase securely.
+                                </p>
+                              </div>
+                              <div className="flex items-start space-x-3">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                <p className="text-sm text-blue-800">
+                                  <strong>Customer Notice:</strong> This information will be displayed to customers 
+                                  so they understand they're being redirected to an external site.
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </>
+                    )}
+
+                    {/* Direct Sale Product Fields */}
+                    {formData.purchase_type === 'direct' && (
+                      <>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Stock Quantity
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={formData.stock_quantity}
+                            onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Leave empty for unlimited stock"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Optional: Set stock quantity. Leave empty for unlimited stock.
+                          </p>
+                        </div>
+
+                        {/* Direct Sale Information Section */}
+                        <div className="md:col-span-2">
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <h3 className="text-lg font-semibold text-green-900 mb-3">Direct Sale Information</h3>
+                            <div className="space-y-3">
+                              <div className="flex items-start space-x-3">
+                                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                <p className="text-sm text-green-800">
+                                  <strong>Direct Purchase:</strong> Customers will checkout and pay directly on Yuumpy using Stripe.
+                                </p>
+                              </div>
+                              <div className="flex items-start space-x-3">
+                                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                <p className="text-sm text-green-800">
+                                  <strong>Order Management:</strong> Orders will appear in your admin dashboard for fulfillment.
+                                </p>
+                              </div>
+                              <div className="flex items-start space-x-3">
+                                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                <p className="text-sm text-green-800">
+                                  <strong>Customer Tracking:</strong> Customers can create accounts to track their orders.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">

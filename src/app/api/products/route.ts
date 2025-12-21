@@ -24,7 +24,9 @@ export async function GET(request: NextRequest) {
     let sql = `
       SELECT p.id, p.name, p.slug, p.description, p.short_description, p.long_description, p.product_review,
              p.price, p.original_price, 
-             p.affiliate_url, p.affiliate_partner_name, p.external_purchase_info, p.image_url, p.gallery,
+             p.affiliate_url, p.affiliate_partner_name, p.external_purchase_info,
+             p.purchase_type, p.product_condition,
+             p.image_url, p.gallery,
              p.category_id, p.subcategory_id, p.brand_id, p.is_featured, p.is_bestseller, p.is_active, 
              p.meta_title, p.meta_description, p.created_at,
              p.banner_ad_title, p.banner_ad_description, p.banner_ad_image_url, p.banner_ad_link_url,
@@ -75,6 +77,13 @@ export async function GET(request: NextRequest) {
       // Advanced search across all text fields with intelligent matching
       const searchTerm = search.trim().toLowerCase();
       
+      // Check if searching for a product condition specifically
+      const conditionTerms = ['new', 'refurbished', 'used'];
+      if (conditionTerms.includes(searchTerm)) {
+        // Exact match on product_condition field only
+        whereConditions.push('LOWER(p.product_condition) = ?');
+        params.push(searchTerm);
+      } else {
       // Split search term into individual words for better matching
       const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0);
       
@@ -90,12 +99,13 @@ export async function GET(request: NextRequest) {
           LOWER(c.name) LIKE ? OR
           LOWER(b.name) LIKE ? OR
           LOWER(s.name) LIKE ? OR
-          LOWER(p.slug) LIKE ?
+          LOWER(p.slug) LIKE ? OR
+          LOWER(p.product_condition) LIKE ?
         )`);
         
-        // Add wildcard search for all fields
+        // Add wildcard search for all fields (10 fields now including product_condition)
         const wildcardWord = `%${word}%`;
-        params.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
+        params.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
       } else {
         // Multi-word search - each word must be found in at least one field
         const wordConditions = searchWords.map(() => `(
@@ -107,17 +117,19 @@ export async function GET(request: NextRequest) {
           LOWER(c.name) LIKE ? OR
           LOWER(b.name) LIKE ? OR
           LOWER(s.name) LIKE ? OR
-          LOWER(p.slug) LIKE ?
+          LOWER(p.slug) LIKE ? OR
+          LOWER(p.product_condition) LIKE ?
         )`).join(' AND ');
         
         whereConditions.push(`(${wordConditions})`);
         
-        // For each word, add all field variations
+        // For each word, add all field variations (10 fields now including product_condition)
         searchWords.forEach(word => {
           const wildcardWord = `%${word}%`;
-          params.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
+          params.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
         });
       }
+      } // Close the else block for non-condition searches
     }
 
     if (minPrice) {
@@ -357,6 +369,9 @@ export async function POST(request: NextRequest) {
       affiliate_url,
       affiliate_partner_name,
       external_purchase_info,
+      purchase_type,
+      product_condition,
+      stock_quantity,
       image_url,
       gallery,
       category_id,
@@ -380,9 +395,17 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!name || !short_description || !price || !affiliate_url || !category_id) {
+    if (!name || !short_description || !price || !category_id) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, short_description, price, affiliate_url, category_id' },
+        { error: 'Missing required fields: name, short_description, price, category_id' },
+        { status: 400 }
+      );
+    }
+
+    // Validate affiliate_url for affiliate products only
+    if (purchase_type === 'affiliate' && !affiliate_url) {
+      return NextResponse.json(
+        { error: 'Affiliate URL is required for affiliate products' },
         { status: 400 }
       );
     }
@@ -399,48 +422,103 @@ export async function POST(request: NextRequest) {
     // Generate slug if not provided
     const productSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-    const sql = `
-      INSERT INTO products (
-        name, slug, description, short_description, long_description, product_review, price, original_price,
-        affiliate_url, affiliate_partner_name, external_purchase_info, image_url, gallery, category_id, subcategory_id, brand_id, is_featured, is_bestseller, is_active,
-        meta_title, meta_description, banner_ad_title, banner_ad_description, banner_ad_image_url, banner_ad_link_url,
-        banner_ad_duration, banner_ad_is_repeating, banner_ad_start_date, banner_ad_end_date, banner_ad_is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    // Try with new columns first, fallback to old schema if columns don't exist
+    let result;
+    try {
+      const sql = `
+        INSERT INTO products (
+          name, slug, description, short_description, long_description, product_review, price, original_price,
+          affiliate_url, affiliate_partner_name, external_purchase_info, purchase_type, product_condition, stock_quantity,
+          image_url, gallery, category_id, subcategory_id, brand_id, is_featured, is_bestseller, is_active,
+          meta_title, meta_description, banner_ad_title, banner_ad_description, banner_ad_image_url, banner_ad_link_url,
+          banner_ad_duration, banner_ad_is_repeating, banner_ad_start_date, banner_ad_end_date, banner_ad_is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
 
-    const result = await query(sql, [
-      name || null,
-      productSlug || null,
-      description || null,
-      short_description || null,
-      long_description || null,
-      product_review || null,
-      price || null,
-      original_price || null,
-      affiliate_url || null,
-      affiliate_partner_name || null,
-      external_purchase_info || null,
-      image_url || null,
-      gallery || null,
-      category_id || null,
-      subcategory_id || null,
-      brand_id || null,
-      is_featured !== undefined ? (is_featured ? 1 : 0) : 0,
-      is_bestseller !== undefined ? (is_bestseller ? 1 : 0) : 0,
-      is_active !== undefined ? (is_active ? 1 : 0) : 1,
-      meta_title || null,
-      meta_description || null,
-      // Banner ad fields
-      banner_ad_title || null,
-      banner_ad_description || null,
-      banner_ad_image_url || null,
-      banner_ad_link_url || null,
-      banner_ad_duration || '1_week',
-      banner_ad_is_repeating !== undefined ? (banner_ad_is_repeating ? 1 : 0) : 0,
-      banner_ad_start_date || null,
-      banner_ad_end_date || null,
-      banner_ad_is_active !== undefined ? (banner_ad_is_active ? 1 : 0) : 0
-    ]);
+      result = await query(sql, [
+        name || null,
+        productSlug || null,
+        description || null,
+        short_description || null,
+        long_description || null,
+        product_review || null,
+        price || null,
+        original_price || null,
+        affiliate_url || '',
+        affiliate_partner_name || null,
+        external_purchase_info || null,
+        purchase_type || 'affiliate',
+        product_condition || 'new',
+        stock_quantity || null,
+        image_url || null,
+        gallery || null,
+        category_id || null,
+        subcategory_id || null,
+        brand_id || null,
+        is_featured !== undefined ? (is_featured ? 1 : 0) : 0,
+        is_bestseller !== undefined ? (is_bestseller ? 1 : 0) : 0,
+        is_active !== undefined ? (is_active ? 1 : 0) : 1,
+        meta_title || null,
+        meta_description || null,
+        banner_ad_title || null,
+        banner_ad_description || null,
+        banner_ad_image_url || null,
+        banner_ad_link_url || null,
+        banner_ad_duration || '1_week',
+        banner_ad_is_repeating !== undefined ? (banner_ad_is_repeating ? 1 : 0) : 0,
+        banner_ad_start_date || null,
+        banner_ad_end_date || null,
+        banner_ad_is_active !== undefined ? (banner_ad_is_active ? 1 : 0) : 0
+      ]);
+    } catch (insertError: any) {
+      // If columns don't exist, use old schema without purchase_type and stock_quantity
+      if (insertError.message?.includes('Unknown column')) {
+        const fallbackSql = `
+          INSERT INTO products (
+            name, slug, description, short_description, long_description, product_review, price, original_price,
+            affiliate_url, affiliate_partner_name, external_purchase_info,
+            image_url, gallery, category_id, subcategory_id, brand_id, is_featured, is_bestseller, is_active,
+            meta_title, meta_description, banner_ad_title, banner_ad_description, banner_ad_image_url, banner_ad_link_url,
+            banner_ad_duration, banner_ad_is_repeating, banner_ad_start_date, banner_ad_end_date, banner_ad_is_active
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        result = await query(fallbackSql, [
+          name || null,
+          productSlug || null,
+          description || null,
+          short_description || null,
+          long_description || null,
+          product_review || null,
+          price || null,
+          original_price || null,
+          affiliate_url || '',
+          affiliate_partner_name || null,
+          external_purchase_info || null,
+          image_url || null,
+          gallery || null,
+          category_id || null,
+          subcategory_id || null,
+          brand_id || null,
+          is_featured !== undefined ? (is_featured ? 1 : 0) : 0,
+          is_bestseller !== undefined ? (is_bestseller ? 1 : 0) : 0,
+          is_active !== undefined ? (is_active ? 1 : 0) : 1,
+          meta_title || null,
+          meta_description || null,
+          banner_ad_title || null,
+          banner_ad_description || null,
+          banner_ad_image_url || null,
+          banner_ad_link_url || null,
+          banner_ad_duration || '1_week',
+          banner_ad_is_repeating !== undefined ? (banner_ad_is_repeating ? 1 : 0) : 0,
+          banner_ad_start_date || null,
+          banner_ad_end_date || null,
+          banner_ad_is_active !== undefined ? (banner_ad_is_active ? 1 : 0) : 0
+        ]);
+      } else {
+        throw insertError;
+      }
+    }
 
     return NextResponse.json({
       success: true,

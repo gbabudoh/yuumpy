@@ -6,23 +6,28 @@ const dbConfig = {
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'yuumpy',
   port: parseInt(process.env.DB_PORT || '3306'),
-  connectionLimit: 10,
+  connectionLimit: 5,
   queueLimit: 0,
-  waitForConnections: true };
+  waitForConnections: true,
+  idleTimeout: 60000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000
+};
 
-let pool: mysql.Pool | null = null;
+// Use global to prevent multiple pools during hot reloading in development
+const globalForDb = globalThis as unknown as { pool: mysql.Pool | undefined };
 
 export async function getConnection() {
-  if (!pool) {
+  if (!globalForDb.pool) {
     try {
-      pool = mysql.createPool(dbConfig);
+      globalForDb.pool = mysql.createPool(dbConfig);
       console.log('Database pool created successfully');
     } catch (error) {
       console.error('Database pool creation error:', error);
       throw error;
     }
   }
-  return pool;
+  return globalForDb.pool;
 }
 
 export async function query(sql: string, params?: any[]) {
@@ -45,8 +50,8 @@ export async function query(sql: string, params?: any[]) {
 }
 
 export async function closeConnection() {
-  if (pool) {
-    await pool.end();
-    pool = null;
+  if (globalForDb.pool) {
+    await globalForDb.pool.end();
+    globalForDb.pool = undefined;
   }
 }

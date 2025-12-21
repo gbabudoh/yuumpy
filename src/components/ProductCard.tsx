@@ -14,6 +14,8 @@ interface Product {
   isFeatured?: boolean;
   isBestseller?: boolean;
   affiliate_url?: string;
+  purchase_type?: 'affiliate' | 'direct';
+  product_condition?: 'new' | 'refurbished' | 'used';
 }
 
 interface ProductCardProps {
@@ -26,6 +28,37 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
   const discountPercentage = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
+
+  // Determine if this is a direct sale product (no affiliate_url or purchase_type is 'direct')
+  const isDirectSale = product.purchase_type === 'direct' || !product.affiliate_url;
+
+  // Get condition badge styling
+  const getConditionBadge = () => {
+    const condition = product.product_condition || 'new';
+    
+    if (condition === 'new') {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800">
+          New
+        </span>
+      );
+    }
+    if (condition === 'refurbished') {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
+          Refurbished
+        </span>
+      );
+    }
+    if (condition === 'used') {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
+          Used
+        </span>
+      );
+    }
+    return null;
+  };
 
   if (viewMode === 'list') {
     return (
@@ -51,11 +84,14 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
 
           {/* Product Info - Takes remaining space */}
           <div className="flex-1 min-w-0 pr-4">
-            <Link href={`/products/${product.slug}`}>
-              <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1 hover:text-blue-600 transition-colors cursor-pointer">
-                {product.name}
-              </h3>
-            </Link>
+            <div className="flex items-center gap-2 mb-1">
+              <Link href={`/products/${product.slug}`}>
+                <h3 className="font-semibold text-gray-900 line-clamp-1 hover:text-blue-600 transition-colors cursor-pointer">
+                  {product.name}
+                </h3>
+              </Link>
+              {getConditionBadge()}
+            </div>
 
             {/* Price */}
             <div className="flex flex-col">
@@ -73,11 +109,11 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
           {/* Buy Now Button */}
           <div className="flex-shrink-0">
             <a
-              href={product.affiliate_url || `/products/${product.slug}`}
-              target={product.affiliate_url ? "_blank" : "_self"}
-              rel={product.affiliate_url ? "noopener noreferrer" : undefined}
-              className="text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center space-x-1 text-sm whitespace-nowrap hover:bg-purple-700 cursor-pointer"
-              style={{ backgroundColor: '#8827ee' }}
+              href={isDirectSale ? `/checkout/${product.slug}` : product.affiliate_url}
+              target={isDirectSale ? "_self" : "_blank"}
+              rel={isDirectSale ? undefined : "noopener noreferrer"}
+              className="text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center space-x-1 text-sm whitespace-nowrap hover:opacity-90 cursor-pointer"
+              style={{ backgroundColor: isDirectSale ? '#16a34a' : '#8827ee' }}
               onClick={() => {
                 // Track product click
                 if (typeof window !== 'undefined') {
@@ -90,7 +126,7 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
               }}
             >
               <span>Buy Now</span>
-              <ArrowTopRightOnSquareIcon className="w-4 h-4 text-white" />
+              {!isDirectSale && <ArrowTopRightOnSquareIcon className="w-4 h-4 text-white" />}
             </a>
           </div>
         </div>
@@ -120,11 +156,14 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
 
       {/* Product Info */}
       <div className="p-3 sm:p-4 md:p-6 flex flex-col flex-grow">
-        <Link href={`/products/${product.slug}`}>
-          <h3 className="font-semibold text-gray-900 mb-1 sm:mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer text-sm sm:text-base">
-            {product.name}
-          </h3>
-        </Link>
+        <div className="flex items-start justify-between gap-2 mb-1 sm:mb-2">
+          <Link href={`/products/${product.slug}`}>
+            <h3 className="font-semibold text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer text-sm sm:text-base">
+              {product.name}
+            </h3>
+          </Link>
+          {getConditionBadge()}
+        </div>
 
         {/* Price */}
         <div className="flex items-center space-x-1 sm:space-x-2 mb-2 sm:mb-4">
@@ -141,11 +180,11 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
         {/* Buy Now Button - Always at bottom */}
         <div className="mt-auto">
           <a
-            href={product.affiliate_url || `/products/${product.slug}`}
-            target={product.affiliate_url ? "_blank" : "_self"}
-            rel={product.affiliate_url ? "noopener noreferrer" : undefined}
-            className="w-full text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm hover:bg-purple-700 cursor-pointer"
-            style={{ backgroundColor: '#8827ee' }}
+            href={isDirectSale ? `/checkout/${product.slug}` : product.affiliate_url}
+            target={isDirectSale ? "_self" : "_blank"}
+            rel={isDirectSale ? undefined : "noopener noreferrer"}
+            className="w-full text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm hover:opacity-90 cursor-pointer"
+            style={{ backgroundColor: isDirectSale ? '#16a34a' : '#8827ee' }}
             onClick={() => {
               // Track product click
               if (typeof window !== 'undefined') {
@@ -158,7 +197,7 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
             }}
           >
             <span>Buy Now</span>
-            <ArrowTopRightOnSquareIcon className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+            {!isDirectSale && <ArrowTopRightOnSquareIcon className="w-3 h-3 sm:w-4 sm:h-4 text-white" />}
           </a>
         </div>
       </div>

@@ -29,14 +29,16 @@ export async function GET(request: NextRequest) {
           LOWER(p.product_review) LIKE ? OR
           LOWER(c.name) LIKE ? OR
           LOWER(b.name) LIKE ? OR
-          LOWER(p.slug) LIKE ?
+          LOWER(p.slug) LIKE ? OR
+          LOWER(p.product_condition) LIKE ?
         )
       ORDER BY 
         CASE 
           WHEN LOWER(p.name) = ? THEN 1 
           WHEN LOWER(p.name) LIKE ? THEN 2 
           WHEN LOWER(p.short_description) LIKE ? THEN 3
-          ELSE 4 
+          WHEN LOWER(p.product_condition) LIKE ? THEN 4
+          ELSE 5 
         END,
         p.is_featured DESC,
         p.is_bestseller DESC,
@@ -51,8 +53,10 @@ export async function GET(request: NextRequest) {
       `%${searchTerm}%`,
       `%${searchTerm}%`,
       `%${searchTerm}%`,
+      `%${searchTerm}%`,
       searchTerm,
       `${searchTerm}%`,
+      `%${searchTerm}%`,
       `%${searchTerm}%`
     ]);
 

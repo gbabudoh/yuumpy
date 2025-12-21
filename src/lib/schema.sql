@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS products (
   price DECIMAL(10, 2) NOT NULL,
   original_price DECIMAL(10, 2),
   affiliate_url VARCHAR(1000) NOT NULL,
+  purchase_type ENUM('affiliate', 'direct') DEFAULT 'affiliate',
+  product_condition ENUM('new', 'refurbished', 'used') DEFAULT 'new',
+  stock_quantity INT DEFAULT NULL,
   image_url LONGTEXT,
   gallery JSON,
   category_id INT,
@@ -185,3 +188,8 @@ INSERT INTO products (name, slug, description, short_description, price, origina
 ('Wireless Bluetooth Headphones', 'wireless-bluetooth-headphones', 'High-quality wireless headphones with noise cancellation and 30-hour battery life.', 'Premium wireless headphones with noise cancellation', 99.99, 149.99, 'https://example.com/affiliate/headphones', 'https://res.cloudinary.com/your-cloud/image/upload/v1/headphones.jpg', 1, TRUE, TRUE),
 ('Smart Fitness Watch', 'smart-fitness-watch', 'Advanced fitness tracking with heart rate monitor, GPS, and water resistance.', 'Track your fitness with this smart watch', 199.99, 299.99, 'https://example.com/affiliate/smartwatch', 'https://res.cloudinary.com/your-cloud/image/upload/v1/smartwatch.jpg', 1, TRUE, FALSE),
 ('Designer T-Shirt', 'designer-t-shirt', 'Comfortable cotton t-shirt with modern design and premium quality.', 'Comfortable designer t-shirt', 29.99, 49.99, 'https://example.com/affiliate/tshirt', 'https://res.cloudinary.com/your-cloud/image/upload/v1/tshirt.jpg', 2, FALSE, TRUE);
+
+-- Migration: Add new columns to existing products table (run if upgrading existing database)
+-- ALTER TABLE products ADD COLUMN purchase_type ENUM('affiliate', 'direct') DEFAULT 'affiliate' AFTER affiliate_url;
+-- ALTER TABLE products ADD COLUMN product_condition ENUM('new', 'refurbished', 'used') DEFAULT 'new' AFTER purchase_type;
+-- ALTER TABLE products ADD COLUMN stock_quantity INT DEFAULT NULL AFTER product_condition;

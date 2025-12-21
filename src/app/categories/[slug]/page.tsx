@@ -23,6 +23,9 @@ interface Product {
   category_slug?: string;
   brand_id?: number;
   created_at?: string;
+  affiliate_url?: string;
+  purchase_type?: 'affiliate' | 'direct';
+  product_condition?: 'new' | 'refurbished' | 'used';
 }
 
 interface Category {
@@ -57,7 +60,8 @@ export default function CategoryPage() {
     bestseller: false,
     priceRange: { min: 0, max: 0 },
     subcategories: [] as string[],
-    brands: [] as string[]
+    brands: [] as string[],
+    conditions: [] as string[]
   });
   const [priceInputs, setPriceInputs] = useState({ min: '', max: '' });
 
@@ -204,15 +208,18 @@ export default function CategoryPage() {
       bestseller: false,
       priceRange: { min: 0, max: 0 },
       subcategories: [],
-      brands: []
+      brands: [],
+      conditions: []
     });
     setPriceInputs({ min: '', max: '' });
     setSearchQuery('');
     setSortBy('newest');
   };
 
-  // Use products directly since filtering is done server-side
-  const sortedAndFilteredProducts = products;
+  // Filter products by condition (client-side) since API doesn't support it yet
+  const sortedAndFilteredProducts = filters.conditions.length > 0
+    ? products.filter((p: Product) => filters.conditions.includes(p.product_condition || 'new'))
+    : products;
 
   if (loading) {
     return (
@@ -469,6 +476,29 @@ export default function CategoryPage() {
                 </div>
               </div>
 
+              {/* Product Condition */}
+              <div className="mb-4 lg:mb-6">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">Product Condition</h4>
+                <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 lg:gap-0 lg:space-y-1">
+                  {['new', 'refurbished', 'used'].map((condition) => (
+                    <label key={condition} className="flex items-center space-x-1 lg:space-x-2 text-xs lg:text-sm">
+                      <input
+                        type="checkbox"
+                        checked={filters.conditions.includes(condition)}
+                        onChange={(e) => {
+                          const newConditions = e.target.checked
+                            ? [...filters.conditions, condition]
+                            : filters.conditions.filter(c => c !== condition);
+                          handleFilterChange('conditions', newConditions);
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
+                      />
+                      <span className="text-gray-700 capitalize">{condition}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {/* Sort */}
               <div className="mb-4">
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Sort By</h4>
@@ -584,7 +614,10 @@ export default function CategoryPage() {
                       originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
                       image_url: product.image_url || '',
                       isFeatured: Boolean(product.is_featured),
-                      isBestseller: Boolean(product.is_bestseller)
+                      isBestseller: Boolean(product.is_bestseller),
+                      affiliate_url: product.affiliate_url,
+                      purchase_type: (product as any).purchase_type,
+                      product_condition: (product as any).product_condition
                     }} 
                     viewMode={viewMode}
                   />

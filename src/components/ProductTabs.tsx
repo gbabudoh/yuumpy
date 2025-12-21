@@ -47,7 +47,7 @@ export default function ProductTabs({ longDescription, productReview }: ProductT
                 }`}
               >
                 <Star className="mr-2 w-5 h-5" />
-                Expert Review & Insights
+                Review & Insights
               </button>
             )}
           </nav>
