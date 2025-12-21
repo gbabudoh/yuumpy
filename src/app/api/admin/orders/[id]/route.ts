@@ -51,7 +51,7 @@ export async function PUT(
   try {
     const { id } = await context.params;
     const body = await request.json();
-    const { order_status, tracking_number, tracking_url, admin_notes } = body;
+    const { order_status, tracking_number, tracking_url, admin_notes, estimated_delivery } = body;
 
     // Build update query dynamically
     const updates: string[] = [];
@@ -75,6 +75,11 @@ export async function PUT(
     if (admin_notes !== undefined) {
       updates.push('admin_notes = ?');
       params.push(admin_notes || null);
+    }
+
+    if (estimated_delivery !== undefined) {
+      updates.push('estimated_delivery = ?');
+      params.push(estimated_delivery || null);
     }
 
     if (updates.length === 0) {

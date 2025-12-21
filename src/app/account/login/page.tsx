@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Header from '@/components/Header';
@@ -9,6 +9,9 @@ import Footer from '@/components/Footer';
 
 export default function CustomerLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,8 +36,8 @@ export default function CustomerLoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Redirect to account page
-      router.push('/account/orders');
+      // Redirect to the original page or account page
+      router.push(redirectUrl || '/account/orders');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

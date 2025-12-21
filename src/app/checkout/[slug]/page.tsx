@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Shield, CreditCard, Truck, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, CreditCard, Truck, Lock, User, LogIn } from 'lucide-react';
 
 interface Product {
   id: number;
@@ -32,6 +32,23 @@ interface CheckoutForm {
   customerNotes: string;
   createAccount: boolean;
   password: string;
+  loginPassword: string;
+}
+
+interface ExistingCustomer {
+  id: number;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  hasAddress: boolean;
+  address?: {
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    county?: string;
+    postcode: string;
+    country: string;
+  };
 }
 
 export default function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -56,8 +73,17 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
     country: 'United Kingdom',
     customerNotes: '',
     createAccount: false,
-    password: ''
+    password: '',
+    loginPassword: ''
   });
+
+  // Existing account states
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [existingCustomer, setExistingCustomer] = useState<ExistingCustomer | null>(null);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loggingIn, setLoggingIn] = useState(false);
 
   useEffect(() => {
     const loadParams = async () => {
@@ -70,8 +96,49 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
   useEffect(() => {
     if (slug) {
       fetchProduct();
+      checkIfLoggedIn();
     }
   }, [slug]);
+
+  // Check if user is already logged in (e.g., after redirect from login page)
+  const checkIfLoggedIn = async () => {
+    try {
+      const response = await fetch('/api/customer/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        const customer = data.customer;
+        
+        setIsLoggedIn(true);
+        setFormData(prev => ({
+          ...prev,
+          email: customer.email || prev.email,
+          firstName: customer.firstName || prev.firstName,
+          lastName: customer.lastName || prev.lastName,
+          phone: customer.phone || prev.phone
+        }));
+
+        // Fetch saved address
+        const addressResponse = await fetch('/api/customer/addresses');
+        if (addressResponse.ok) {
+          const addressData = await addressResponse.json();
+          if (addressData.addresses && addressData.addresses.length > 0) {
+            const defaultAddress = addressData.addresses.find((a: any) => a.is_default) || addressData.addresses[0];
+            setFormData(prev => ({
+              ...prev,
+              addressLine1: defaultAddress.address_line1 || prev.addressLine1,
+              addressLine2: defaultAddress.address_line2 || prev.addressLine2,
+              city: defaultAddress.city || prev.city,
+              county: defaultAddress.county || prev.county,
+              postcode: defaultAddress.postcode || prev.postcode,
+              country: defaultAddress.country || prev.country
+            }));
+          }
+        }
+      }
+    } catch (err) {
+      // Not logged in, continue as guest
+    }
+  };
 
   const fetchProduct = async () => {
     try {
@@ -104,6 +171,108 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  // Check if email exists when user finishes typing
+  const checkExistingEmail = async (email: string) => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setExistingCustomer(null);
+      setShowLoginForm(false);
+      return;
+    }
+
+    setCheckingEmail(true);
+    try {
+      const response = await fetch(`/api/customer/check-email?email=${encodeURIComponent(email)}`);
+      const data = await response.json();
+      
+      if (data.exists) {
+        setExistingCustomer(data.customer);
+        setShowLoginForm(true);
+      } else {
+        setExistingCustomer(null);
+        setShowLoginForm(false);
+      }
+    } catch (err) {
+      console.error('Error checking email:', err);
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  // Handle login for existing customer
+  const handleLogin = async () => {
+    if (!formData.loginPassword) {
+      setLoginError('Please enter your password');
+      return;
+    }
+
+    setLoggingIn(true);
+    setLoginError(null);
+
+    try {
+      const response = await fetch('/api/customer/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.loginPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
+
+      // Successfully logged in - pre-fill form with customer data
+      setIsLoggedIn(true);
+      setShowLoginForm(false);
+      
+      // Fetch customer details including address
+      const customerResponse = await fetch('/api/customer/auth/me');
+      if (customerResponse.ok) {
+        const customerData = await customerResponse.json();
+        const customer = customerData.customer;
+        
+        setFormData(prev => ({
+          ...prev,
+          firstName: customer.firstName || prev.firstName,
+          lastName: customer.lastName || prev.lastName,
+          phone: customer.phone || prev.phone
+        }));
+
+        // Fetch saved address if available
+        const addressResponse = await fetch('/api/customer/addresses');
+        if (addressResponse.ok) {
+          const addressData = await addressResponse.json();
+          if (addressData.addresses && addressData.addresses.length > 0) {
+            const defaultAddress = addressData.addresses.find((a: any) => a.is_default) || addressData.addresses[0];
+            setFormData(prev => ({
+              ...prev,
+              addressLine1: defaultAddress.address_line1 || prev.addressLine1,
+              addressLine2: defaultAddress.address_line2 || prev.addressLine2,
+              city: defaultAddress.city || prev.city,
+              county: defaultAddress.county || prev.county,
+              postcode: defaultAddress.postcode || prev.postcode,
+              country: defaultAddress.country || prev.country
+            }));
+          }
+        }
+      }
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  // Handle email blur to check for existing account
+  const handleEmailBlur = () => {
+    if (formData.email && !isLoggedIn) {
+      checkExistingEmail(formData.email);
+    }
   };
 
   const calculateTotal = () => {
@@ -218,25 +387,124 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
           {/* Checkout Form */}
           <div className="order-2 lg:order-1">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Returning Customer Banner */}
+              {!isLoggedIn && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <User className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm text-blue-900">Returning customer?</span>
+                  </div>
+                  <Link 
+                    href={`/account/login?redirect=/checkout/${slug}`}
+                    className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    <LogIn className="w-4 h-4 mr-1" />
+                    Log in for faster checkout
+                  </Link>
+                </div>
+              )}
+
               {/* Contact Information */}
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Contact Information</h2>
+                  {isLoggedIn && (
+                    <span className="flex items-center text-sm text-green-600">
+                      <User className="w-4 h-4 mr-1" />
+                      Logged in
+                    </span>
+                  )}
+                </div>
                 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Email Address *
                     </label>
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="your@email.com"
-                    />
+                    <div className="relative">
+                      <input
+                        type="email"
+                        name="email"
+                        required
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        onBlur={handleEmailBlur}
+                        disabled={isLoggedIn}
+                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${isLoggedIn ? 'bg-gray-100' : ''}`}
+                        placeholder="your@email.com"
+                      />
+                      {checkingEmail && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Existing Account Login Section */}
+                  {showLoginForm && !isLoggedIn && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <User className="w-5 h-5 text-blue-600 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-blue-900">
+                            Welcome back! An account exists with this email.
+                          </p>
+                          <p className="text-sm text-blue-700 mt-1">
+                            Log in to use your saved details and track your order.
+                          </p>
+                          
+                          <div className="mt-3 space-y-3">
+                            <div>
+                              <label className="block text-sm font-medium text-blue-900 mb-1">
+                                Password
+                              </label>
+                              <input
+                                type="password"
+                                name="loginPassword"
+                                value={formData.loginPassword}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter your password"
+                              />
+                            </div>
+                            
+                            {loginError && (
+                              <p className="text-sm text-red-600">{loginError}</p>
+                            )}
+                            
+                            <div className="flex items-center space-x-3">
+                              <button
+                                type="button"
+                                onClick={handleLogin}
+                                disabled={loggingIn}
+                                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+                              >
+                                {loggingIn ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Logging in...
+                                  </>
+                                ) : (
+                                  <>
+                                    <LogIn className="w-4 h-4 mr-2" />
+                                    Log In
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowLoginForm(false)}
+                                className="text-sm text-blue-600 hover:text-blue-800"
+                              >
+                                Continue as guest
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>

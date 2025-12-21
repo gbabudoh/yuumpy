@@ -142,6 +142,21 @@ export async function POST() {
     `);
     migrations.push('Created customer_sessions table');
 
+    // Add estimated_delivery column to orders table
+    try {
+      await query(`
+        ALTER TABLE orders 
+        ADD COLUMN estimated_delivery DATE DEFAULT NULL AFTER admin_notes
+      `);
+      migrations.push('Added estimated_delivery column to orders');
+    } catch (e: any) {
+      if (e.code === 'ER_DUP_FIELDNAME') {
+        migrations.push('estimated_delivery column already exists');
+      } else {
+        throw e;
+      }
+    }
+
     // Create indexes (ignore errors if they already exist)
     const indexes = [
       { name: 'idx_orders_customer_id', table: 'orders', column: 'customer_id' },

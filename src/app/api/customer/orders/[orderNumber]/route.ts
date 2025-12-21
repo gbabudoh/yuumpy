@@ -34,7 +34,7 @@ export async function GET(
     const orderResult = await query(
       `SELECT o.id, o.order_number, o.total_amount, o.subtotal, o.shipping_cost, 
               o.tax_amount, o.currency, o.payment_status, o.order_status, 
-              o.tracking_number, o.tracking_url,
+              o.tracking_number, o.tracking_url, o.estimated_delivery,
               o.created_at, o.updated_at,
               o.shipping_address_line1, o.shipping_address_line2,
               o.shipping_city, o.shipping_county, o.shipping_postcode, o.shipping_country,

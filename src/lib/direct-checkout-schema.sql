@@ -81,6 +81,9 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_notes TEXT,
   admin_notes TEXT,
   
+  -- Delivery info
+  estimated_delivery DATE,
+  
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL

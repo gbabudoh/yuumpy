@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Get customer orders
     const ordersResult = await query(
       `SELECT o.id, o.order_number, o.total_amount, o.currency, o.payment_status, 
-              o.order_status, o.tracking_number, o.tracking_url, o.created_at,
+              o.order_status, o.tracking_number, o.tracking_url, o.estimated_delivery, o.created_at,
               (SELECT JSON_ARRAYAGG(
                 JSON_OBJECT(
                   'id', oi.id,

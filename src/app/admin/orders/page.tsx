@@ -40,6 +40,7 @@ interface Order {
   tracking_url: string;
   customer_notes: string;
   admin_notes: string;
+  estimated_delivery: string;
   created_at: string;
   items: OrderItem[] | string;
 }
@@ -74,7 +75,8 @@ export default function AdminOrdersPage() {
     order_status: '',
     tracking_number: '',
     tracking_url: '',
-    admin_notes: ''
+    admin_notes: '',
+    estimated_delivery: ''
   });
 
   useEffect(() => {
@@ -115,7 +117,8 @@ export default function AdminOrdersPage() {
       order_status: order.order_status,
       tracking_number: order.tracking_number || '',
       tracking_url: order.tracking_url || '',
-      admin_notes: order.admin_notes || ''
+      admin_notes: order.admin_notes || '',
+      estimated_delivery: order.estimated_delivery ? order.estimated_delivery.split('T')[0] : ''
     });
     setShowModal(true);
   };
@@ -422,15 +425,27 @@ export default function AdminOrdersPage() {
                       />
                     </div>
                   </div>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tracking URL</label>
-                    <input
-                      type="url"
-                      value={editForm.tracking_url}
-                      onChange={(e) => setEditForm({ ...editForm, tracking_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                      placeholder="https://tracking.example.com/..."
-                    />
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tracking URL</label>
+                      <input
+                        type="url"
+                        value={editForm.tracking_url}
+                        onChange={(e) => setEditForm({ ...editForm, tracking_url: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                        placeholder="https://tracking.example.com/..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Expected Delivery Date</label>
+                      <input
+                        type="date"
+                        value={editForm.estimated_delivery}
+                        onChange={(e) => setEditForm({ ...editForm, estimated_delivery: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Set expected delivery date for customer</p>
+                    </div>
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Admin Notes</label>
