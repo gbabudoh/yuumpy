@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MagnifyingGlassIcon, ShoppingBagIcon, Bars3Icon, XMarkIcon, TagIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, ShoppingBagIcon, Bars3Icon, XMarkIcon, TagIcon, BuildingOfficeIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
 interface SearchSuggestion {
   text: string;
@@ -13,14 +13,41 @@ interface SearchSuggestion {
   url: string;
 }
 
+interface Customer {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Check customer authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/customer/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setCustomer(data.customer);
+        }
+      } catch (error) {
+        // Not logged in, that's fine
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   // Fetch search suggestions
   const fetchSuggestions = async (query: string) => {
@@ -222,6 +249,31 @@ export default function Header() {
               </div>
             </div>
 
+            {/* Customer Account / Login */}
+            <div className="hidden md:flex items-center">
+              {isCheckingAuth ? (
+                <div className="w-8 h-8 animate-pulse bg-gray-200 rounded-full"></div>
+              ) : customer ? (
+                <Link
+                  href="/account/orders"
+                  className="flex items-center space-x-2 text-gray-700 hover:text-green-600 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <UserCircleIcon className="w-5 h-5 text-green-600" />
+                  </div>
+                  <span className="text-sm font-medium">My Orders</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/account/login"
+                  className="flex items-center space-x-2 text-gray-700 hover:text-green-600 transition-colors"
+                >
+                  <UserCircleIcon className="w-6 h-6" />
+                  <span className="text-sm font-medium">Login</span>
+                </Link>
+              )}
+            </div>
+
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -355,6 +407,31 @@ export default function Header() {
               >
                 About
               </Link>
+              
+              {/* Mobile Account Link */}
+              <div className="border-t border-gray-200 pt-4 mt-2">
+                {customer ? (
+                  <Link 
+                    href="/account/orders" 
+                    className="flex items-center space-x-2 text-green-600 hover:text-green-700 font-medium py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <UserCircleIcon className="w-5 h-5 text-green-600" />
+                    </div>
+                    <span>My Orders</span>
+                  </Link>
+                ) : (
+                  <Link 
+                    href="/account/login" 
+                    className="flex items-center space-x-2 text-gray-700 hover:text-green-600 font-medium py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <UserCircleIcon className="w-6 h-6" />
+                    <span>Login / Register</span>
+                  </Link>
+                )}
+              </div>
             </nav>
             
             {/* Mobile Search */}

@@ -193,6 +193,18 @@ export async function PUT(
 
     console.log('Parsed body data:', body);
 
+    // Fetch existing product to preserve values not explicitly provided
+    const existingProductData = await query(
+      'SELECT purchase_type, product_condition, stock_quantity FROM products WHERE slug = ?',
+      [productSlug]
+    );
+    const existing = Array.isArray(existingProductData) && existingProductData.length > 0 ? existingProductData[0] as any : null;
+
+    // Use existing values if not provided in the update request
+    const finalPurchaseType = purchase_type !== undefined ? purchase_type : (existing?.purchase_type || 'affiliate');
+    const finalProductCondition = product_condition !== undefined ? product_condition : (existing?.product_condition || 'new');
+    const finalStockQuantity = stock_quantity !== undefined ? stock_quantity : existing?.stock_quantity;
+
     // Validate required fields
     if (!name || !short_description || !price || !category_id) {
       return NextResponse.json(
@@ -202,7 +214,7 @@ export async function PUT(
     }
 
     // Validate affiliate_url for affiliate products only
-    if (purchase_type === 'affiliate' && !affiliate_url) {
+    if (finalPurchaseType === 'affiliate' && !affiliate_url) {
       return NextResponse.json(
         { error: 'Affiliate URL is required for affiliate products' },
         { status: 400 }
@@ -345,9 +357,9 @@ export async function PUT(
       affiliate_url || '',
       affiliate_partner_name || null,
       external_purchase_info || null,
-      purchase_type || 'affiliate',
-      product_condition || 'new',
-      stock_quantity || null,
+      finalPurchaseType,
+      finalProductCondition,
+      finalStockQuantity,
       image_url || null,
       gallery || null,
       category_id || null,

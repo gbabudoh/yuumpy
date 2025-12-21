@@ -21,6 +21,13 @@ function SuccessContent() {
 
   const fetchOrder = async () => {
     try {
+      // Update payment status to paid since customer reached success page
+      await fetch(`/api/orders/${orderNumber}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_status: 'paid', order_status: 'confirmed' })
+      });
+
       const response = await fetch(`/api/orders/${orderNumber}`);
       if (response.ok) {
         const data = await response.json();

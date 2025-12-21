@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       SELECT p.id, p.name, p.slug, p.description, p.short_description, p.long_description, p.product_review,
              p.price, p.original_price, 
              p.affiliate_url, p.affiliate_partner_name, p.external_purchase_info,
-             p.purchase_type, p.product_condition,
+             p.purchase_type, p.product_condition, p.stock_quantity,
              p.image_url, p.gallery,
              p.category_id, p.subcategory_id, p.brand_id, p.is_featured, p.is_bestseller, p.is_active, 
              p.meta_title, p.meta_description, p.created_at,

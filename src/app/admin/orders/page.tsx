@@ -284,7 +284,7 @@ export default function AdminOrdersPage() {
                         <td className="px-6 py-4">
                           <button
                             onClick={() => openOrderModal(order)}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
                           >
                             <Eye className="w-4 h-4" />
                           </button>

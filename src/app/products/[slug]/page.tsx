@@ -278,8 +278,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 </div>
                 {product.original_price && (
                   <span className="inline-flex items-center px-2.5 md:px-3 py-1 md:py-1.5 rounded-md text-xs font-bold bg-red-600 text-white">
-                    Save {discountPercentage}%
-                  </span>
+                    Save {discountPercentage}%</span>
                 )}
               </div>
             </div>
@@ -291,17 +290,63 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </p>
             </div>
 
+            {/* Stock Availability for Direct Sale Products */}
+            {(product.purchase_type === 'direct' || !product.affiliate_url) && (
+              <div className="py-2">
+                {product.stock_quantity !== null && product.stock_quantity !== undefined ? (
+                  product.stock_quantity > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-semibold bg-green-100 text-green-800">
+                        <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        In Stock
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        ({product.stock_quantity} available)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-semibold bg-red-100 text-red-800">
+                        <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        Out of Stock
+                      </span>
+                    </div>
+                  )
+                ) : (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-semibold bg-green-100 text-green-800">
+                    <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    In Stock
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Actions */}
             <div className="space-y-3 md:space-y-4">
               {(product.purchase_type === 'direct' || !product.affiliate_url) ? (
-                <Link
-                  href={`/checkout/${product.slug}`}
-                  className="w-full text-white py-3 md:py-4 px-6 rounded-lg font-semibold text-base md:text-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer hover:opacity-90"
-                  style={{ backgroundColor: '#16a34a' }}
-                >
-                  <span>Buy Now</span>
-                  <Shield className="w-4 h-4 md:w-5 md:h-5" />
-                </Link>
+                product.stock_quantity === null || product.stock_quantity === undefined || product.stock_quantity > 0 ? (
+                  <Link
+                    href={`/checkout/${product.slug}`}
+                    className="w-full text-white py-3 md:py-4 px-6 rounded-lg font-semibold text-base md:text-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer hover:opacity-90"
+                    style={{ backgroundColor: '#16a34a' }}
+                  >
+                    <span>Buy Now</span>
+                    <Shield className="w-4 h-4 md:w-5 md:h-5" />
+                  </Link>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full text-white py-3 md:py-4 px-6 rounded-lg font-semibold text-base md:text-lg flex items-center justify-center space-x-2 cursor-not-allowed bg-gray-400"
+                  >
+                    <span>Out of Stock</span>
+                  </button>
+                )
               ) : (
                 <a
                   href={product.affiliate_url}

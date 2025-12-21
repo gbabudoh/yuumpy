@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { query } from '@/lib/database';
+import { sendOrderConfirmationEmail, sendNewOrderNotificationEmail } from '@/lib/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16' });
@@ -119,6 +120,56 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
          )
          WHERE id = ? AND stock_quantity IS NOT NULL`,
         [orderId, productId, productId]
+      );
+    }
+
+    // Fetch order details for email
+    const orderResult = await query(
+      `SELECT o.*, 
+              JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'product_name', oi.product_name,
+                  'quantity', oi.quantity,
+                  'unit_price', oi.unit_price,
+                  'total_price', oi.total_price,
+                  'product_image_url', oi.product_image_url
+                )
+              ) as items
+       FROM orders o
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       WHERE o.id = ?
+       GROUP BY o.id`,
+      [orderId]
+    );
+
+    if (Array.isArray(orderResult) && orderResult.length > 0) {
+      const order = orderResult[0] as any;
+      const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+
+      const emailData = {
+        orderNumber: order.order_number,
+        customerName: `${order.customer_first_name} ${order.customer_last_name}`,
+        customerEmail: order.customer_email,
+        items: items || [],
+        subtotal: order.subtotal,
+        shippingCost: order.shipping_cost || 0,
+        totalAmount: order.total_amount,
+        shippingAddress: {
+          line1: order.shipping_address_line1,
+          line2: order.shipping_address_line2,
+          city: order.shipping_city,
+          county: order.shipping_county,
+          postcode: order.shipping_postcode,
+          country: order.shipping_country || 'United Kingdom',
+        },
+      };
+
+      // Send emails (don't await to avoid blocking)
+      sendOrderConfirmationEmail(emailData).catch(err => 
+        console.error('Failed to send order confirmation email:', err)
+      );
+      sendNewOrderNotificationEmail(emailData).catch(err => 
+        console.error('Failed to send admin notification email:', err)
       );
     }
 
