@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { query } from '@/lib/database';
 import { sendOrderConfirmationEmail, sendNewOrderNotificationEmail } from '@/lib/email';
+import { awardPointsForOrder } from '@/lib/rewards';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16' });
@@ -123,7 +124,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       );
     }
 
-    // Fetch order details for email
+    // Fetch order details for email and points
     const orderResult = await query(
       `SELECT o.*, 
               JSON_ARRAYAGG(
@@ -171,6 +172,18 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       sendNewOrderNotificationEmail(emailData).catch(err => 
         console.error('Failed to send admin notification email:', err)
       );
+
+      // Award points if customer is logged in
+      if (order.customer_id) {
+        awardPointsForOrder(
+          order.customer_id,
+          parseInt(orderId),
+          order.order_number,
+          order.total_amount
+        ).catch(err => 
+          console.error('Failed to award points:', err)
+        );
+      }
     }
 
     console.log('Checkout session completed for order:', orderNumber);

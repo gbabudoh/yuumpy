@@ -58,10 +58,32 @@ export default function CustomerOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (customer) {
+      fetchUnreadCount();
+      // Refresh notification count every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [customer]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await fetch('/api/customer/notifications?unread_only=true&limit=1');
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadNotifications(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
 
   const checkAuth = async () => {
     try {
@@ -184,12 +206,25 @@ export default function CustomerOrdersPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="p-2 bg-gray-500/20 hover:bg-gray-500/30 rounded-xl transition-colors cursor-pointer">
+              <Link
+                href="/account/notifications"
+                className="p-2 bg-gray-500/20 hover:bg-gray-500/30 rounded-xl transition-colors cursor-pointer relative"
+                title="Notifications"
+              >
                 <Bell className="w-5 h-5" />
-              </button>
-              <button className="p-2 bg-gray-500/20 hover:bg-gray-500/30 rounded-xl transition-colors cursor-pointer">
+                {unreadNotifications > 0 && (
+                  <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
+              </Link>
+              <Link
+                href="/account/settings"
+                className="p-2 bg-gray-500/20 hover:bg-gray-500/30 rounded-xl transition-colors cursor-pointer"
+                title="Settings"
+              >
                 <Settings className="w-5 h-5" />
-              </button>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-500/20 hover:bg-gray-500/30 rounded-xl transition-colors text-sm font-medium cursor-pointer"
@@ -274,24 +309,24 @@ export default function CustomerOrdersPage() {
               <p className="text-xs text-gray-500">Contact support</p>
             </div>
           </Link>
-          <button className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all group text-left">
+          <Link href="/account/wishlist" className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all group">
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
               <Heart className="w-5 h-5 text-purple-600" />
             </div>
             <div>
               <p className="font-medium text-gray-900 text-sm">Wishlist</p>
-              <p className="text-xs text-gray-500">Coming soon</p>
+              <p className="text-xs text-gray-500">View saved items</p>
             </div>
-          </button>
-          <button className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all group text-left">
+          </Link>
+          <Link href="/account/rewards" className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all group">
             <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center group-hover:bg-amber-200 transition-colors">
               <Gift className="w-5 h-5 text-amber-600" />
             </div>
             <div>
               <p className="font-medium text-gray-900 text-sm">Rewards</p>
-              <p className="text-xs text-gray-500">Coming soon</p>
+              <p className="text-xs text-gray-500">View points</p>
             </div>
-          </button>
+          </Link>
         </div>
 
         {/* Orders Section */}

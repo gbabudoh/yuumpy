@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
+import { createOrderNotification } from '@/lib/notifications';
 
 export async function GET(
   request: NextRequest,
@@ -95,6 +96,28 @@ export async function PUT(
       `UPDATE orders SET ${updates.join(', ')} WHERE id = ?`,
       params
     );
+
+    // Create notification if order status changed and customer exists
+    if (order_status) {
+      const orderResult = await query(
+        `SELECT customer_id, order_number FROM orders WHERE id = ?`,
+        [id]
+      ) as any[];
+
+      if (Array.isArray(orderResult) && orderResult.length > 0) {
+        const order = orderResult[0] as any;
+        if (order.customer_id) {
+          createOrderNotification(
+            order.customer_id,
+            parseInt(id),
+            order.order_number,
+            order_status
+          ).catch(err => 
+            console.error('Failed to create order notification:', err)
+          );
+        }
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

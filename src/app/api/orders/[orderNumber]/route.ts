@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import { sendOrderConfirmationEmail, sendNewOrderNotificationEmail } from '@/lib/email';
+import { awardPointsForOrder } from '@/lib/rewards';
 
 export async function GET(
   request: NextRequest,
@@ -147,6 +148,18 @@ export async function PATCH(
         sendNewOrderNotificationEmail(emailData).catch(err => 
           console.error('Failed to send admin notification email:', err)
         );
+
+        // Award points if customer is logged in
+        if (order.customer_id) {
+          awardPointsForOrder(
+            order.customer_id,
+            order.id,
+            order.order_number,
+            order.total_amount
+          ).catch(err => 
+            console.error('Failed to award points:', err)
+          );
+        }
       }
     }
 
