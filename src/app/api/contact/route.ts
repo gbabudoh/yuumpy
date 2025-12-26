@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendContactFormNotificationEmail, sendContactFormConfirmationEmail } from '@/lib/email';
 
 // Function to save email locally for admin panel
 async function saveEmailLocally(contactData: any) {
@@ -16,88 +17,6 @@ async function saveEmailLocally(contactData: any) {
     }
   } catch (error) {
     console.error('Error saving email locally:', error);
-  }
-}
-
-// Email notification functions
-async function sendAdminNotification(contactData: any) {
-  try {
-    // Determine email recipient and subject based on contact type
-    const isCustomerSupport = contactData.ad_type === 'customer-support';
-    const recipientEmail = isCustomerSupport 
-      ? 'orders@yuumpy.com' 
-      : (process.env.ADMIN_EMAIL || 'admin@yuumpy.com');
-    
-    const subject = isCustomerSupport
-      ? `New Customer Support Inquiry - ${contactData.name}`
-      : `New Advertising Inquiry - ${contactData.ad_type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
-    
-    const notificationType = isCustomerSupport ? 'customer_support' : 'advertising_inquiry';
-
-    // Send email to your admin backend
-    const response = await fetch(`${process.env.ADMIN_BACKEND_URL || 'http://localhost:8000'}/api/contact-notification`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ADMIN_API_KEY || ''}` },
-      body: JSON.stringify({
-        type: notificationType,
-        to: recipientEmail,
-        subject: subject,
-        data: {
-          name: contactData.name,
-          email: contactData.email,
-          company: contactData.company || 'Not provided',
-          phone: contactData.phone || 'Not provided',
-          adType: contactData.ad_type,
-          message: contactData.message,
-          submittedAt: new Date(contactData.created_at).toLocaleString() }
-      }) });
-
-    if (!response.ok) {
-      console.error('Failed to send admin notification email:', response.status, response.statusText);
-    } else {
-      console.log(`Admin notification email sent successfully to ${recipientEmail}`);
-    }
-  } catch (error) {
-    console.error('Error sending admin notification:', error);
-  }
-}
-
-async function sendUserConfirmation(userEmail: string, userName: string, adType: string) {
-  try {
-    const isCustomerSupport = adType === 'customer-support';
-    const confirmationType = isCustomerSupport ? 'customer_support_confirmation' : 'advertising_confirmation';
-    const subject = isCustomerSupport 
-      ? 'Thank you for contacting Yuumpy Support - We\'ll get back to you soon!'
-      : 'Thank you for your advertising inquiry - Yuumpy';
-    const supportEmail = isCustomerSupport 
-      ? 'orders@yuumpy.com' 
-      : (process.env.ADMIN_EMAIL || 'admin@yuumpy.com');
-
-    // Send confirmation email to user via your admin backend
-    const response = await fetch(`${process.env.ADMIN_BACKEND_URL || 'http://localhost:8000'}/api/user-confirmation`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ADMIN_API_KEY || ''}` },
-      body: JSON.stringify({
-        type: confirmationType,
-        to: userEmail,
-        subject: subject,
-        data: {
-          name: userName,
-          adType: adType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          supportEmail: supportEmail }
-      }) });
-
-    if (!response.ok) {
-      console.error('Failed to send user confirmation email:', response.status, response.statusText);
-    } else {
-      console.log('User confirmation email sent successfully');
-    }
-  } catch (error) {
-    console.error('Error sending user confirmation:', error);
   }
 }
 
@@ -141,13 +60,34 @@ export async function POST(request: NextRequest) {
     // Save to database (if you have a database setup)
     // await saveContactToDatabase(contactData);
     
-    // Send email notification to admin
-    console.log('Sending admin notification email...');
-    await sendAdminNotification(contactData);
+    // Determine email recipient based on contact type
+    const isCustomerSupport = adType === 'customer-support';
+    const recipientEmail = isCustomerSupport 
+      ? 'orders@yuumpy.com' 
+      : (process.env.ADMIN_EMAIL || 'admin@yuumpy.com');
+    
+    // Prepare contact form data for email
+    const contactFormData = {
+      name: contactData.name,
+      email: contactData.email,
+      company: contactData.company,
+      phone: contactData.phone,
+      contactType: contactData.ad_type,
+      message: contactData.message,
+      submittedAt: contactData.created_at
+    };
+    
+    // Send email notification to admin/support
+    console.log(`Sending ${isCustomerSupport ? 'customer support' : 'advertising'} notification email to ${recipientEmail}...`);
+    await sendContactFormNotificationEmail(contactFormData, recipientEmail).catch(err => 
+      console.error('Failed to send admin notification email:', err)
+    );
     
     // Send confirmation email to user
     console.log('Sending user confirmation email...');
-    await sendUserConfirmation(email, name, adType);
+    await sendContactFormConfirmationEmail(email, name, adType).catch(err => 
+      console.error('Failed to send user confirmation email:', err)
+    );
     
     // Log the email for debugging (this will always show in console)
     const inquiryType = adType === 'customer-support' ? 'CUSTOMER SUPPORT INQUIRY' : 'ADVERTISING INQUIRY';

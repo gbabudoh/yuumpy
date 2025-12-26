@@ -486,3 +486,178 @@ export async function sendOrderCancelledEmail(
     return false;
   }
 }
+
+interface ContactFormData {
+  name: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  contactType: string;
+  message: string;
+  submittedAt: string;
+}
+
+export async function sendContactFormNotificationEmail(
+  contactData: ContactFormData,
+  recipientEmail: string
+): Promise<boolean> {
+  try {
+    const isCustomerSupport = contactData.contactType === 'customer-support';
+    const contactTypeLabel = isCustomerSupport 
+      ? 'Customer Support' 
+      : contactData.contactType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    const subject = isCustomerSupport
+      ? `New Customer Support Inquiry - ${contactData.name}`
+      : `New Advertising Inquiry - ${contactTypeLabel}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Contact Form Submission</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #9333ea 0%, #3b82f6 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">New ${contactTypeLabel} Inquiry</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="font-size: 16px;">You have received a new ${isCustomerSupport ? 'customer support' : 'advertising'} inquiry:</p>
+          
+          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin: 0 0 15px 0; color: #111827; border-bottom: 2px solid #9333ea; padding-bottom: 10px;">Contact Information</h3>
+            <p style="margin: 8px 0;"><strong>Name:</strong> ${contactData.name}</p>
+            <p style="margin: 8px 0;"><strong>Email:</strong> <a href="mailto:${contactData.email}" style="color: #9333ea; text-decoration: none;">${contactData.email}</a></p>
+            ${contactData.phone ? `<p style="margin: 8px 0;"><strong>Phone:</strong> <a href="tel:${contactData.phone}" style="color: #9333ea; text-decoration: none;">${contactData.phone}</a></p>` : ''}
+            ${contactData.company ? `<p style="margin: 8px 0;"><strong>Company:</strong> ${contactData.company}</p>` : ''}
+            <p style="margin: 8px 0;"><strong>Contact Type:</strong> ${contactTypeLabel}</p>
+            <p style="margin: 8px 0;"><strong>Submitted:</strong> ${new Date(contactData.submittedAt).toLocaleString()}</p>
+          </div>
+
+          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin: 0 0 15px 0; color: #111827; border-bottom: 2px solid #9333ea; padding-bottom: 10px;">Message</h3>
+            <p style="margin: 0; white-space: pre-wrap; color: #374151;">${contactData.message}</p>
+          </div>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <a href="mailto:${contactData.email}" style="display: inline-block; background: #9333ea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Reply to ${contactData.name}
+            </a>
+          </div>
+        </div>
+        
+        <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="margin: 0; font-size: 12px; color: #6b7280;">
+            This email was sent from the Yuumpy contact form.
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"Yuumpy Contact Form" <${process.env.SMTP_FROM || 'orders@yuumpy.com'}>`,
+      to: recipientEmail,
+      replyTo: contactData.email,
+      subject: subject,
+      html,
+    });
+
+    console.log(`Contact form notification email sent to ${recipientEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending contact form notification email:', error);
+    return false;
+  }
+}
+
+export async function sendContactFormConfirmationEmail(
+  userEmail: string,
+  userName: string,
+  contactType: string
+): Promise<boolean> {
+  try {
+    const isCustomerSupport = contactType === 'customer-support';
+    const contactTypeLabel = isCustomerSupport 
+      ? 'Customer Support' 
+      : contactType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    const subject = isCustomerSupport 
+      ? 'Thank you for contacting Yuumpy Support - We\'ll get back to you soon!'
+      : 'Thank you for your advertising inquiry - Yuumpy';
+    
+    const supportEmail = isCustomerSupport 
+      ? 'orders@yuumpy.com' 
+      : (process.env.ADMIN_EMAIL || 'admin@yuumpy.com');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Thank You for Contacting Us</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #16a34a 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Thank You! 🙏</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">We've received your ${isCustomerSupport ? 'support' : 'advertising'} inquiry</p>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="font-size: 16px;">Hi <strong>${userName}</strong>,</p>
+          <p>Thank you for contacting Yuumpy! We've received your ${contactTypeLabel.toLowerCase()} inquiry and our team will review it shortly.</p>
+          
+          ${isCustomerSupport ? `
+          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0; color: #92400e; font-size: 14px;">
+              <strong>📧 Support Email:</strong> <a href="mailto:${supportEmail}" style="color: #d97706; text-decoration: none;">${supportEmail}</a>
+            </p>
+          </div>
+          ` : ''}
+
+          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #111827;">What happens next?</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #374151;">
+              <li>Our team will review your inquiry</li>
+              <li>We'll get back to you within 24-48 hours</li>
+              <li>Check your email (including spam folder) for our response</li>
+            </ul>
+          </div>
+
+          <p style="margin-top: 30px;">If you have any urgent questions, please don't hesitate to reach out to us directly.</p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">
+              Best regards,<br>
+              <strong>The Yuumpy Team</strong>
+            </p>
+          </div>
+        </div>
+        
+        <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="margin: 0; font-size: 12px; color: #6b7280;">
+            This is an automated confirmation email. Please do not reply to this message.
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"Yuumpy" <${process.env.SMTP_FROM || 'orders@yuumpy.com'}>`,
+      to: userEmail,
+      subject: subject,
+      html,
+    });
+
+    console.log(`Contact form confirmation email sent to ${userEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending contact form confirmation email:', error);
+    return false;
+  }
+}
