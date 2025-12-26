@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { query } from '@/lib/database';
 import { sendOrderConfirmationEmail, sendNewOrderNotificationEmail } from '@/lib/email';
 import { awardPointsForOrder } from '@/lib/rewards';
+import { createOrderNotification } from '@/lib/notifications';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16' });
@@ -173,8 +174,18 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         console.error('Failed to send admin notification email:', err)
       );
 
-      // Award points if customer is logged in
+      // Create in-app notification if customer is logged in
       if (order.customer_id) {
+        createOrderNotification(
+          order.customer_id,
+          parseInt(orderId),
+          order.order_number,
+          'confirmed'
+        ).catch(err => 
+          console.error('Failed to create order notification:', err)
+        );
+
+        // Award points if customer is logged in
         awardPointsForOrder(
           order.customer_id,
           parseInt(orderId),
