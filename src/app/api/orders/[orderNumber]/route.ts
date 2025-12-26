@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
-import { sendOrderConfirmationEmail, sendNewOrderNotificationEmail } from '@/lib/email';
+import { 
+  sendOrderConfirmationEmail, 
+  sendNewOrderNotificationEmail,
+  sendOrderShippedEmail,
+  sendOrderDeliveredEmail,
+  sendOrderCancelledEmail
+} from '@/lib/email';
 import { awardPointsForOrder } from '@/lib/rewards';
 
 export async function GET(
@@ -98,34 +104,35 @@ export async function PATCH(
       params
     );
 
-    // If payment was just marked as paid, send confirmation emails
-    if (payment_status === 'paid') {
-      // Fetch order details for email
-      const orderResult = await query(
-        `SELECT o.*, 
-                JSON_ARRAYAGG(
-                  JSON_OBJECT(
-                    'product_name', oi.product_name,
-                    'quantity', oi.quantity,
-                    'unit_price', oi.unit_price,
-                    'total_price', oi.total_price,
-                    'product_image_url', oi.product_image_url
-                  )
-                ) as items
-         FROM orders o
-         LEFT JOIN order_items oi ON o.id = oi.order_id
-         WHERE o.order_number = ?
-         GROUP BY o.id`,
-        [orderNumber]
-      );
+    // Fetch order details for email/notifications
+    const orderResult = await query(
+      `SELECT o.*, 
+              JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'product_name', oi.product_name,
+                  'quantity', oi.quantity,
+                  'unit_price', oi.unit_price,
+                  'total_price', oi.total_price,
+                  'product_image_url', oi.product_image_url
+                )
+              ) as items
+       FROM orders o
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       WHERE o.order_number = ?
+       GROUP BY o.id`,
+      [orderNumber]
+    );
 
-      if (Array.isArray(orderResult) && orderResult.length > 0) {
-        const order = orderResult[0] as any;
-        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    if (Array.isArray(orderResult) && orderResult.length > 0) {
+      const order = orderResult[0] as any;
+      const customerName = `${order.customer_first_name} ${order.customer_last_name}`;
+      const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
 
+      // If payment was just marked as paid, send confirmation emails
+      if (payment_status === 'paid') {
         const emailData = {
           orderNumber: order.order_number,
-          customerName: `${order.customer_first_name} ${order.customer_last_name}`,
+          customerName,
           customerEmail: order.customer_email,
           items: items || [],
           subtotal: order.subtotal,
@@ -158,6 +165,43 @@ export async function PATCH(
             order.total_amount
           ).catch(err => 
             console.error('Failed to award points:', err)
+          );
+        }
+      }
+
+      // Send emails for order status changes
+      if (order_status && order.customer_email) {
+        if (order_status === 'shipped') {
+          // Send shipping email with tracking info
+          const trackingNumber = order.tracking_number || 'Pending';
+          sendOrderShippedEmail(
+            order.customer_email,
+            customerName,
+            order.order_number,
+            trackingNumber,
+            order.tracking_url || undefined
+          ).catch(err => 
+            console.error('Failed to send order shipped email:', err)
+          );
+        } else if (order_status === 'delivered') {
+          // Send delivery confirmation email
+          sendOrderDeliveredEmail(
+            order.customer_email,
+            customerName,
+            order.order_number
+          ).catch(err => 
+            console.error('Failed to send order delivered email:', err)
+          );
+        } else if (order_status === 'cancelled') {
+          // Send cancellation email with refund info if applicable
+          sendOrderCancelledEmail(
+            order.customer_email,
+            customerName,
+            order.order_number,
+            order.payment_status === 'paid' ? order.total_amount : undefined,
+            undefined // cancellation reason not available in this endpoint
+          ).catch(err => 
+            console.error('Failed to send order cancelled email:', err)
           );
         }
       }

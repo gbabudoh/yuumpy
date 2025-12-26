@@ -329,3 +329,160 @@ export async function sendOrderShippedEmail(
     return false;
   }
 }
+
+export async function sendOrderDeliveredEmail(
+  customerEmail: string,
+  customerName: string,
+  orderNumber: string
+): Promise<boolean> {
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Your Order Has Been Delivered!</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Order Delivered! ✅</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="font-size: 16px;">Hi <strong>${customerName}</strong>,</p>
+          <p>Great news! Your order <strong>${orderNumber}</strong> has been successfully delivered.</p>
+          
+          <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+            <p style="margin: 0; color: #065f46; font-size: 16px;">
+              🎉 We hope you love your purchase! If you have any questions or need assistance, we're here to help.
+            </p>
+          </div>
+          
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com'}/account/orders/${orderNumber}" 
+               style="display: inline-block; background: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-right: 10px;">
+              View Order Details
+            </a>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com'}" 
+               style="display: inline-block; background: #f3f4f6; color: #374151; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Shop Again
+            </a>
+          </div>
+          
+          <div style="margin-top: 30px; padding: 15px; background: #f9fafb; border-radius: 8px;">
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">
+              💡 <strong>Tip:</strong> Leave a review to help other customers make informed decisions!
+            </p>
+          </div>
+        </div>
+        
+        <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">
+            Questions? Contact us at <a href="mailto:support@yuumpy.com" style="color: #10b981;">support@yuumpy.com</a>
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"Yuumpy" <${process.env.SMTP_FROM || 'orders@yuumpy.com'}>`,
+      to: customerEmail,
+      subject: `Your Order ${orderNumber} Has Been Delivered! ✅`,
+      html,
+    });
+
+    console.log(`Order delivered email sent to ${customerEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending order delivered email:', error);
+    return false;
+  }
+}
+
+export async function sendOrderCancelledEmail(
+  customerEmail: string,
+  customerName: string,
+  orderNumber: string,
+  refundAmount?: number,
+  reason?: string
+): Promise<boolean> {
+  try {
+    const refundInfo = refundAmount 
+      ? `
+          <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+            <p style="margin: 0; color: #92400e; font-size: 14px; margin-bottom: 8px;"><strong>Refund Information:</strong></p>
+            <p style="margin: 0; color: #78350f; font-size: 18px; font-weight: bold;">£${Number(refundAmount).toFixed(2)} will be refunded to your original payment method.</p>
+            <p style="margin: 8px 0 0 0; color: #92400e; font-size: 12px;">Refunds typically take 5-10 business days to appear in your account.</p>
+          </div>
+        `
+      : '';
+
+    const reasonInfo = reason 
+      ? `
+          <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0; color: #6b7280; font-size: 14px;"><strong>Reason:</strong> ${reason}</p>
+          </div>
+        `
+      : '';
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Order Cancelled</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Order Cancelled</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="font-size: 16px;">Hi <strong>${customerName}</strong>,</p>
+          <p>We're sorry to inform you that your order <strong>${orderNumber}</strong> has been cancelled.</p>
+          
+          ${reasonInfo}
+          ${refundInfo}
+          
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com'}/account/orders/${orderNumber}" 
+               style="display: inline-block; background: #ef4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-right: 10px;">
+              View Order Details
+            </a>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com'}" 
+               style="display: inline-block; background: #f3f4f6; color: #374151; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Continue Shopping
+            </a>
+          </div>
+          
+          <div style="margin-top: 30px; padding: 15px; background: #f9fafb; border-radius: 8px;">
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">
+              If you have any questions about this cancellation, please don't hesitate to contact us.
+            </p>
+          </div>
+        </div>
+        
+        <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">
+            Questions? Contact us at <a href="mailto:support@yuumpy.com" style="color: #ef4444;">support@yuumpy.com</a>
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"Yuumpy" <${process.env.SMTP_FROM || 'orders@yuumpy.com'}>`,
+      to: customerEmail,
+      subject: `Order ${orderNumber} Has Been Cancelled`,
+      html,
+    });
+
+    console.log(`Order cancelled email sent to ${customerEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending order cancelled email:', error);
+    return false;
+  }
+}
