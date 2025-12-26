@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { query } from '@/lib/database';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16'
@@ -11,6 +14,22 @@ function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `YMP-${timestamp}-${random}`;
+}
+
+// Helper function to get customer ID from JWT token
+function getCustomerIdFromToken(request: NextRequest): number | null {
+  try {
+    const token = request.cookies.get('customer_token')?.value;
+    
+    if (!token) {
+      return null;
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    return decoded.customerId || null;
+  } catch (error) {
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -84,9 +103,11 @@ export async function POST(request: NextRequest) {
     // Generate order number
     const orderNumber = generateOrderNumber();
 
-    // Handle customer account creation if requested
-    let customerId = null;
-    if (createAccount && password) {
+    // Check if customer is already logged in
+    let customerId = getCustomerIdFromToken(request);
+
+    // Handle customer account creation if requested (only if not already logged in)
+    if (!customerId && createAccount && password) {
       // Check if customer already exists
       const existingCustomer = await query(
         'SELECT id FROM customers WHERE email = ?',
