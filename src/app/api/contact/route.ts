@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendContactFormNotificationEmail, sendContactFormConfirmationEmail } from '@/lib/email';
+import { sendContactAdminNotification, sendContactUserConfirmation } from '@/lib/email';
 
 // Function to save email locally for admin panel
 async function saveEmailLocally(contactData: any) {
@@ -60,32 +60,25 @@ export async function POST(request: NextRequest) {
     // Save to database (if you have a database setup)
     // await saveContactToDatabase(contactData);
     
-    // Determine email recipient based on contact type
-    const isCustomerSupport = adType === 'customer-support';
-    const recipientEmail = isCustomerSupport 
-      ? 'orders@yuumpy.com' 
-      : (process.env.ADMIN_EMAIL || 'admin@yuumpy.com');
-    
     // Prepare contact form data for email
     const contactFormData = {
       name: contactData.name,
       email: contactData.email,
-      company: contactData.company,
-      phone: contactData.phone,
-      contactType: contactData.ad_type,
-      message: contactData.message,
-      submittedAt: contactData.created_at
+      company: contactData.company || undefined,
+      phone: contactData.phone || undefined,
+      adType: contactData.ad_type,
+      message: contactData.message
     };
     
     // Send email notification to admin/support
-    console.log(`Sending ${isCustomerSupport ? 'customer support' : 'advertising'} notification email to ${recipientEmail}...`);
-    await sendContactFormNotificationEmail(contactFormData, recipientEmail).catch(err => 
+    console.log('Sending admin notification email...');
+    await sendContactAdminNotification(contactFormData).catch(err => 
       console.error('Failed to send admin notification email:', err)
     );
     
     // Send confirmation email to user
     console.log('Sending user confirmation email...');
-    await sendContactFormConfirmationEmail(email, name, adType).catch(err => 
+    await sendContactUserConfirmation(email, name, adType).catch(err => 
       console.error('Failed to send user confirmation email:', err)
     );
     

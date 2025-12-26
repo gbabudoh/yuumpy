@@ -661,3 +661,78 @@ export async function sendContactFormConfirmationEmail(
     return false;
   }
 }
+
+// Contact form email functions
+export async function sendContactAdminNotification(contactData: {
+  name: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  adType: string;
+  message: string;
+}): Promise<boolean> {
+  try {
+    const isCustomerSupport = contactData.adType === 'customer-support';
+    const recipientEmail = isCustomerSupport ? 'orders@yuumpy.com' : (process.env.ADMIN_EMAIL || 'admin@yuumpy.com');
+    const subject = isCustomerSupport
+      ? `New Customer Support Inquiry - ${contactData.name}`
+      : `New Advertising Inquiry - ${contactData.adType.replace('-', ' ')}`;
+
+    const html = `
+      <h2>${isCustomerSupport ? 'Customer Support Inquiry' : 'Advertising Inquiry'}</h2>
+      <p><strong>From:</strong> ${contactData.name}</p>
+      <p><strong>Email:</strong> ${contactData.email}</p>
+      ${contactData.company ? `<p><strong>Company:</strong> ${contactData.company}</p>` : ''}
+      ${contactData.phone ? `<p><strong>Phone:</strong> ${contactData.phone}</p>` : ''}
+      <p><strong>Type:</strong> ${contactData.adType}</p>
+      <p><strong>Message:</strong></p>
+      <p>${contactData.message}</p>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'orders@yuumpy.com',
+      to: recipientEmail,
+      subject,
+      html,
+    });
+
+    console.log(`Admin notification sent to ${recipientEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending admin notification:', error);
+    return false;
+  }
+}
+
+export async function sendContactUserConfirmation(
+  userEmail: string,
+  userName: string,
+  adType: string
+): Promise<boolean> {
+  try {
+    const isCustomerSupport = adType === 'customer-support';
+    const subject = isCustomerSupport
+      ? 'Thank you for contacting Yuumpy Support'
+      : 'Thank you for your advertising inquiry';
+
+    const html = `
+      <h2>Thank you for contacting us!</h2>
+      <p>Hi ${userName},</p>
+      <p>We've received your ${isCustomerSupport ? 'support request' : 'advertising inquiry'} and will get back to you shortly.</p>
+      <p>Best regards,<br>The Yuumpy Team</p>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'orders@yuumpy.com',
+      to: userEmail,
+      subject,
+      html,
+    });
+
+    console.log('User confirmation sent');
+    return true;
+  } catch (error) {
+    console.error('Error sending user confirmation:', error);
+    return false;
+  }
+}
