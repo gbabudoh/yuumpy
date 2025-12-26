@@ -22,6 +22,18 @@ async function saveEmailLocally(contactData: any) {
 // Email notification functions
 async function sendAdminNotification(contactData: any) {
   try {
+    // Determine email recipient and subject based on contact type
+    const isCustomerSupport = contactData.ad_type === 'customer-support';
+    const recipientEmail = isCustomerSupport 
+      ? 'orders@yuumpy.com' 
+      : (process.env.ADMIN_EMAIL || 'admin@yuumpy.com');
+    
+    const subject = isCustomerSupport
+      ? `New Customer Support Inquiry - ${contactData.name}`
+      : `New Advertising Inquiry - ${contactData.ad_type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+    
+    const notificationType = isCustomerSupport ? 'customer_support' : 'advertising_inquiry';
+
     // Send email to your admin backend
     const response = await fetch(`${process.env.ADMIN_BACKEND_URL || 'http://localhost:8000'}/api/contact-notification`, {
       method: 'POST',
@@ -29,9 +41,9 @@ async function sendAdminNotification(contactData: any) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.ADMIN_API_KEY || ''}` },
       body: JSON.stringify({
-        type: 'advertising_inquiry',
-        to: process.env.ADMIN_EMAIL || 'admin@yuumpy.com',
-        subject: `New Advertising Inquiry - ${contactData.ad_type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+        type: notificationType,
+        to: recipientEmail,
+        subject: subject,
         data: {
           name: contactData.name,
           email: contactData.email,
@@ -45,7 +57,7 @@ async function sendAdminNotification(contactData: any) {
     if (!response.ok) {
       console.error('Failed to send admin notification email:', response.status, response.statusText);
     } else {
-      console.log('Admin notification email sent successfully');
+      console.log(`Admin notification email sent successfully to ${recipientEmail}`);
     }
   } catch (error) {
     console.error('Error sending admin notification:', error);
@@ -54,6 +66,15 @@ async function sendAdminNotification(contactData: any) {
 
 async function sendUserConfirmation(userEmail: string, userName: string, adType: string) {
   try {
+    const isCustomerSupport = adType === 'customer-support';
+    const confirmationType = isCustomerSupport ? 'customer_support_confirmation' : 'advertising_confirmation';
+    const subject = isCustomerSupport 
+      ? 'Thank you for contacting Yuumpy Support - We\'ll get back to you soon!'
+      : 'Thank you for your advertising inquiry - Yuumpy';
+    const supportEmail = isCustomerSupport 
+      ? 'orders@yuumpy.com' 
+      : (process.env.ADMIN_EMAIL || 'admin@yuumpy.com');
+
     // Send confirmation email to user via your admin backend
     const response = await fetch(`${process.env.ADMIN_BACKEND_URL || 'http://localhost:8000'}/api/user-confirmation`, {
       method: 'POST',
@@ -61,13 +82,13 @@ async function sendUserConfirmation(userEmail: string, userName: string, adType:
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.ADMIN_API_KEY || ''}` },
       body: JSON.stringify({
-        type: 'advertising_confirmation',
+        type: confirmationType,
         to: userEmail,
-        subject: 'Thank you for your advertising inquiry - Yuumpy',
+        subject: subject,
         data: {
           name: userName,
           adType: adType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          supportEmail: process.env.ADMIN_EMAIL || 'admin@yuumpy.com' }
+          supportEmail: supportEmail }
       }) });
 
     if (!response.ok) {
@@ -129,12 +150,13 @@ export async function POST(request: NextRequest) {
     await sendUserConfirmation(email, name, adType);
     
     // Log the email for debugging (this will always show in console)
-    console.log('=== NEW ADVERTISING INQUIRY ===');
+    const inquiryType = adType === 'customer-support' ? 'CUSTOMER SUPPORT INQUIRY' : 'ADVERTISING INQUIRY';
+    console.log(`=== NEW ${inquiryType} ===`);
     console.log('Name:', name);
     console.log('Email:', email);
     console.log('Company:', company || 'Not provided');
     console.log('Phone:', phone || 'Not provided');
-    console.log('Ad Type:', adType);
+    console.log('Contact Type:', adType);
     console.log('Message:', message);
     console.log('Submitted:', contactData.created_at);
     console.log('================================');

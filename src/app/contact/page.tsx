@@ -213,7 +213,7 @@ export default function ContactPage() {
 
                 <div>
                   <label htmlFor="adType" className="block text-sm font-medium text-gray-700 mb-2">
-                    Advertising Type *
+                    Contact type *
                   </label>
                   <select
                     id="adType"
@@ -223,7 +223,8 @@ export default function ContactPage() {
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all appearance-none bg-white"
                   >
-                    <option value="">Select advertising type</option>
+                    <option value="">Select contact type</option>
+                    <option value="customer-support">Customer Support</option>
                     <option value="top-position">Top Position (Banner Ad)</option>
                     <option value="product-page">Product Page (Ad)</option>
                     <option value="custom">Custom (Ad)</option>
@@ -242,7 +243,7 @@ export default function ContactPage() {
                     required
                     rows={6}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
-                    placeholder="Tell us about your advertising needs, budget, timeline, and any specific requirements..."
+                    placeholder="Tell us how we can help you..."
                   />
                 </div>
 
