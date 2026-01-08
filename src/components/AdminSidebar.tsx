@@ -47,6 +47,12 @@ const navigation = [
     current: false
   },
   {
+    name: 'Customers',
+    href: '/admin/customers',
+    icon: Users,
+    current: false
+  },
+  {
     name: 'Categories',
     href: '/admin/categories',
     icon: ShoppingBag,
