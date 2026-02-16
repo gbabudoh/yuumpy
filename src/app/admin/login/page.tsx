@@ -32,6 +32,7 @@ export default function AdminLogin() {
         toast.success('Login successful! Redirecting to dashboard...');
         // Store auth token in localStorage
         localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminUser', JSON.stringify(data.user));
         // Redirect to admin dashboard
         router.push('/admin/dashboard');
       } else {

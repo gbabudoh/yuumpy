@@ -48,11 +48,11 @@ export default function ForgotPasswordPage() {
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h1>
               <p className="text-gray-600 mb-6">
-                We've sent a password reset link to <strong>{email}</strong>. 
+                We&apos;ve sent a password reset link to <strong>{email}</strong>. 
                 Please check your email and follow the instructions.
               </p>
               <p className="text-sm text-gray-500 mb-6">
-                Didn't receive the email? Check your spam folder or try again.
+                Didn&apos;t receive the email? Check your spam folder or try again.
               </p>
               <div className="space-y-3">
                 <button
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
               Back to Sign In
             </Link>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Reset Your Password</h1>
-            <p className="text-gray-600 mb-6">Enter your email address and we'll send you a link to reset your password.</p>
+            <p className="text-gray-600 mb-6">Enter your email address and we&apos;ll send you a link to reset your password.</p>
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">{error}</div>

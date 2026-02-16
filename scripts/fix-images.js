@@ -1,4 +1,12 @@
-const mysql = require('mysql2/promise');
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '../.env.local') });
 
 // Database configuration
 const dbConfig = {

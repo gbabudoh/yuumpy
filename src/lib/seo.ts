@@ -34,7 +34,6 @@ export function generateMetadata(seoData: SEOData, defaultTitle?: string): Metad
   } = seoData;
 
   const siteName = 'Yuumpy';
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com';
   
   const finalTitle = title ? `${title} | ${siteName}` : defaultTitle || siteName;
   const finalDescription = description || 'Discover amazing products from our curated collection';
@@ -75,31 +74,50 @@ export function generateMetadata(seoData: SEOData, defaultTitle?: string): Metad
       google: process.env.GOOGLE_SITE_VERIFICATION } };
 }
 
-export function generateStructuredData(type: 'product' | 'organization' | 'breadcrumb', data: any) {
+interface StructuredProductData {
+  name: string;
+  description: string;
+  image_url: string;
+  brand_name?: string;
+  category_name?: string;
+  price: number;
+  is_active: boolean;
+  slug: string;
+  rating?: number;
+  review_count?: number;
+}
+
+interface StructuredBreadcrumbData {
+  items: { name: string; url: string }[];
+}
+
+export function generateStructuredData(type: 'product' | 'organization' | 'breadcrumb', data?: StructuredProductData | StructuredBreadcrumbData) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com';
 
   switch (type) {
-    case 'product':
+    case 'product': {
+      const p = data as StructuredProductData;
       return {
         '@context': 'https://schema.org',
         '@type': 'Product',
-        name: data.name,
-        description: data.description,
-        image: data.image_url,
+        name: p.name,
+        description: p.description,
+        image: p.image_url,
         brand: {
           '@type': 'Brand',
-          name: data.brand_name },
-        category: data.category_name,
+          name: p.brand_name },
+        category: p.category_name,
         offers: {
           '@type': 'Offer',
-          price: data.price,
+          price: p.price,
           priceCurrency: 'GBP',
-          availability: data.is_active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          url: `${baseUrl}/products/${data.slug}` },
-        aggregateRating: data.rating ? {
+          availability: p.is_active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          url: `${baseUrl}/products/${p.slug}` },
+        aggregateRating: p.rating ? {
           '@type': 'AggregateRating',
-          ratingValue: data.rating,
-          reviewCount: data.review_count || 1 } : undefined };
+          ratingValue: p.rating,
+          reviewCount: p.review_count || 1 } : undefined };
+    }
 
     case 'organization':
       return {
@@ -115,15 +133,17 @@ export function generateStructuredData(type: 'product' | 'organization' | 'bread
           process.env.INSTAGRAM_URL,
         ].filter(Boolean) };
 
-    case 'breadcrumb':
+    case 'breadcrumb': {
+      const b = data as StructuredBreadcrumbData;
       return {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
-        itemListElement: data.items.map((item: any, index: number) => ({
+        itemListElement: b.items.map((item, index) => ({
           '@type': 'ListItem',
           position: index + 1,
           name: item.name,
           item: item.url })) };
+    }
 
     default:
       return null;

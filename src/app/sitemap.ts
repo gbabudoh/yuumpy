@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { query } from '@/lib/database';
+import { Category } from '@/types/product';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com';
@@ -17,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.9 },
     {
-      url: `${baseUrl}/categories`,
+      url: `${baseUrl}/products/categories`, // Changed from /categories to /products/categories
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.8 },
@@ -58,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     `;
     const products = await query(productsSql);
 
-    const productPages = Array.isArray(products) ? products.map((product: any) => ({
+    const productPages = Array.isArray(products) ? (products as {slug: string, updated_at: string}[]).map((product) => ({
       url: `${baseUrl}/products/${product.slug}`,
       lastModified: new Date(product.updated_at),
       changeFrequency: 'weekly' as const,
@@ -73,8 +74,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     `;
     const categories = await query(categoriesSql);
 
-    const categoryPages = Array.isArray(categories) ? categories.map((category: any) => ({
-      url: `${baseUrl}/categories/${category.slug}`,
+    const categoryPages = Array.isArray(categories) ? (categories as Category[]).map((category) => ({
+      url: `${baseUrl}/products/${category.slug}`,
       lastModified: new Date(category.updated_at),
       changeFrequency: 'weekly' as const,
       priority: 0.6 })) : [];
@@ -88,7 +89,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     `;
     const pages = await query(pagesSql);
 
-    const customPages = Array.isArray(pages) ? pages.map((page: any) => ({
+    const customPages = Array.isArray(pages) ? (pages as {slug: string, updated_at: string}[]).map((page) => ({
       url: `${baseUrl}/${page.slug}`,
       lastModified: new Date(page.updated_at),
       changeFrequency: 'monthly' as const,

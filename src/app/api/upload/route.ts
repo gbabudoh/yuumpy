@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cloudinary, isCloudinaryConfigured, getCloudinaryStatus } from '@/lib/cloudinary';
 
 // GET handler to check Cloudinary configuration status
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const status = getCloudinaryStatus();
     
@@ -77,12 +77,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      console.error('❌ Invalid file type:', file.type);
+    // Validate file type - be more robust with logging
+    const fileType = file.type || '';
+    const fileName = file.name || '';
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+    
+    console.log(`📁 Validating file: ${fileName} (Type: ${fileType}, Ext: ${fileExtension})`);
+
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
+
+    const isAllowedMimeType = allowedMimeTypes.includes(fileType);
+    const isAllowedExtension = allowedExtensions.includes(fileExtension);
+
+    if (!isAllowedMimeType && !isAllowedExtension) {
+      console.error('❌ Invalid file type/extension:', { type: fileType, ext: fileExtension });
       return NextResponse.json(
-        { error: `Invalid file type: ${file.type}. Only JPEG, PNG, WebP, and GIF images are allowed.` },
+        { 
+          error: `Invalid file type: ${fileType || fileExtension}. Only JPEG, PNG, WebP, AVIF, and GIF images are allowed.`,
+          details: `Detected Type: ${fileType}, Extension: ${fileExtension}`
+        },
         { status: 400 }
       );
     }
@@ -148,7 +162,7 @@ export async function POST(request: NextRequest) {
       ).end(buffer);
     });
 
-    const uploadResult = result as any;
+    const uploadResult = result as { secure_url: string; public_id: string; width: number; height: number; format: string; bytes: number };
 
     return NextResponse.json({
       success: true,

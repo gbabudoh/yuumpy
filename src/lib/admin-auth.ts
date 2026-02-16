@@ -1,13 +1,13 @@
 import bcrypt from 'bcryptjs';
 import { query } from './database';
-import { generateJWT, verifyJWT, generateAdminToken, JWT_CONFIG } from './jwt-config';
+import { verifyJWT, generateAdminToken, JWT_CONFIG } from './jwt-config';
 
 export interface AdminUser {
   id: number;
   username: string;
   email: string;
   password_hash: string;
-  role: 'super_admin' | 'content_admin' | 'product_admin';
+  role: 'super_admin' | 'content_admin' | 'product_admin' | 'basic_admin';
   permissions: {
     can_manage_users: boolean;
     can_manage_products: boolean;
@@ -21,6 +21,8 @@ export interface AdminUser {
     can_manage_settings: boolean;
     can_manage_emails: boolean;
     can_manage_pages: boolean;
+    can_manage_orders: boolean;
+    can_manage_customers: boolean;
   };
   is_active: boolean;
   last_login?: string;
@@ -52,12 +54,12 @@ export function generateToken(userId: number, role: string): string {
 // Verify JWT token
 export function verifyToken(token: string): { userId: number; role: string } | null {
   try {
-    const decoded = verifyJWT(token) as any;
+    const decoded = verifyJWT(token) as { userId: number; role: string; type: string };
     if (!decoded || decoded.type !== JWT_CONFIG.types.ADMIN) {
       return null;
     }
     return { userId: decoded.userId, role: decoded.role };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -159,7 +161,10 @@ export function getRolePermissions(role: string): AdminUser['permissions'] {
     can_manage_seo: false,
     can_manage_settings: false,
     can_manage_emails: false,
-    can_manage_pages: false };
+    can_manage_pages: false,
+    can_manage_orders: false,
+    can_manage_customers: false
+  };
 
   switch (role) {
     case 'super_admin':
@@ -180,6 +185,18 @@ export function getRolePermissions(role: string): AdminUser['permissions'] {
     case 'product_admin':
       // Product admin can only manage products
       permissions.can_manage_products = true;
+      break;
+    
+    case 'basic_admin':
+      // Basic admin can manage products, orders, customers, categories, subcategories, brands, banners
+      permissions.can_manage_products = true;
+      permissions.can_manage_orders = true;
+      permissions.can_manage_customers = true;
+      permissions.can_manage_categories = true;
+      permissions.can_manage_subcategories = true;
+      permissions.can_manage_brands = true;
+      permissions.can_manage_banner_ads = true;
+      permissions.can_manage_product_banner_ads = true;
       break;
   }
 

@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import { ArrowTopRightOnSquareIcon, EyeIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
+import { useCart } from '@/hooks/useCart';
 
 interface Product {
   id: number;
@@ -21,10 +23,17 @@ interface Product {
 interface ProductCardProps {
   product: Product;
   viewMode?: 'grid' | 'list';
-  categoryId?: number;
 }
 
-export default function ProductCard({ product, viewMode = 'grid', categoryId }: ProductCardProps) {
+export default function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
+  const router = useRouter();
+  const { addToCart } = useCart();
+
+  const handleAddToCart = () => {
+    addToCart(product);
+    router.push('/cart');
+  };
+
   const discountPercentage = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
@@ -106,28 +115,35 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
             </div>
           </div>
 
-          {/* Buy Now Button */}
-          <div className="flex-shrink-0">
-            <a
-              href={isDirectSale ? `/checkout/${product.slug}` : product.affiliate_url}
-              target={isDirectSale ? "_self" : "_blank"}
-              rel={isDirectSale ? undefined : "noopener noreferrer"}
-              className="text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center space-x-1 text-sm whitespace-nowrap hover:opacity-90 cursor-pointer"
-              style={{ backgroundColor: isDirectSale ? '#16a34a' : '#8827ee' }}
-              onClick={() => {
-                // Track product click
-                if (typeof window !== 'undefined') {
-                  window.gtag?.('event', 'click', {
-                    event_category: 'product',
-                    event_label: product.name,
-                    value: product.id
-                  });
-                }
-              }}
+          {/* Actions */}
+          <div className="flex-shrink-0 flex flex-col space-y-2">
+            <Link
+              href={`/products/${product.slug}`}
+              className="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-1 text-sm whitespace-nowrap hover:bg-gray-200 cursor-pointer"
             >
-              <span>Buy Now</span>
-              {!isDirectSale && <ArrowTopRightOnSquareIcon className="w-4 h-4 text-white" />}
-            </a>
+              <EyeIcon className="w-4 h-4" />
+              <span>View</span>
+            </Link>
+
+            {isDirectSale ? (
+              <button
+                onClick={handleAddToCart}
+                className="bg-purple-600 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-1 text-sm whitespace-nowrap hover:bg-purple-700 cursor-pointer shadow-sm shadow-purple-100"
+              >
+                <ShoppingCartIcon className="w-4 h-4" />
+                <span>Add to Cart</span>
+              </button>
+            ) : (
+              <a
+                href={product.affiliate_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-amber-500 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-1 text-sm whitespace-nowrap hover:bg-amber-600 cursor-pointer shadow-sm shadow-amber-100"
+              >
+                <span>View Deal</span>
+                <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -136,7 +152,6 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
 
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden group h-full flex flex-col">
-      {/* Product Image */}
       <Link href={`/products/${product.slug}`} className="relative aspect-square overflow-hidden">
         {product.image_url ? (
           <Image
@@ -150,6 +165,13 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
             <span className="text-gray-400 text-sm">No Image</span>
+          </div>
+        )}
+
+        {/* Discount Badge */}
+        {discountPercentage > 0 && (
+          <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shadow-sm z-10 transition-transform group-hover:scale-110">
+            {discountPercentage}% OFF
           </div>
         )}
       </Link>
@@ -177,28 +199,37 @@ export default function ProductCard({ product, viewMode = 'grid', categoryId }: 
           )}
         </div>
 
-        {/* Buy Now Button - Always at bottom */}
-        <div className="mt-auto">
-          <a
-            href={isDirectSale ? `/checkout/${product.slug}` : product.affiliate_url}
-            target={isDirectSale ? "_self" : "_blank"}
-            rel={isDirectSale ? undefined : "noopener noreferrer"}
-            className="w-full text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm hover:opacity-90 cursor-pointer"
-            style={{ backgroundColor: isDirectSale ? '#16a34a' : '#8827ee' }}
-            onClick={() => {
-              // Track product click
-              if (typeof window !== 'undefined') {
-                window.gtag?.('event', 'click', {
-                  event_category: 'product',
-                  event_label: product.name,
-                  value: product.id
-                });
-              }
-            }}
-          >
-            <span>Buy Now</span>
-            {!isDirectSale && <ArrowTopRightOnSquareIcon className="w-3 h-3 sm:w-4 sm:h-4 text-white" />}
-          </a>
+        {/* Actions */}
+        <div className="mt-auto pt-4">
+          <div className="flex flex-col gap-2">
+            <Link
+              href={`/products/${product.slug}`}
+              className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2 text-xs hover:bg-gray-200 cursor-pointer border border-gray-200"
+            >
+              <EyeIcon className="w-4 h-4" />
+              <span>View Product</span>
+            </Link>
+
+            {isDirectSale ? (
+              <button
+                onClick={handleAddToCart}
+                className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2 text-xs hover:bg-purple-700 cursor-pointer shadow-sm shadow-purple-100"
+              >
+                <ShoppingCartIcon className="w-4 h-4" />
+                <span>Add to Cart</span>
+              </button>
+            ) : (
+              <a
+                href={product.affiliate_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-amber-500 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2 text-xs hover:bg-amber-600 cursor-pointer shadow-sm shadow-amber-100"
+              >
+                <span>View Deal</span>
+                <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>

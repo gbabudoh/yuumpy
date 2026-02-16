@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Analytics from "@/components/Analytics";
 import CookieBanner from "@/components/CookieBanner";
+import { CartProvider } from "@/hooks/useCart";
 import { generateMetadata as generateSEOMetadata, generateStructuredData } from "@/lib/seo";
 
 const geistSans = Geist({
@@ -57,9 +58,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Analytics />
-        {children}
-        <CookieBanner />
+        <CartProvider>
+          <Analytics />
+          {children}
+          <CookieBanner />
+        </CartProvider>
       </body>
     </html>
   );

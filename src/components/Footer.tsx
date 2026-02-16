@@ -4,6 +4,19 @@ import Link from 'next/link';
 import { EnvelopeIcon, PhoneIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
 
+interface FooterCategory {
+  id: number;
+  name: string;
+  slug: string;
+  parent_id: number | null;
+  is_active: number;
+}
+
+interface FooterSetting {
+  key_name: string;
+  value: string;
+}
+
 export default function Footer() {
   const [settings, setSettings] = useState({
     homepage_tagline: 'Your premier affiliate marketplace platform. Discover amazing products and earn through our network.',
@@ -18,7 +31,7 @@ export default function Footer() {
     social_linkedin: '#'
   });
 
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<FooterCategory[]>([]);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -31,9 +44,9 @@ export default function Footer() {
         });
         
         if (response.ok) {
-          const settingsData = await response.json();
+          const settingsData: FooterSetting[] = await response.json();
           const settingsMap: { [key: string]: string } = {};
-          settingsData.forEach((setting: any) => {
+          settingsData.forEach((setting) => {
             settingsMap[setting.key_name] = setting.value;
           });
           setSettings(prevSettings => ({
@@ -53,10 +66,10 @@ export default function Footer() {
         });
         
         if (response.ok) {
-          const categoriesData = await response.json();
+          const categoriesData: FooterCategory[] = await response.json();
           // Filter only main categories (parent_id is null) and limit to first 8 for footer display
           const mainCategories = categoriesData
-            .filter((cat: any) => cat.parent_id === null && cat.is_active === 1)
+            .filter((cat) => cat.parent_id === null && cat.is_active === 1)
             .slice(0, 8);
           setCategories(mainCategories);
         }
@@ -170,7 +183,7 @@ export default function Footer() {
                 categories.map((category) => (
                   <li key={category.id}>
                     <Link 
-                      href={`/categories/${category.slug}`} 
+                      href={`/products/${category.slug}`} 
                       className="text-gray-400 hover:text-white transition-colors"
                     >
                       {category.name}

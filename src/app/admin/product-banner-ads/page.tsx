@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Plus, Edit, Calendar, PoundSterling, Eye, EyeOff, Trash2 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
@@ -14,7 +15,7 @@ interface ProductBannerAd {
   start_date?: string;
   end_date?: string;
   expires_at?: string;
-  duration?: string;
+  duration?: '1_week' | '2_weeks' | '3_weeks' | '4_weeks' | '6_months';
   is_repeating?: boolean;
   created_at: string;
 }
@@ -197,7 +198,7 @@ export default function ProductBannerAdsPage() {
     setImagePreview(null);
   };
 
-  const handleEdit = (ad: any) => {
+  const handleEdit = (ad: ProductBannerAd) => {
     try {
       if (!ad) {
         console.error('Product banner ad is null or undefined');
@@ -214,7 +215,7 @@ export default function ProductBannerAdsPage() {
         is_active: ad.is_active !== undefined ? ad.is_active : true,
         start_date: ad.start_date || '',
         end_date: ad.end_date || '',
-        duration: ad.duration || '1_week',
+        duration: (ad.duration as '1_week' | '2_weeks' | '3_weeks' | '4_weeks' | '6_months') || '1_week',
         is_repeating: ad.is_repeating || false
       });
       setImagePreview(ad.image_url || null);
@@ -339,7 +340,7 @@ export default function ProductBannerAdsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm font-medium">This Month</p>
-                <p className="text-3xl font-bold text-gray-900">£1,250</p>
+                <p className="text-3xl font-bold text-gray-900">£0</p>
               </div>
               <div className="bg-purple-100 p-3 rounded-lg">
                 <Calendar className="w-6 h-6 text-purple-600" />
@@ -398,11 +399,14 @@ export default function ProductBannerAdsPage() {
                     <tr key={`product-banner-${ad.id}-${index}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-16 w-16">
-                            <img
-                              className="h-16 w-16 rounded-lg object-cover"
+                          <div className="flex-shrink-0 h-16 w-16 relative">
+                            <Image
+                              className="rounded-lg object-cover"
                               src={ad.image_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI2MDAiIHZpZXdCb3g9IjAgMCAxMjAwIDYwMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iNjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik01NjAgMjAwSDY0MFY0MDBINjAwVjI0MEg1NjBWMjAwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNNTIwIDI0MEg2ODBWMzYwSDY0MFYzMjBINTIwVjI0MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+'}
                               alt={ad.title || 'Product Banner Ad'}
+                              fill
+                              sizes="64px"
+                              unoptimized
                             />
                           </div>
                           <div className="ml-4">
@@ -537,11 +541,14 @@ export default function ProductBannerAdsPage() {
                     {(imagePreview || selectedImage) && (
                       <div className="mt-4">
                         <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
-                        <div className="relative inline-block">
-                          <img
+                        <div className="relative inline-block w-full h-32">
+                          <Image
                             src={imagePreview || (selectedImage ? URL.createObjectURL(selectedImage) : '')}
                             alt="Banner preview"
-                            className="max-w-full h-32 object-cover rounded-lg border border-gray-300"
+                            className="object-cover rounded-lg border border-gray-200"
+                            fill
+                            sizes="(max-width: 768px) 100vw, 800px"
+                            unoptimized
                           />
                         </div>
                       </div>

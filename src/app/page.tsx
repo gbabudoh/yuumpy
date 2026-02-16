@@ -21,6 +21,8 @@ interface Product {
   isFeatured: boolean;
   isBestseller: boolean;
   affiliate_url?: string;
+  purchase_type?: 'affiliate' | 'direct';
+  product_condition?: 'new' | 'refurbished' | 'used';
 }
 
 interface Category {
@@ -48,7 +50,19 @@ export default function Home() {
           const productsData = await productsResponse.json();
           const products = Array.isArray(productsData) ? productsData : (productsData.products || []);
           
-          const mappedProducts = products.map((product: any) => ({
+          const mappedProducts = products.map((product: {
+            id: number;
+            name: string;
+            slug: string;
+            price: string;
+            original_price?: string;
+            image_url: string;
+            is_featured: number | boolean;
+            is_bestseller: number | boolean;
+            affiliate_url?: string;
+            purchase_type?: 'affiliate' | 'direct';
+            product_condition?: 'new' | 'refurbished' | 'used';
+          }) => ({
             id: product.id,
             name: product.name,
             slug: product.slug,
@@ -69,7 +83,16 @@ export default function Home() {
         const categoriesResponse = await fetch('/api/categories?parent_only=true');
         if (categoriesResponse.ok) {
           const categoriesData = await categoriesResponse.json();
-          const mappedCategories = categoriesData.map((category: any) => ({
+          const mappedCategories = categoriesData.map((category: {
+            id: number;
+            name: string;
+            slug: string;
+            description: string;
+            image_url?: string;
+            icon_url?: string;
+            product_count?: number;
+            is_active: number | boolean;
+          }) => ({
             id: category.id,
             name: category.name,
             slug: category.slug,

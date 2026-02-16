@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MagnifyingGlassIcon, ShoppingBagIcon, Bars3Icon, XMarkIcon, TagIcon, BuildingOfficeIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { useCart } from '@/hooks/useCart';
 
 interface SearchSuggestion {
   text: string;
@@ -30,6 +31,7 @@ export default function Header() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { cartCount } = useCart();
 
   // Check customer authentication status
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function Header() {
           const data = await response.json();
           setCustomer(data.customer);
         }
-      } catch (error) {
+      } catch {
         // Not logged in, that's fine
       } finally {
         setIsCheckingAuth(false);
@@ -229,7 +231,7 @@ export default function Header() {
                             className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 text-sm text-gray-600"
                           >
                             <MagnifyingGlassIcon className="w-4 h-4" />
-                            <span>Search for "{searchQuery}"</span>
+                            <span>Search for &quot;{searchQuery}&quot;</span>
                           </button>
                         </div>
                       </div>
@@ -240,7 +242,7 @@ export default function Header() {
                           onClick={handleSearch}
                           className="block w-full mt-2 px-3 py-1 text-sm text-purple-600 hover:text-purple-700"
                         >
-                          Search for "{searchQuery}"
+                          Search for &quot;{searchQuery}&quot;
                         </button>
                       </div>
                     ) : null}
@@ -273,6 +275,19 @@ export default function Header() {
                 </Link>
               )}
             </div>
+
+            {/* Cart Icon */}
+            <Link
+              href="/cart"
+              className="relative p-2 text-gray-700 hover:text-purple-600 transition-colors"
+            >
+              <ShoppingBagIcon className="w-6 h-6" />
+              {cartCount > 0 && (
+                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-purple-600 rounded-full">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
 
             {/* Mobile Menu Button */}
             <button
@@ -351,7 +366,7 @@ export default function Header() {
                             className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 text-sm text-gray-600"
                           >
                             <MagnifyingGlassIcon className="w-4 h-4" />
-                            <span>Search for "{searchQuery}"</span>
+                            <span>Search for &quot;{searchQuery}&quot;</span>
                           </button>
                         </div>
                       </div>
@@ -362,7 +377,7 @@ export default function Header() {
                           onClick={handleSearch}
                           className="block w-full mt-2 px-3 py-1 text-sm text-purple-600 hover:text-purple-700"
                         >
-                          Search for "{searchQuery}"
+                          Search for &quot;{searchQuery}&quot;
                         </button>
                       </div>
                     ) : null}

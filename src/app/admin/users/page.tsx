@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, UserPlus, Shield, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Edit, UserPlus, Shield, Eye, EyeOff, Trash2 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
 interface AdminUser {
   id: number;
   username: string;
   email: string;
-  role: 'super_admin' | 'content_admin' | 'product_admin';
+  role: 'super_admin' | 'content_admin' | 'product_admin' | 'basic_admin';
   permissions: {
     can_manage_users: boolean;
     can_manage_products: boolean;
@@ -22,6 +22,8 @@ interface AdminUser {
     can_manage_settings: boolean;
     can_manage_emails: boolean;
     can_manage_pages: boolean;
+    can_manage_orders: boolean;
+    can_manage_customers: boolean;
   };
   is_active: boolean;
   last_login?: string;
@@ -32,13 +34,15 @@ interface AdminUser {
 const ROLE_LABELS = {
   super_admin: 'Super Admin',
   content_admin: 'Content Admin',
-  product_admin: 'Product Admin'
+  product_admin: 'Product Admin',
+  basic_admin: 'Basic Admin'
 };
 
 const ROLE_DESCRIPTIONS = {
   super_admin: 'Full access to all admin features',
   content_admin: 'Can manage products, categories, subcategories, and brands',
-  product_admin: 'Can only manage products'
+  product_admin: 'Can only manage products',
+  basic_admin: 'Can manage products, orders, customers, and content'
 };
 
 export default function AdminUsersPage() {
@@ -50,7 +54,7 @@ export default function AdminUsersPage() {
     username: '',
     email: '',
     password: '',
-    role: 'content_admin' as 'super_admin' | 'content_admin' | 'product_admin' });
+    role: 'content_admin' as AdminUser['role'] });
 
   useEffect(() => {
     fetchUsers();
@@ -278,8 +282,8 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4">
                       <div className="text-xs text-gray-600">
                         {Object.entries(user.permissions)
-                          .filter(([_, hasPermission]) => hasPermission)
-                          .map(([permission, _]) => permission.replace('can_manage_', ''))
+                          .filter(([, hasPermission]) => hasPermission)
+                          .map(([permission]) => permission.replace('can_manage_', ''))
                           .join(', ')}
                       </div>
                     </td>
@@ -384,11 +388,12 @@ export default function AdminUsersPage() {
                   </label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminUser['role'] })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="content_admin">Content Admin</option>
                     <option value="product_admin">Product Admin</option>
+                    <option value="basic_admin">Basic Admin</option>
                     <option value="super_admin">Super Admin</option>
                   </select>
                 </div>
@@ -448,11 +453,12 @@ export default function AdminUsersPage() {
                   </label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminUser['role'] })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="content_admin">Content Admin</option>
                     <option value="product_admin">Product Admin</option>
+                    <option value="basic_admin">Basic Admin</option>
                     <option value="super_admin">Super Admin</option>
                   </select>
                 </div>

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ResultSetHeader } from 'mysql2';
 import { query } from '@/lib/database';
 import { hashPassword, getRolePermissions } from '@/lib/admin-auth';
 
 // Get all admin users
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const sql = `
       SELECT 
@@ -51,10 +52,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role
-    const validRoles = ['super_admin', 'content_admin', 'product_admin'];
+    const validRoles = ['super_admin', 'content_admin', 'product_admin', 'basic_admin'];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
-        { error: 'Invalid role. Must be super_admin, content_admin, or product_admin' },
+        { error: 'Invalid role. Must be super_admin, content_admin, product_admin, or basic_admin' },
         { status: 400 }
       );
     }
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Admin user created successfully',
-      userId: Array.isArray(result) ? (result as any)[0]?.insertId : (result as any)?.insertId
+      userId: (result as ResultSetHeader).insertId
     });
 
   } catch (error) {
@@ -115,8 +116,7 @@ export async function PUT(request: NextRequest) {
       username,
       email,
       role,
-      is_active,
-      updated_by
+      is_active
     } = body;
 
     if (!id) {
@@ -128,10 +128,10 @@ export async function PUT(request: NextRequest) {
 
     // Validate role if provided
     if (role) {
-      const validRoles = ['super_admin', 'content_admin', 'product_admin'];
+      const validRoles = ['super_admin', 'content_admin', 'product_admin', 'basic_admin'];
       if (!validRoles.includes(role)) {
         return NextResponse.json(
-          { error: 'Invalid role. Must be super_admin, content_admin, or product_admin' },
+          { error: 'Invalid role. Must be super_admin, content_admin, product_admin, or basic_admin' },
           { status: 400 }
         );
       }

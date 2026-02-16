@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken, verifyAdminSession } from '@/lib/admin-auth';
+import { verifyToken, verifyAdminSession, AdminUser } from '@/lib/admin-auth';
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
     id: number;
     username: string;
     role: string;
-    permissions: any;
+    permissions: AdminUser['permissions'];
   };
 }
 
@@ -81,16 +81,16 @@ export async function withAuth(
 }
 
 // Helper function to check if user has specific permission
-export function hasPermission(user: any, permission: string): boolean {
+export function hasPermission(user: { permissions?: AdminUser['permissions'] } | null | undefined, permission: keyof AdminUser['permissions']): boolean {
   return user?.permissions?.[permission] === true;
 }
 
 // Helper function to check if user has any of the specified permissions
-export function hasAnyPermission(user: any, permissions: string[]): boolean {
+export function hasAnyPermission(user: { permissions?: AdminUser['permissions'] } | null | undefined, permissions: (keyof AdminUser['permissions'])[]): boolean {
   return permissions.some(permission => user?.permissions?.[permission] === true);
 }
 
 // Helper function to check if user has all of the specified permissions
-export function hasAllPermissions(user: any, permissions: string[]): boolean {
+export function hasAllPermissions(user: { permissions?: AdminUser['permissions'] } | null | undefined, permissions: (keyof AdminUser['permissions'])[]): boolean {
   return permissions.every(permission => user?.permissions?.[permission] === true);
 }

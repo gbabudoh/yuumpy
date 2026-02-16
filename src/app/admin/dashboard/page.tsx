@@ -70,12 +70,12 @@ export default function AdminDashboard() {
           totalProducts: productsData.pagination?.total || productsData.products?.length || 0,
           totalCategories: categories.length || 0,
           totalBrands: brands.length || 0,
-          totalRevenue: 12450.75,
-          totalViews: 8942,
-          totalClicks: 1247,
-          totalBannerAds: 12,
-          totalEmails: 24,
-          newEmails: 3
+          totalRevenue: 0,
+          totalViews: 0,
+          totalClicks: 0,
+          totalBannerAds: 0,
+          totalEmails: 0,
+          newEmails: 0
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -131,9 +131,9 @@ export default function AdminDashboard() {
               </div>
               <Package className="w-8 h-8 text-blue-600" />
             </div>
-            <div className="mt-4 flex items-center text-sm text-green-600">
+            <div className="mt-4 flex items-center text-sm text-gray-500">
               <TrendingUp className="w-4 h-4 mr-1" />
-              <span>+12% this month</span>
+              <span>0% this month</span>
             </div>
           </div>
 
@@ -145,9 +145,9 @@ export default function AdminDashboard() {
               </div>
               <DollarSign className="w-8 h-8 text-green-600" />
             </div>
-            <div className="mt-4 flex items-center text-sm text-green-600">
+            <div className="mt-4 flex items-center text-sm text-gray-500">
               <TrendingUp className="w-4 h-4 mr-1" />
-              <span>+8% this month</span>
+              <span>0% this month</span>
             </div>
           </div>
 
@@ -159,9 +159,9 @@ export default function AdminDashboard() {
               </div>
               <Eye className="w-8 h-8 text-purple-600" />
             </div>
-            <div className="mt-4 flex items-center text-sm text-green-600">
+            <div className="mt-4 flex items-center text-sm text-gray-500">
               <TrendingUp className="w-4 h-4 mr-1" />
-              <span>+15% this month</span>
+              <span>0% this month</span>
             </div>
           </div>
 
@@ -173,9 +173,9 @@ export default function AdminDashboard() {
               </div>
               <MousePointer className="w-8 h-8 text-orange-600" />
             </div>
-            <div className="mt-4 flex items-center text-sm text-green-600">
+            <div className="mt-4 flex items-center text-sm text-gray-500">
               <TrendingUp className="w-4 h-4 mr-1" />
-              <span>+22% this month</span>
+              <span>0% this month</span>
             </div>
           </div>
         </div>
@@ -329,19 +329,19 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-gray-600">Conversion Rate</p>
-                    <p className="font-semibold text-green-600">3.2%</p>
+                    <p className="font-semibold text-gray-400">0.0%</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Avg. Order Value</p>
-                    <p className="font-semibold text-blue-600">£45.50</p>
+                    <p className="font-semibold text-gray-400">£0.00</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Click-through Rate</p>
-                    <p className="font-semibold text-purple-600">13.9%</p>
+                    <p className="font-semibold text-gray-400">0.0%</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Revenue per Click</p>
-                    <p className="font-semibold text-orange-600">£10.00</p>
+                    <p className="font-semibold text-gray-400">£0.00</p>
                   </div>
                 </div>
               </div>
@@ -351,19 +351,19 @@ export default function AdminDashboard() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Electronics</span>
-                    <span className="font-semibold">45% of clicks</span>
+                    <span className="font-semibold text-gray-400">0%</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Fashion</span>
-                    <span className="font-semibold">32% of clicks</span>
+                    <span className="font-semibold text-gray-400">0%</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Household</span>
-                    <span className="font-semibold">15% of clicks</span>
+                    <span className="font-semibold text-gray-400">0%</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Cosmetics</span>
-                    <span className="font-semibold">8% of clicks</span>
+                    <span className="font-semibold text-gray-400">0%</span>
                   </div>
                 </div>
               </div>

@@ -90,7 +90,7 @@ export default function SettingsPage() {
       <div className="p-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Site Settings</h1>
-          <p className="text-gray-600">Manage your site's content and configuration</p>
+          <p className="text-gray-600">Manage your site&apos;s content and configuration</p>
         </div>
 
         {/* Settings Grid */}
@@ -106,7 +106,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Site Content</h2>
-                  <p className="text-sm text-gray-600">Manage your site's main content and messaging</p>
+                  <p className="text-sm text-gray-600">Manage your site&apos;s main content and messaging</p>
                 </div>
               </div>
             </div>

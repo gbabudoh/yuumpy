@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MagnifyingGlassIcon, FunnelIcon, Squares2X2Icon, ListBulletIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Header from '@/components/Header';
@@ -57,49 +57,7 @@ function ProductsPageContent() {
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Handle category checkbox changes
-  const handleCategoryChange = (categorySlug: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCategories([...selectedCategories, categorySlug]);
-    } else {
-      setSelectedCategories(selectedCategories.filter(slug => slug !== categorySlug));
-    }
-  };
-
-  useEffect(() => {
-    // Initialize search term from URL parameters
-    const searchParam = searchParams?.get('search');
-    if (searchParam) {
-      setSearchTerm(searchParam);
-    } else {
-      // Only fetch products if no search param (otherwise the other useEffect will handle it)
-      fetchProducts();
-    }
-    fetchCategories();
-    fetchBrands();
-  }, [searchParams]);
-
-  // Handle search param changes
-  useEffect(() => {
-    const searchParam = searchParams?.get('search');
-    const filterParam = searchParams?.get('filter');
-    
-    if (searchParam !== searchTerm) {
-      setSearchTerm(searchParam || '');
-    }
-    
-    // Handle filter parameter (e.g., filter=bestsellers)
-    if (filterParam === 'bestsellers') {
-      setSortBy('bestseller');
-    }
-  }, [searchParams, searchTerm]);
-
-  // Refetch products when filters change
-  useEffect(() => {
-    fetchProducts();
-  }, [searchTerm, selectedCategories, selectedBrands, selectedConditions, priceRange, sortBy]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -126,9 +84,9 @@ function ProductsPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, selectedCategories, selectedBrands, priceRange.min, priceRange.max, sortBy]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch('/api/categories');
       if (response.ok) {
@@ -138,9 +96,9 @@ function ProductsPageContent() {
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  };
+  }, []);
 
-  const fetchBrands = async () => {
+  const fetchBrands = useCallback(async () => {
     try {
       const response = await fetch('/api/brands');
       if (response.ok) {
@@ -150,7 +108,49 @@ function ProductsPageContent() {
     } catch (error) {
       console.error('Error fetching brands:', error);
     }
+  }, []);
+
+  // Handle category checkbox changes
+  const handleCategoryChange = (categorySlug: string, checked: boolean) => {
+    if (checked) {
+      setSelectedCategories([...selectedCategories, categorySlug]);
+    } else {
+      setSelectedCategories(selectedCategories.filter(slug => slug !== categorySlug));
+    }
   };
+
+  useEffect(() => {
+    // Initialize search term from URL parameters
+    const searchParam = searchParams?.get('search');
+    if (searchParam) {
+      setSearchTerm(searchParam);
+    } else {
+      // Only fetch products if no search param (otherwise the other useEffect will handle it)
+      fetchProducts();
+    }
+    fetchCategories();
+    fetchBrands();
+  }, [searchParams, fetchProducts, fetchCategories, fetchBrands]);
+
+  // Handle search param changes
+  useEffect(() => {
+    const searchParam = searchParams?.get('search');
+    const filterParam = searchParams?.get('filter');
+    
+    if (searchParam !== searchTerm) {
+      setSearchTerm(searchParam || '');
+    }
+    
+    // Handle filter parameter (e.g., filter=bestsellers)
+    if (filterParam === 'bestsellers') {
+      setSortBy('bestseller');
+    }
+  }, [searchParams, searchTerm]);
+
+  // Refetch products when filters change (controlled by fetchProducts dependency stability)
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   // Filter products by condition (client-side) and sort
   const filteredProducts = selectedConditions.length > 0
@@ -225,7 +225,7 @@ function ProductsPageContent() {
                   url.searchParams.delete('search');
                   window.history.replaceState({}, '', url.toString());
                 }}
-                className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center space-x-1"
+                className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center space-x-1 cursor-pointer"
               >
                 <span>Clear search</span>
                 <XMarkIcon className="w-4 h-4" />
@@ -243,7 +243,7 @@ function ProductsPageContent() {
                 <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
                 <button
                   onClick={() => setShowMobileFilters(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   <XMarkIcon className="w-6 h-6" />
                 </button>
@@ -269,14 +269,14 @@ function ProductsPageContent() {
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Categories</h3>
                 <div className="space-y-2">
                   {Array.isArray(categories) && categories.map((category) => (
-                    <label key={category.id} className="flex items-center">
+                    <label key={category.id} className="flex items-center cursor-pointer group">
                       <input
                         type="checkbox"
                         checked={selectedCategories.includes(category.slug)}
                         onChange={(e) => handleCategoryChange(category.slug, e.target.checked)}
-                        className="mr-3 text-blue-600 focus:ring-blue-500"
+                        className="mr-3 text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-gray-700 group-hover:text-purple-600 transition-colors">
                         {category.name} ({category.product_count})
                       </span>
                     </label>
@@ -316,14 +316,14 @@ function ProductsPageContent() {
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Popular Brands</h3>
                 <div className="space-y-2">
                   {Array.isArray(brands) && brands.map((brand) => (
-                    <label key={brand.id} className="flex items-center">
+                    <label key={brand.id} className="flex items-center cursor-pointer group">
                       <input
                         type="checkbox"
                         checked={selectedBrands.includes(brand.slug)}
                         onChange={() => handleBrandToggle(brand.slug)}
-                        className="mr-3 text-blue-600 focus:ring-blue-500 rounded"
+                        className="mr-3 text-blue-600 focus:ring-blue-500 rounded cursor-pointer"
                       />
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-gray-700 group-hover:text-purple-600 transition-colors">
                         {brand.name} ({brand.product_count || 0})
                       </span>
                     </label>
@@ -336,14 +336,15 @@ function ProductsPageContent() {
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Features</h3>
                 <div className="space-y-2">
                   {features.map((feature) => (
-                    <label key={feature} className="flex items-center">
+                    <label key={feature} className="flex items-center cursor-pointer group">
                       <input
                         type="checkbox"
                         checked={selectedFeatures.includes(feature)}
                         onChange={() => handleFeatureToggle(feature)}
-                        className="mr-3 text-blue-600 focus:ring-blue-500 rounded"
+                        className="mr-3 text-blue-600 focus:ring-blue-500 rounded cursor-pointer"
                       />
-                      <span className="text-sm text-gray-700">{feature}</span>
+                      <span className="text-sm text-gray-700 group-hover:text-purple-600 transition-colors">
+                        {feature}</span>
                     </label>
                   ))}
                 </div>
@@ -354,7 +355,7 @@ function ProductsPageContent() {
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Product Condition</h3>
                 <div className="space-y-2">
                   {['new', 'refurbished', 'used'].map((condition) => (
-                    <label key={condition} className="flex items-center">
+                    <label key={condition} className="flex items-center cursor-pointer group">
                       <input
                         type="checkbox"
                         checked={selectedConditions.includes(condition)}
@@ -365,9 +366,9 @@ function ProductsPageContent() {
                             setSelectedConditions(selectedConditions.filter(c => c !== condition));
                           }
                         }}
-                        className="mr-3 text-blue-600 focus:ring-blue-500 rounded"
+                        className="mr-3 text-blue-600 focus:ring-blue-500 rounded cursor-pointer"
                       />
-                      <span className="text-sm text-gray-700 capitalize">{condition}</span>
+                      <span className="text-sm text-gray-700 capitalize group-hover:text-purple-600 transition-colors">{condition}</span>
                     </label>
                   ))}
                 </div>
@@ -376,7 +377,7 @@ function ProductsPageContent() {
               {/* Clear Filters */}
               <button
                 onClick={clearFilters}
-                className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium cursor-pointer"
               >
                 Clear All Filters
               </button>
@@ -392,7 +393,7 @@ function ProductsPageContent() {
                 {/* Mobile Filter Button */}
                 <button
                   onClick={() => setShowMobileFilters(true)}
-                  className="lg:hidden flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50"
+                  className="lg:hidden flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 cursor-pointer"
                 >
                   <FunnelIcon className="w-4 h-4" />
                   <span>Filters</span>
@@ -410,7 +411,7 @@ function ProductsPageContent() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-fit"
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-fit cursor-pointer"
                   >
                     <option value="name">Sort by Name</option>
                     <option value="price-low">Price: Low to High</option>
@@ -425,14 +426,14 @@ function ProductsPageContent() {
                 <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 ${viewMode === 'grid' ? 'text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                    className={`p-2 cursor-pointer ${viewMode === 'grid' ? 'text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                     style={viewMode === 'grid' ? { backgroundColor: '#8827ee' } : {}}
                   >
                     <Squares2X2Icon className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 ${viewMode === 'list' ? 'text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                    className={`p-2 cursor-pointer ${viewMode === 'list' ? 'text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                     style={viewMode === 'list' ? { backgroundColor: '#8827ee' } : {}}
                   >
                     <ListBulletIcon className="w-4 h-4" />
@@ -492,8 +493,8 @@ function ProductsPageContent() {
                       isFeatured: Boolean(product.is_featured),
                       isBestseller: Boolean(product.is_bestseller),
                       affiliate_url: product.affiliate_url,
-                      purchase_type: (product as any).purchase_type,
-                      product_condition: (product as any).product_condition
+                      purchase_type: product.purchase_type,
+                      product_condition: product.product_condition
                     }} 
                   />
                 ))}
@@ -512,7 +513,7 @@ function ProductsPageContent() {
                   <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
                   <button
                     onClick={() => setShowMobileFilters(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 cursor-pointer"
                   >
                     <XMarkIcon className="w-6 h-6" />
                   </button>
@@ -538,14 +539,14 @@ function ProductsPageContent() {
                   <h3 className="text-sm font-semibold text-gray-900 mb-3">Categories</h3>
                   <div className="space-y-2">
                       {Array.isArray(categories) && categories.map((category) => (
-                        <label key={category.id} className="flex items-center">
+                        <label key={category.id} className="flex items-center cursor-pointer group">
                           <input
                             type="checkbox"
                             checked={selectedCategories.includes(category.slug)}
                             onChange={(e) => handleCategoryChange(category.slug, e.target.checked)}
-                            className="mr-3 text-blue-600 focus:ring-blue-500"
+                            className="mr-3 text-blue-600 focus:ring-blue-500 cursor-pointer"
                           />
-                          <span className="text-sm text-gray-700">
+                          <span className="text-sm text-gray-700 group-hover:text-purple-600 transition-colors">
                             {category.name} ({category.product_count})
                           </span>
                         </label>
@@ -585,14 +586,14 @@ function ProductsPageContent() {
                   <h3 className="text-sm font-semibold text-gray-900 mb-3">Popular Brands</h3>
                   <div className="space-y-2">
                     {Array.isArray(brands) && brands.map((brand) => (
-                      <label key={brand.id} className="flex items-center">
+                      <label key={brand.id} className="flex items-center cursor-pointer group">
                         <input
                           type="checkbox"
                           checked={selectedBrands.includes(brand.slug)}
                           onChange={() => handleBrandToggle(brand.slug)}
-                          className="mr-3 text-blue-600 focus:ring-blue-500 rounded"
+                          className="mr-3 text-blue-600 focus:ring-blue-500 rounded cursor-pointer"
                         />
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-700 group-hover:text-purple-600 transition-colors">
                           {brand.name} ({brand.product_count || 0})
                         </span>
                       </label>
@@ -605,14 +606,14 @@ function ProductsPageContent() {
                   <h3 className="text-sm font-semibold text-gray-900 mb-3">Features</h3>
                   <div className="space-y-2">
                     {features.map((feature) => (
-                      <label key={feature} className="flex items-center">
+                      <label key={feature} className="flex items-center cursor-pointer group">
                         <input
                           type="checkbox"
                           checked={selectedFeatures.includes(feature)}
                           onChange={() => handleFeatureToggle(feature)}
-                          className="mr-3 text-blue-600 focus:ring-blue-500 rounded"
+                          className="mr-3 text-blue-600 focus:ring-blue-500 rounded cursor-pointer"
                         />
-                        <span className="text-sm text-gray-700">{feature}</span>
+                        <span className="text-sm text-gray-700 group-hover:text-purple-600 transition-colors">{feature}</span>
                       </label>
                     ))}
                   </div>
@@ -621,7 +622,7 @@ function ProductsPageContent() {
                 {/* Clear Filters */}
                 <button
                   onClick={clearFilters}
-                  className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                  className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium cursor-pointer"
                 >
                   Clear All Filters
                 </button>
