@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 interface ProductImageGalleryProps {
@@ -14,6 +14,14 @@ export default function ProductImageGallery({ images, productName }: ProductImag
   // Ensure we have at least one image
   const displayImages = images.length > 0 ? images : ['https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600'];
 
+  // Reset selected image when images prop changes
+  useEffect(() => {
+    setSelectedImage(0);
+  }, [images]);
+
+  // Handle case where selected image index might be out of bounds after image update
+  const currentImageIndex = selectedImage < displayImages.length ? selectedImage : 0;
+
   return (
     <div className="flex flex-col md:flex-row gap-4">
       {/* Thumbnail Gallery - Vertical on Desktop, Hidden on Mobile */}
@@ -24,7 +32,7 @@ export default function ProductImageGallery({ images, productName }: ProductImag
               key={index}
               onClick={() => setSelectedImage(index)}
               className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                selectedImage === index
+                currentImageIndex === index
                   ? 'border-blue-600 shadow-md'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
@@ -46,7 +54,7 @@ export default function ProductImageGallery({ images, productName }: ProductImag
         {/* Main Image */}
         <div className="aspect-square bg-white rounded-xl shadow-lg overflow-hidden">
           <Image
-            src={displayImages[selectedImage]}
+            src={displayImages[currentImageIndex]}
             alt={productName}
             width={600}
             height={600}
@@ -63,7 +71,7 @@ export default function ProductImageGallery({ images, productName }: ProductImag
                 key={index}
                 onClick={() => setSelectedImage(index)}
                 className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                  selectedImage === index
+                  currentImageIndex === index
                     ? 'border-blue-600 shadow-md'
                     : 'border-gray-200'
                 }`}

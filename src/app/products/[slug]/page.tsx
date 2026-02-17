@@ -24,7 +24,34 @@ async function getProduct(slug: string): Promise<Product | null> {
       WHERE p.slug = ? AND p.is_active = 1
     `;
     const result = await query(sql, [slug]);
-    return Array.isArray(result) && result.length > 0 ? (result[0] as Product) : null;
+    if (!Array.isArray(result) || result.length === 0) return null;
+
+    const product = result[0] as Product;
+
+    // Fetch colour variations
+    try {
+      const variationRows = await query(
+        'SELECT * FROM product_variations WHERE product_id = ? ORDER BY sort_order ASC, id ASC',
+        [product.id]
+      );
+      if (Array.isArray(variationRows) && variationRows.length > 0) {
+        product.variations = variationRows.map((v: Record<string, unknown>) => ({
+          id: v.id as number,
+          product_id: v.product_id as number,
+          colour_name: v.colour_name as string,
+          colour_hex: (v.colour_hex as string) || null,
+          main_image_url: (v.main_image_url as string) || null,
+          gallery_images: v.gallery_images
+            ? (typeof v.gallery_images === 'string' ? JSON.parse(v.gallery_images) : v.gallery_images as string[])
+            : [],
+          sort_order: (v.sort_order as number) || 0,
+        }));
+      }
+    } catch {
+      // Table may not exist yet
+    }
+
+    return product;
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;

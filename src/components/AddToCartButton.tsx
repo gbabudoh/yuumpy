@@ -3,41 +3,62 @@
 import { ShoppingCartIcon, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/hooks/useCart';
-
-interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  price: number;
-  original_price?: number;
-  image_url: string;
-  purchase_type?: 'affiliate' | 'direct';
-  product_condition?: 'new' | 'refurbished' | 'used';
-  stock_quantity?: number;
-  affiliate_url?: string;
-}
+import { Product, ColorOption } from '@/types/product';
 
 interface AddToCartButtonProps {
   product: Product;
   isDirectSale: boolean;
+  selectedColors?: string[];
 }
 
-export default function AddToCartButton({ product, isDirectSale }: AddToCartButtonProps) {
+export default function AddToCartButton({ product, isDirectSale, selectedColors }: AddToCartButtonProps) {
   const router = useRouter();
   const { addToCart } = useCart();
 
   const handleAddToCart = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      price: Number(product.price),
-      originalPrice: product.original_price ? Number(product.original_price) : undefined,
-      image_url: product.image_url,
-      purchase_type: product.purchase_type,
-      product_condition: product.product_condition,
-      affiliate_url: product.affiliate_url
-    });
+    if (selectedColors && selectedColors.length > 0) {
+      // Parse colors to find specific images
+      let productColors: (string | ColorOption)[] = [];
+      try {
+        const parsed = typeof product.colors === 'string' ? JSON.parse(product.colors) : product.colors;
+        productColors = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.error('Failed to parse colors in AddToCartButton:', e);
+      }
+
+      // Add each selected color as a separate item
+      selectedColors.forEach(colorName => {
+        const colorOption = productColors.find(c => (typeof c === 'string' ? c : c.name) === colorName);
+        const colorImageUrl = typeof colorOption === 'object' && colorOption !== null && 'image_url' in colorOption ? colorOption.image_url : undefined;
+
+        addToCart({
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          price: Number(product.price),
+          originalPrice: product.original_price ? Number(product.original_price) : undefined,
+          image_url: product.image_url,
+          purchase_type: product.purchase_type,
+          product_condition: product.product_condition,
+          affiliate_url: product.affiliate_url,
+          color: colorName,
+          color_image: colorImageUrl
+        });
+      });
+    } else {
+      // Default behavior if no colors selected or available
+      addToCart({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: Number(product.price),
+        originalPrice: product.original_price ? Number(product.original_price) : undefined,
+        image_url: product.image_url,
+        purchase_type: product.purchase_type,
+        product_condition: product.product_condition,
+        affiliate_url: product.affiliate_url,
+      });
+    }
     router.push('/cart');
   };
 

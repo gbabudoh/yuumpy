@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS products (
   banner_ad_start_date DATETIME,
   banner_ad_end_date DATETIME,
   banner_ad_is_active BOOLEAN DEFAULT FALSE,
+  colors JSON DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,

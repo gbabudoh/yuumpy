@@ -1,3 +1,19 @@
+export interface ColorOption {
+  name: string;
+  image_url?: string;
+  gallery?: string[] | string;
+}
+
+export interface ProductVariation {
+  id: number;
+  product_id: number;
+  colour_name: string;
+  colour_hex: string | null;
+  main_image_url: string | null;
+  gallery_images: string[];
+  sort_order: number;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -16,6 +32,7 @@ export interface Product {
   stock_quantity?: number;
   image_url: string;
   gallery?: string | string[];
+  colors?: string | string[] | ColorOption[];
   category_name: string;
   category_slug: string;
   brand_name?: string;
@@ -43,6 +60,7 @@ export interface Product {
   banner_ad_start_date?: string;
   banner_ad_end_date?: string;
   banner_ad_is_active?: boolean;
+  variations?: ProductVariation[];
 }
 
 export interface ProductSEO {

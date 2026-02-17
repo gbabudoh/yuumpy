@@ -1,9 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { Plus, Edit, Package, Filter, Search, Trash2 } from 'lucide-react';
+import { Plus, Edit, Package, Filter, Search, Trash2, ChevronDown, Upload, X } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
+
+declare global {
+  interface Window {
+    allCategories: Category[];
+  }
+}
+
+interface ColorOption {
+  name: string;
+  image_url?: string;
+  gallery?: string[] | string;
+}
 
 interface Product {
   id: number;
@@ -23,6 +35,7 @@ interface Product {
   stock_quantity?: number;
   image_url: string;
   gallery?: string[];
+  colors?: string | string[] | ColorOption[] | null;
   category_name: string;
   category_id?: number;
   subcategory_id?: number;
@@ -58,6 +71,45 @@ interface Brand {
   name: string;
 }
 
+interface VariationForm {
+  id?: number;
+  colour_name: string;
+  colour_hex: string;
+  main_image_url: string;
+  gallery_images: string[];
+  main_image_file: File | null;
+  gallery_files: File[];
+  saved: boolean;
+  saving: boolean;
+}
+
+const PREDEFINED_COLOURS = [
+  { name: 'Black', hex: '#000000' },
+  { name: 'White', hex: '#FFFFFF' },
+  { name: 'Red', hex: '#EF4444' },
+  { name: 'Blue', hex: '#3B82F6' },
+  { name: 'Green', hex: '#22C55E' },
+  { name: 'Yellow', hex: '#EAB308' },
+  { name: 'Orange', hex: '#F97316' },
+  { name: 'Purple', hex: '#A855F7' },
+  { name: 'Pink', hex: '#EC4899' },
+  { name: 'Grey', hex: '#6B7280' },
+  { name: 'Silver', hex: '#C0C0C0' },
+  { name: 'Gold', hex: '#FFD700' },
+  { name: 'Navy', hex: '#1E3A5F' },
+  { name: 'Teal', hex: '#14B8A6' },
+  { name: 'Brown', hex: '#92400E' },
+  { name: 'Beige', hex: '#D2B48C' },
+  { name: 'Coral', hex: '#FF7F50' },
+  { name: 'Mint', hex: '#98FF98' },
+  { name: 'Lavender', hex: '#E6E6FA' },
+  { name: 'Burgundy', hex: '#800020' },
+  { name: 'Rose Gold', hex: '#B76E79' },
+  { name: 'Space Grey', hex: '#4A4A4A' },
+  { name: 'Midnight', hex: '#191970' },
+  { name: 'Cream', hex: '#FFFDD0' },
+];
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -81,6 +133,7 @@ export default function ProductsPage() {
     purchase_type: 'affiliate' as 'affiliate' | 'direct',
     product_condition: 'new' as 'new' | 'refurbished' | 'used',
     stock_quantity: '',
+    colors: [] as ColorOption[],
     main_category_id: '',
     category_id: '',
     subcategory_id: '',
@@ -108,6 +161,169 @@ export default function ProductsPage() {
   const [uploading, setUploading] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<File[]>([]);
+
+  // Colour Variations State
+  const [variations, setVariations] = useState<VariationForm[]>([]);
+
+  const addVariation = () => {
+    setVariations(prev => [...prev, {
+      colour_name: '',
+      colour_hex: '',
+      main_image_url: '',
+      gallery_images: [],
+      main_image_file: null,
+      gallery_files: [],
+      saved: false,
+      saving: false,
+    }]);
+  };
+
+  const removeVariation = (index: number) => {
+    setVariations(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateVariation = (index: number, updates: Partial<VariationForm>) => {
+    setVariations(prev => prev.map((v, i) => i === index ? { ...v, ...updates } : v));
+  };
+
+  const handleVariationColourSelect = (index: number, colourName: string) => {
+    const colour = PREDEFINED_COLOURS.find(c => c.name === colourName);
+    updateVariation(index, {
+      colour_name: colourName,
+      colour_hex: colour?.hex || '',
+    });
+  };
+
+  const handleVariationMainImage = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+      if (file.size > 5 * 1024 * 1024) { alert('Image size should be less than 5MB'); return; }
+      updateVariation(index, { main_image_file: file, main_image_url: URL.createObjectURL(file) });
+    }
+  };
+
+  const handleVariationGalleryImages = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const valid = files.filter(f => {
+      if (!f.type.startsWith('image/')) return false;
+      if (f.size > 5 * 1024 * 1024) return false;
+      return true;
+    });
+    if (valid.length > 0) {
+      const current = variations[index];
+      updateVariation(index, {
+        gallery_files: [...current.gallery_files, ...valid],
+        gallery_images: [...current.gallery_images, ...valid.map(f => URL.createObjectURL(f))],
+      });
+    }
+  };
+
+  const removeVariationGalleryImage = (varIndex: number, imgIndex: number) => {
+    const current = variations[varIndex];
+    updateVariation(varIndex, {
+      gallery_images: current.gallery_images.filter((_, i) => i !== imgIndex),
+      gallery_files: current.gallery_files.filter((_, i) => i !== imgIndex),
+    });
+  };
+
+  const uploadFile = async (file: File, folder: string): Promise<string | null> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('folder', folder);
+    const res = await fetch('/api/upload', { method: 'POST', body: fd });
+    if (res.ok) {
+      const data = await res.json();
+      return data.url;
+    }
+    return null;
+  };
+
+  const saveVariation = async (index: number) => {
+    const v = variations[index];
+    if (!v.colour_name) { alert('Please select a colour'); return; }
+
+    updateVariation(index, { saving: true });
+
+    try {
+      let mainUrl = v.main_image_url;
+      // Upload main image if it's a file (blob URL)
+      if (v.main_image_file) {
+        const url = await uploadFile(v.main_image_file, 'yuumpy/products/variations');
+        if (url) mainUrl = url;
+      }
+
+      // Upload gallery files
+      const galleryUrls: string[] = [];
+      for (const img of v.gallery_images) {
+        if (!img.startsWith('blob:')) {
+          galleryUrls.push(img); // already uploaded
+        }
+      }
+      for (const file of v.gallery_files) {
+        const url = await uploadFile(file, 'yuumpy/products/variations/gallery');
+        if (url) galleryUrls.push(url);
+      }
+
+      updateVariation(index, {
+        main_image_url: mainUrl,
+        main_image_file: null,
+        gallery_images: galleryUrls,
+        gallery_files: [],
+        saved: true,
+        saving: false,
+      });
+    } catch (err) {
+      console.error('Error saving variation:', err);
+      alert('Failed to upload variation images');
+      updateVariation(index, { saving: false });
+    }
+  };
+
+  const saveAllVariationsToServer = useCallback(async (productSlug: string) => {
+    if (variations.length === 0) return;
+
+    const payload = variations.map(v => ({
+      colour_name: v.colour_name,
+      colour_hex: v.colour_hex,
+      main_image_url: v.main_image_url && !v.main_image_url.startsWith('blob:') ? v.main_image_url : null,
+      gallery_images: v.gallery_images.filter(img => !img.startsWith('blob:')),
+    }));
+
+    try {
+      await fetch(`/api/products/${productSlug}/variations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variations: payload }),
+      });
+    } catch (err) {
+      console.error('Error saving variations to server:', err);
+    }
+  }, [variations]);
+
+  const loadVariations = async (productSlug: string) => {
+    try {
+      const res = await fetch(`/api/products/${productSlug}/variations`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setVariations(data.map((v: { id?: number; colour_name: string; colour_hex?: string; main_image_url?: string; gallery_images?: string[] }) => ({
+            id: v.id,
+            colour_name: v.colour_name,
+            colour_hex: v.colour_hex || '',
+            main_image_url: v.main_image_url || '',
+            gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : [],
+            main_image_file: null,
+            gallery_files: [],
+            saved: true,
+            saving: false,
+          })));
+        }
+      }
+    } catch {
+      // Table may not exist yet
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -140,7 +356,7 @@ export default function ProductsPage() {
         const data = await response.json();
         const allCategories = Array.isArray(data) ? data : [];
         // Store all categories for reference, but show only main categories in the dropdown
-        (window as any).allCategories = allCategories; // Store globally for reference
+        window.allCategories = allCategories; // Store globally for reference
         const mainCategories = allCategories.filter(cat => cat.parent_id === null);
         setCategories(mainCategories);
       }
@@ -410,6 +626,7 @@ export default function ProductsPage() {
         purchase_type: formData.purchase_type || 'affiliate',
         product_condition: formData.product_condition || 'new',
         stock_quantity: formData.stock_quantity ? parseInt(formData.stock_quantity) : null,
+        colors: formData.colors || [],
         category_id: cleanCategoryId, // Always use main category ID
         subcategory_id: cleanSubcategoryId, // Use subcategory ID if selected
         brand_id: cleanBrandId,
@@ -452,7 +669,7 @@ export default function ProductsPage() {
       };
 
       let response = await attemptSave();
-      let responseData: any = {};
+      let responseData: { error?: string; details?: string; success?: boolean } = {};
       try { responseData = await response.json(); } catch { responseData = {}; }
       console.log('API Response:', responseData);
 
@@ -473,6 +690,11 @@ export default function ProductsPage() {
       }
 
       if (response.ok) {
+        // Save colour variations to server
+        const savedProduct = responseData as { product?: { slug?: string }; success?: boolean; error?: string; details?: string };
+        const productSlug = editingProduct?.slug || savedProduct?.product?.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        await saveAllVariationsToServer(productSlug);
+
         alert('Product saved successfully!');
         fetchProducts();
         // Close form after successful update, but don't reset data
@@ -516,7 +738,7 @@ export default function ProductsPage() {
     setEditingProduct(product);
     
     // Find the product's category from all categories
-    const allCategories = (window as any).allCategories || [];
+    const allCategories = window.allCategories || [];
     let mainCategoryId = '';
     let categoryId = product.category_id?.toString() || '';
     
@@ -544,7 +766,7 @@ export default function ProductsPage() {
           const response = await fetch('/api/subcategories');
           if (response.ok) {
             const subcategoriesData = await response.json();
-            const subcategoryData = subcategoriesData.find((sub: any) => sub.id === product.subcategory_id);
+            const subcategoryData = subcategoriesData.find((sub: Category) => sub.id === product.subcategory_id);
             console.log('Found subcategory in API:', subcategoryData);
             if (subcategoryData && subcategoryData.category_id) {
               mainCategoryId = subcategoryData.category_id.toString();
@@ -570,6 +792,31 @@ export default function ProductsPage() {
     
     console.log('Final values:', { mainCategoryId, categoryId });
     
+    // Parse gallery from JSON string if it exists
+    let parsedGallery: string[] = [];
+    if (product.gallery) {
+      try {
+        parsedGallery = typeof product.gallery === 'string' ? JSON.parse(product.gallery) : product.gallery;
+      } catch (e) {
+        console.error('Failed to parse gallery:', e);
+        parsedGallery = [];
+      }
+    }
+
+    // Parse colors
+    let parsedColors: ColorOption[] = [];
+    if (product.colors) {
+      try {
+        const parsed = typeof product.colors === 'string' ? JSON.parse(product.colors) : product.colors;
+        if (Array.isArray(parsed)) {
+          parsedColors = parsed.map(c => typeof c === 'string' ? { name: c } : c);
+        }
+      } catch (e) {
+        console.error('Failed to parse colors:', e);
+        parsedColors = [];
+      }
+    }
+
     setFormData({
       name: product.name,
       price: product.price.toString(),
@@ -599,25 +846,21 @@ export default function ProductsPage() {
       banner_ad_is_repeating: product.banner_ad_is_repeating || false,
       banner_ad_start_date: formatDateTimeForInput(product.banner_ad_start_date),
       banner_ad_end_date: formatDateTimeForInput(product.banner_ad_end_date),
-      banner_ad_is_active: product.banner_ad_is_active || false
+      banner_ad_is_active: product.banner_ad_is_active || false,
+      colors: parsedColors
     });
     setImagePreview(product.image_url);
     setSelectedImage(null);
     setBannerAdImagePreview(product.banner_ad_image_url || null);
     setSelectedBannerAdImage(null);
-    // Parse gallery from JSON string if it exists
-    let parsedGallery: string[] = [];
-    if (product.gallery) {
-      try {
-        parsedGallery = typeof product.gallery === 'string' ? JSON.parse(product.gallery) : product.gallery;
-      } catch (e) {
-        console.error('Failed to parse gallery:', e);
-        parsedGallery = [];
-      }
-    }
+    
     setGalleryImages(parsedGallery);
     setSelectedGalleryImages([]);
     setShowForm(true);
+
+    // Load colour variations from server
+    setVariations([]);
+    loadVariations(product.slug);
   };
 
   const handleDelete = async (product: Product) => {
@@ -735,6 +978,7 @@ export default function ProductsPage() {
       external_purchase_info: '',
       purchase_type: 'affiliate',
       product_condition: 'new',
+      colors: [],
       stock_quantity: '',
       main_category_id: '',
       category_id: '',
@@ -764,6 +1008,7 @@ export default function ProductsPage() {
     setSelectedGalleryImages([]);
     setEditingProduct(null);
     setShowForm(false);
+    setVariations([]);
   };
 
   const filteredProducts = Array.isArray(products) ? products.filter(product => {
@@ -992,7 +1237,7 @@ export default function ProductsPage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         <span className="flex items-center">
-                          � Purchase Type *
+                          💳 Purchase Type *
                           <span className="ml-2 text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded">Important</span>
                         </span>
                       </label>
@@ -1253,22 +1498,19 @@ export default function ProductsPage() {
                               <div className="flex items-start space-x-3">
                                 <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                                 <p className="text-sm text-blue-800">
-                                  <strong>Affiliate Partner:</strong> This product is sold by our trusted affiliate partner. 
-                                  Customers will be redirected to complete their purchase on the partner's website.
+                                  <strong>Affiliate Partner:</strong> {'This product is sold by our trusted affiliate partner. Customers will be redirected to complete their purchase on the partner\'s website.'}
                                 </p>
                               </div>
                               <div className="flex items-start space-x-3">
                                 <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                                 <p className="text-sm text-blue-800">
-                                  <strong>External Purchase:</strong> When customers click "Buy Now", they will be redirected 
-                                  to the affiliate's website to complete their purchase securely.
+                                  <strong>External Purchase:</strong> {'When customers click "Buy Now", they will be redirected to the affiliate\'s website to complete their purchase securely.'}
                                 </p>
                               </div>
                               <div className="flex items-start space-x-3">
                                 <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                                 <p className="text-sm text-blue-800">
-                                  <strong>Customer Notice:</strong> This information will be displayed to customers 
-                                  so they understand they're being redirected to an external site.
+                                  <strong>Customer Notice:</strong> {"This information will be displayed to customers so they understand they're being redirected to an external site."}
                                 </p>
                               </div>
                             </div>
@@ -1334,13 +1576,13 @@ export default function ProductsPage() {
                         {/* Image Preview */}
                         {imagePreview && (
                           <div className="relative">
-                            <img
+                            <Image
                               src={imagePreview}
                               alt="Product preview"
+                              width={128}
+                              height={128}
                               className="w-32 h-32 object-cover rounded-lg border border-gray-300"
-                              onError={(e) => { 
-                                e.currentTarget.style.display = 'none';
-                               }}
+                              unoptimized={true}
                             />
                             <button
                               type="button"
@@ -1380,10 +1622,13 @@ export default function ProductsPage() {
                           <div className="flex flex-wrap gap-2">
                             {galleryImages.map((img, index) => (
                               <div key={index} className="relative">
-                                <img
+                                <Image
                                   src={img}
                                   alt={`Gallery ${index + 1}`}
+                                  width={80}
+                                  height={80}
                                   className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                                  unoptimized={true}
                                 />
                                 <button
                                   type="button"
@@ -1402,10 +1647,13 @@ export default function ProductsPage() {
                           <div className="flex flex-wrap gap-2">
                             {selectedGalleryImages.map((file, index) => (
                               <div key={index} className="relative">
-                                <img
+                                <Image
                                   src={URL.createObjectURL(file)}
                                   alt={`New ${index + 1}`}
+                                  width={80}
+                                  height={80}
                                   className="w-20 h-20 object-cover rounded-lg border border-green-300"
+                                  unoptimized={true}
                                 />
                                 <button
                                   type="button"
@@ -1434,6 +1682,161 @@ export default function ProductsPage() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Colour Variations Section */}
+                  <div className="border-t pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium text-gray-900">🎨 Colour Variations</h3>
+                      <span className="text-xs text-gray-500">{variations.length} variation{variations.length !== 1 ? 's' : ''}</span>
+                    </div>
+
+                    {variations.length === 0 && (
+                      <p className="text-sm text-gray-500 italic mb-4">No colour variations added yet. Add variations so customers can choose different colours.</p>
+                    )}
+
+                    <div className="space-y-4">
+                      {variations.map((variation, vIndex) => (
+                        <div key={vIndex} className="border border-gray-200 rounded-lg p-4 bg-gray-50 relative">
+                          <button
+                            type="button"
+                            onClick={() => removeVariation(vIndex)}
+                            className="absolute top-3 right-3 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                            title="Remove variation"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Upload Main Image */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <Upload className="w-4 h-4 inline mr-1" />
+                                Upload Main Image
+                              </label>
+                              <div className="flex items-center gap-3">
+                                {variation.main_image_url && (
+                                  <Image
+                                    src={variation.main_image_url}
+                                    alt={`${variation.colour_name || 'Variation'} main`}
+                                    width={80}
+                                    height={80}
+                                    className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                                    unoptimized={true}
+                                  />
+                                )}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleVariationMainImage(vIndex, e)}
+                                  className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Select Colour */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <ChevronDown className="w-4 h-4 inline mr-1" />
+                                Select Colour
+                              </label>
+                              <div className="flex items-center gap-2">
+                                {variation.colour_hex && (
+                                  <span
+                                    className="w-8 h-8 rounded-full border-2 border-gray-300 flex-shrink-0"
+                                    style={{ backgroundColor: variation.colour_hex }}
+                                  />
+                                )}
+                                <select
+                                  value={variation.colour_name}
+                                  onChange={(e) => handleVariationColourSelect(vIndex, e.target.value)}
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer"
+                                >
+                                  <option value="">-- Select a colour --</option>
+                                  {PREDEFINED_COLOURS.map(c => (
+                                    <option key={c.name} value={c.name}>{c.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Upload Thumbnail Images */}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Upload Thumbnail Images
+                              </label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={(e) => handleVariationGalleryImages(vIndex, e)}
+                                className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer"
+                              />
+                              {variation.gallery_images.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {variation.gallery_images.map((img, imgIdx) => (
+                                    <div key={imgIdx} className="relative">
+                                      <Image
+                                        src={img}
+                                        alt={`Thumb ${imgIdx + 1}`}
+                                        width={60}
+                                        height={60}
+                                        className="w-14 h-14 object-cover rounded border border-gray-300"
+                                        unoptimized={true}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => removeVariationGalleryImage(vIndex, imgIdx)}
+                                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs hover:bg-red-600 cursor-pointer"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Save Variation Button */}
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                            <div className="flex items-center gap-2">
+                              {variation.saved && (
+                                <span className="text-xs text-green-600 font-medium">✓ Images uploaded</span>
+                              )}
+                              {variation.colour_name && (
+                                <span className="text-xs text-gray-500">
+                                  {variation.colour_name}
+                                  {variation.main_image_url ? ' • Main image set' : ''}
+                                  {variation.gallery_images.length > 0 ? ` • ${variation.gallery_images.length} thumbnail${variation.gallery_images.length > 1 ? 's' : ''}` : ''}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => saveVariation(vIndex)}
+                              disabled={variation.saving || !variation.colour_name}
+                              className="px-4 py-1.5 text-sm text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-purple-700 cursor-pointer flex items-center gap-1"
+                              style={{ backgroundColor: variation.saving ? undefined : '#8827ee' }}
+                            >
+                              {variation.saving && (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                              )}
+                              {variation.saving ? 'Uploading...' : 'Save'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={addVariation}
+                      className="mt-4 w-full py-2.5 border-2 border-dashed border-purple-300 text-purple-600 rounded-lg hover:bg-purple-50 hover:border-purple-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add more colour variation
+                    </button>
                   </div>
 
                   <div className="flex items-center space-x-6">
@@ -1520,10 +1923,13 @@ export default function ProductsPage() {
                       <div className="space-y-4">
                         {bannerAdImagePreview && (
                           <div className="relative">
-                            <img
+                            <Image
                               src={bannerAdImagePreview}
                               alt="Banner ad preview"
+                              width={600}
+                              height={128}
                               className="w-full h-32 object-cover rounded-lg border"
+                              unoptimized={true}
                             />
                           </div>
                         )}
@@ -1546,7 +1952,7 @@ export default function ProductsPage() {
                         </label>
                         <select
                           value={formData.banner_ad_duration || '1_week'}
-                          onChange={(e) => setFormData({...formData, banner_ad_duration: e.target.value as any})}
+                          onChange={(e) => setFormData({...formData, banner_ad_duration: e.target.value as '1_week' | '2_weeks' | '3_weeks' | '4_weeks' | '6_months'})}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="1_week">1 Week</option>
@@ -1637,6 +2043,7 @@ export default function ProductsPage() {
             </div>
           </div>
         )}
+
       </div>
     </AdminLayout>
   );

@@ -5,40 +5,68 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Package, Mail, ArrowRight } from 'lucide-react';
 
+interface OrderItem {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_slug: string;
+  product_image_url: string;
+  quantity: number;
+  unit_price: string | number;
+  total_price: string | number;
+}
+
+interface Order {
+  id: number;
+  order_number: string;
+  total_amount: string | number;
+  order_status: string;
+  customer_first_name: string;
+  customer_last_name: string;
+  customer_email: string;
+  shipping_address_line1: string;
+  shipping_address_line2?: string;
+  shipping_city: string;
+  shipping_county?: string;
+  shipping_postcode: string;
+  shipping_country: string;
+  items?: OrderItem[];
+}
+
 function SuccessContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get('order');
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        // Update payment status to paid since customer reached success page
+        await fetch(`/api/orders/${orderNumber}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payment_status: 'paid', order_status: 'confirmed' })
+        });
+
+        const response = await fetch(`/api/orders/${orderNumber}`);
+        if (response.ok) {
+          const data = await response.json();
+          setOrder(data);
+        }
+      } catch (error) {
+        console.error('Error fetching order:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (orderNumber) {
       fetchOrder();
     } else {
       setLoading(false);
     }
   }, [orderNumber]);
-
-  const fetchOrder = async () => {
-    try {
-      // Update payment status to paid since customer reached success page
-      await fetch(`/api/orders/${orderNumber}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payment_status: 'paid', order_status: 'confirmed' })
-      });
-
-      const response = await fetch(`/api/orders/${orderNumber}`);
-      if (response.ok) {
-        const data = await response.json();
-        setOrder(data);
-      }
-    } catch (error) {
-      console.error('Error fetching order:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -101,7 +129,7 @@ function SuccessContent() {
             <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg text-left">
               <Package className="w-5 h-5 text-green-600 flex-shrink-0" />
               <p className="text-sm text-green-800">
-                We'll notify you when your order ships.
+                We&apos;ll notify you when your order ships.
               </p>
             </div>
           </div>

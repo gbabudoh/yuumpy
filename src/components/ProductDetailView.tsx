@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { ExternalLink, Shield } from 'lucide-react';
 import Header from '@/components/Header';
@@ -7,7 +10,7 @@ import ProductTabs from '@/components/ProductTabs';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AddToCartButton from '@/components/AddToCartButton';
 import { generateStructuredData } from '@/lib/seo';
-import { Product } from '@/types/product';
+import { Product, ColorOption, ProductVariation } from '@/types/product';
 
 interface ProductDetailViewProps {
   product: Product;
@@ -39,18 +42,111 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
   const mainImage = product.image_url || fallbackImage;
   
   // Parse gallery from JSON string if it exists
-  let galleryImages: string[] = [];
-  if (product.gallery) {
-    try {
-      const parsed = typeof product.gallery === 'string' ? JSON.parse(product.gallery) : product.gallery;
-      galleryImages = Array.isArray(parsed) ? parsed.filter((img: string) => img && img.trim() !== '') : [];
-    } catch (e) {
-      console.error('Failed to parse gallery:', e);
-      galleryImages = [];
+  const galleryImages = useMemo(() => {
+    if (product.gallery) {
+      try {
+        const parsed = typeof product.gallery === 'string' ? JSON.parse(product.gallery) : product.gallery;
+        return Array.isArray(parsed) ? parsed.filter((img: string) => img && img.trim() !== '') : [];
+      } catch (e) {
+        console.error('Failed to parse gallery:', e);
+        return [];
+      }
     }
-  }
+    return [];
+  }, [product.gallery]);
   
-  const images = [mainImage, ...galleryImages];
+  // Parse colors (legacy support)
+  const productColors = useMemo(() => {
+    if (product.colors) {
+      try {
+        const parsed = typeof product.colors === 'string' ? JSON.parse(product.colors) : product.colors;
+        if (Array.isArray(parsed)) {
+          return parsed.map(c => {
+            if (typeof c === 'string') return { name: c };
+            return c as ColorOption;
+          }).filter(c => c.name && c.name.trim() !== '');
+        }
+      } catch (e) {
+        console.error('Failed to parse colors:', e);
+        return [];
+      }
+    }
+    return [];
+  }, [product.colors]);
+
+  // Parse new variations (from product_variations table)
+  const productVariations: ProductVariation[] = useMemo(() => {
+    if (product.variations && Array.isArray(product.variations)) {
+      return product.variations;
+    }
+    return [];
+  }, [product.variations]);
+
+  // Use variations if available, otherwise fall back to legacy colors
+  const hasVariations = productVariations.length > 0;
+
+  // State for selected colors
+  const [selectedColors, setSelectedColors] = useState<string[]>(
+    hasVariations
+      ? (productVariations.length > 0 ? [productVariations[0].colour_name] : [])
+      : (productColors.length > 0 ? [productColors[0].name] : [])
+  );
+
+  // State for active gallery color
+  const [activeGalleryColor, setActiveGalleryColor] = useState<string | null>(
+    hasVariations
+      ? (productVariations.length > 0 ? productVariations[0].colour_name : null)
+      : (productColors.length > 0 ? productColors[0].name : null)
+  );
+
+  const toggleColor = (color: string) => {
+    setSelectedColors(prev => 
+      prev.includes(color) 
+        ? prev.filter(c => c !== color) 
+        : [...prev, color]
+    );
+    setActiveGalleryColor(color);
+  };
+
+  // Get current images based on active color
+  const images = useMemo(() => {
+    if (hasVariations) {
+      const activeVariation = productVariations.find(v => v.colour_name === activeGalleryColor);
+      if (activeVariation) {
+        const varImages: string[] = [];
+        if (activeVariation.main_image_url) varImages.push(activeVariation.main_image_url);
+        if (activeVariation.gallery_images && Array.isArray(activeVariation.gallery_images)) {
+          varImages.push(...activeVariation.gallery_images);
+        }
+        if (varImages.length > 0) return varImages;
+      }
+      // Fallback to default product images
+      return [mainImage, ...galleryImages];
+    }
+
+    // Legacy color system
+    const activeColor = productColors.find(c => c.name === activeGalleryColor);
+    if (!activeColor) return [mainImage, ...galleryImages];
+
+    const hasSpecificImage = activeColor.image_url && activeColor.image_url.trim() !== '';
+    let colorGallery: string[] = [];
+    if (activeColor.gallery) {
+      try {
+        const parsed = typeof activeColor.gallery === 'string' ? JSON.parse(activeColor.gallery) : activeColor.gallery;
+        colorGallery = Array.isArray(parsed) ? parsed.filter((img: string) => img && img.trim() !== '') : [];
+      } catch (e) {
+        console.error('Failed to parse color gallery:', e);
+      }
+    }
+
+    if (hasSpecificImage || colorGallery.length > 0) {
+      const colorMain = activeColor.image_url || mainImage;
+      return [colorMain, ...colorGallery].filter((img: string) => img && img.trim() !== '');
+    }
+    return [mainImage, ...galleryImages];
+  }, [activeGalleryColor, productVariations, productColors, mainImage, galleryImages, hasVariations]);
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -163,6 +259,74 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
               </div>
             </div>
 
+            {/* Color Selection - New Variations (colour swatches) */}
+            {hasVariations && productVariations.length > 0 && (
+              <div className="py-3">
+                <h3 className="text-sm font-medium text-gray-900 mb-2">
+                  Colour: <span className="text-gray-600 font-normal">
+                    {activeGalleryColor || 'Select a colour'}
+                  </span>
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {productVariations.map((variation) => (
+                    <button
+                      key={variation.id || variation.colour_name}
+                      onClick={() => toggleColor(variation.colour_name)}
+                      className={`group relative cursor-pointer`}
+                      title={variation.colour_name}
+                    >
+                      <span
+                        className={`block w-10 h-10 rounded-full border-2 transition-all ${
+                          activeGalleryColor === variation.colour_name
+                            ? 'border-purple-600 ring-2 ring-purple-300 ring-offset-1 scale-110'
+                            : 'border-gray-300 hover:border-gray-400 hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: variation.colour_hex || '#ccc' }}
+                      />
+                      {selectedColors.includes(variation.colour_name) && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
+                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                      )}
+                      <span className="block text-xs text-center mt-1 text-gray-600">{variation.colour_name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Color Selection - Legacy (text buttons) */}
+            {!hasVariations && productColors.length > 0 && (
+              <div className="py-3">
+                <h3 className="text-sm font-medium text-gray-900 mb-2">
+                  Select Colors: <span className="text-gray-600 font-normal">
+                    {selectedColors.length > 0 ? selectedColors.join(', ') : 'None selected'}
+                  </span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {productColors.map((color) => (
+                    <button
+                      key={color.name}
+                      onClick={() => toggleColor(color.name)}
+                      onMouseEnter={() => setActiveGalleryColor(color.name)}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        selectedColors.includes(color.name)
+                          ? 'bg-purple-600 text-white ring-2 ring-purple-600 ring-offset-2'
+                          : 'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50'
+                      } ${activeGalleryColor === color.name ? 'border-purple-400' : ''}`}
+                    >
+                      {color.name}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2 italic">
+                  * You can select multiple colors to add them to your cart at once.
+                </p>
+              </div>
+            )}
+
             {/* Layer 4: Short Description */}
             <div className="py-3 md:py-4">
               <p className="text-sm md:text-base text-gray-600 leading-relaxed">
@@ -210,7 +374,8 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
             {/* Actions */}
             <AddToCartButton 
               product={product} 
-              isDirectSale={product.purchase_type === 'direct' || !product.affiliate_url} 
+              isDirectSale={product.purchase_type === 'direct' || !product.affiliate_url}
+              selectedColors={selectedColors}
             />
 
             {/* Features */}

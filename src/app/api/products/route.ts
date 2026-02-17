@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 
+interface CountResult {
+  total: number;
+}
+
+interface InsertResult {
+  insertId: number;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -39,7 +47,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN categories s ON p.subcategory_id = s.id
     `;
-    const params: any[] = [];
+    const params: (string | number | boolean | null)[] = [];
     const whereConditions = [];
 
     // Only filter by is_active for non-admin requests
@@ -235,7 +243,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN categories s ON p.subcategory_id = s.id
     `;
-    const countParams: any[] = [];
+    const countParams: (string | number | boolean | null)[] = [];
     const countWhereConditions = [];
 
     // Only filter by is_active for non-admin requests
@@ -332,7 +340,7 @@ export async function GET(request: NextRequest) {
       countSql += ' WHERE ' + countWhereConditions.join(' AND ');
     }
 
-    const [countResult] = await query(countSql, countParams) as any[];
+    const [countResult] = await query(countSql, countParams) as CountResult[];
     const total = countResult.total;
 
     return NextResponse.json({
@@ -374,6 +382,7 @@ export async function POST(request: NextRequest) {
       stock_quantity,
       image_url,
       gallery,
+      colors,
       category_id,
       subcategory_id,
       brand_id,
@@ -422,6 +431,9 @@ export async function POST(request: NextRequest) {
     // Generate slug if not provided
     const productSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
+    // Prepare colors JSON
+    const colorsJson = colors && Array.isArray(colors) && colors.length > 0 ? JSON.stringify(colors) : null;
+
     // Try with new columns first, fallback to old schema if columns don't exist
     let result;
     try {
@@ -429,10 +441,10 @@ export async function POST(request: NextRequest) {
         INSERT INTO products (
           name, slug, description, short_description, long_description, product_review, price, original_price,
           affiliate_url, affiliate_partner_name, external_purchase_info, purchase_type, product_condition, stock_quantity,
-          image_url, gallery, category_id, subcategory_id, brand_id, is_featured, is_bestseller, is_active,
+          image_url, gallery, colors, category_id, subcategory_id, brand_id, is_featured, is_bestseller, is_active,
           meta_title, meta_description, banner_ad_title, banner_ad_description, banner_ad_image_url, banner_ad_link_url,
           banner_ad_duration, banner_ad_is_repeating, banner_ad_start_date, banner_ad_end_date, banner_ad_is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       result = await query(sql, [
@@ -452,6 +464,7 @@ export async function POST(request: NextRequest) {
         stock_quantity || null,
         image_url || null,
         gallery || null,
+        colorsJson,
         category_id || null,
         subcategory_id || null,
         brand_id || null,
@@ -470,9 +483,9 @@ export async function POST(request: NextRequest) {
         banner_ad_end_date || null,
         banner_ad_is_active !== undefined ? (banner_ad_is_active ? 1 : 0) : 0
       ]);
-    } catch (insertError: any) {
+    } catch (insertError: unknown) {
       // If columns don't exist, use old schema without purchase_type and stock_quantity
-      if (insertError.message?.includes('Unknown column')) {
+      if ((insertError as Error).message?.includes('Unknown column')) {
         const fallbackSql = `
           INSERT INTO products (
             name, slug, description, short_description, long_description, product_review, price, original_price,
@@ -522,7 +535,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      product: { id: (result as any).insertId, ...body }
+      product: { id: (result as InsertResult).insertId, ...body }
     });
   } catch (error) {
     console.error('Error creating product:', error);

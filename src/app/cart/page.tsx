@@ -48,10 +48,10 @@ export default function CartPage() {
               <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                 <ul className="divide-y divide-gray-100">
                   {cart.map((item) => (
-                    <li key={item.id} className="p-6 flex items-center sm:items-start space-x-6">
+                    <li key={`${item.id}-${item.color || 'none'}`} className="p-6 flex items-center sm:items-start space-x-6">
                       <div className="relative w-24 h-24 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden">
                         <Image
-                          src={item.image_url}
+                          src={item.color_image || item.image_url}
                           alt={item.name}
                           fill
                           className="object-cover"
@@ -64,10 +64,15 @@ export default function CartPage() {
                             <Link href={`/products/${item.slug}`} className="text-lg font-semibold text-gray-900 hover:text-purple-600 transition-colors line-clamp-1 cursor-pointer">
                               {item.name}
                             </Link>
+                            {item.color && (
+                              <p className="text-sm text-gray-500 mt-0.5">
+                                Color: <span className="font-medium text-purple-600">{item.color}</span>
+                              </p>
+                            )}
                             <p className="text-purple-600 font-bold mt-1">£{item.price.toFixed(2)}</p>
                           </div>
                           <button 
-                            onClick={() => removeFromCart(item.id)}
+                            onClick={() => removeFromCart(item.id, item.color)}
                             className="text-gray-400 hover:text-red-500 transition-colors p-2 cursor-pointer"
                             title="Remove item"
                           >
@@ -78,7 +83,7 @@ export default function CartPage() {
                         <div className="mt-4 flex items-center justify-between">
                           <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                             <button 
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.id, item.quantity - 1, item.color)}
                               className="p-2 hover:bg-gray-50 text-gray-600 transition-colors cursor-pointer"
                             >
                               <MinusIcon className="w-4 h-4" />
@@ -87,7 +92,7 @@ export default function CartPage() {
                               {item.quantity}
                             </span>
                             <button 
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.id, item.quantity + 1, item.color)}
                               className="p-2 hover:bg-gray-50 text-gray-600 transition-colors cursor-pointer"
                             >
                               <PlusIcon className="w-4 h-4" />

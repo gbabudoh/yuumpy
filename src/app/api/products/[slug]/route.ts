@@ -1,6 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 
+interface PartialProduct {
+  purchase_type?: string;
+  product_condition?: string;
+  stock_quantity?: number;
+}
+
+interface CategoryCheck {
+  id: number;
+  name: string;
+  slug: string;
+  parent_id: number | null;
+}
+
+interface SubcategoryCheck {
+  id: number;
+  name: string;
+  slug: string;
+  category_id: number;
+}
+
+interface BrandCheck {
+  id: number;
+  name: string;
+}
+
+interface CurrentProduct {
+  id: number;
+  name: string;
+  category_id: number;
+  subcategory_id: number | null;
+  brand_id: number | null;
+  current_category_name: string;
+  current_subcategory_name: string | null;
+  current_brand_name: string | null;
+}
+
+interface CategoryInfo {
+  category_name: string;
+  subcategory_name: string | null;
+  brand_name: string | null;
+}
+
+interface DeleteResult {
+  affectedRows: number;
+}
+
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ slug: string }> }
@@ -106,8 +153,30 @@ export async function GET(
         );
       }
 
-      return NextResponse.json(products[0]);
-    } catch (dbError) {
+      const product = products[0] as { id: number; [key: string]: unknown };
+
+      // Fetch colour variations
+      let variations: unknown[] = [];
+      try {
+        const variationRows = await query(
+          'SELECT * FROM product_variations WHERE product_id = ? ORDER BY sort_order ASC, id ASC',
+          [product.id]
+        );
+        if (Array.isArray(variationRows)) {
+          variations = variationRows.map((v: { gallery_images?: string | string[] | null; [key: string]: unknown }) => ({
+            ...v,
+            gallery_images: v.gallery_images
+              ? (typeof v.gallery_images === 'string' ? JSON.parse(v.gallery_images) : v.gallery_images)
+              : []
+          }));
+        }
+      } catch {
+        // Table may not exist yet, that's fine
+        console.log('product_variations table not available yet');
+      }
+
+      return NextResponse.json({ ...product, variations });
+    } catch {
       console.log('Database not available, using mock data');
       
       // Use mock data as fallback
@@ -171,6 +240,7 @@ export async function PUT(
       stock_quantity,
       image_url,
       gallery,
+      colors,
       category_id,
       subcategory_id,
       brand_id,
@@ -198,7 +268,7 @@ export async function PUT(
       'SELECT purchase_type, product_condition, stock_quantity FROM products WHERE slug = ?',
       [productSlug]
     );
-    const existing = Array.isArray(existingProductData) && existingProductData.length > 0 ? existingProductData[0] as any : null;
+    const existing = Array.isArray(existingProductData) && existingProductData.length > 0 ? existingProductData[0] as PartialProduct : null;
 
     // Use existing values if not provided in the update request
     const finalPurchaseType = purchase_type !== undefined ? purchase_type : (existing?.purchase_type || 'affiliate');
@@ -247,7 +317,7 @@ export async function PUT(
         );
       }
       
-      const category = categoryCheck[0] as any;
+      const category = categoryCheck[0] as CategoryCheck;
       if (category.parent_id !== null) {
         return NextResponse.json(
           { 
@@ -284,7 +354,7 @@ export async function PUT(
         );
       }
       
-      const subcategory = subcategoryCheck[0] as any;
+      const subcategory = subcategoryCheck[0] as SubcategoryCheck;
       if (subcategory.category_id !== parseInt(category_id)) {
         return NextResponse.json(
           { 
@@ -312,19 +382,22 @@ export async function PUT(
         );
       }
       
-      const brand = brandCheck[0] as any;
+      const brand = brandCheck[0] as BrandCheck;
       console.log(`✅ Valid brand: ${brand.name} (ID: ${brand.id})`);
     }
 
     // Generate slug if not provided
     const newSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
+    // Prepare colors JSON
+    const colorsJson = colors && Array.isArray(colors) && colors.length > 0 ? JSON.stringify(colors) : null;
+
     // SQL with new columns (purchase_type, product_condition, stock_quantity)
     const sql = `
       UPDATE products SET
         name = ?, slug = ?, description = ?, short_description = ?, long_description = ?, product_review = ?,
         price = ?, original_price = ?, affiliate_url = ?, affiliate_partner_name = ?, external_purchase_info = ?,
-        purchase_type = ?, product_condition = ?, stock_quantity = ?, image_url = ?, gallery = ?,
+        purchase_type = ?, product_condition = ?, stock_quantity = ?, image_url = ?, gallery = ?, colors = ?,
         category_id = ?, subcategory_id = ?, brand_id = ?, is_featured = ?, is_bestseller = ?, is_active = ?,
         meta_title = ?, meta_description = ?,
         banner_ad_title = ?, banner_ad_description = ?, banner_ad_image_url = ?, banner_ad_link_url = ?,
@@ -362,6 +435,7 @@ export async function PUT(
       finalStockQuantity,
       image_url || null,
       gallery || null,
+      colorsJson,
       category_id || null,
       subcategory_id || null,
       brand_id || null,
@@ -417,7 +491,7 @@ export async function PUT(
     ];
 
     // Flag to track which SQL to use
-    let useFallback = false;
+    // let useFallback = false;
 
     console.log('SQL params:', sqlParams);
     
@@ -442,7 +516,7 @@ export async function PUT(
       );
     }
 
-    const currentProduct = existingProduct[0] as any;
+    const currentProduct = existingProduct[0] as CurrentProduct;
     console.log('📋 Current product categorization:');
     console.log(`  Product: ${currentProduct.name} (ID: ${currentProduct.id})`);
     console.log(`  Current Category: ${currentProduct.current_category_name} (ID: ${currentProduct.category_id})`);
@@ -475,12 +549,12 @@ export async function PUT(
       let result;
       try {
         result = await query(sql, sqlParams);
-      } catch (columnError: any) {
+      } catch (columnError: unknown) {
         // If columns don't exist, use fallback SQL without purchase_type/stock_quantity
-        if (columnError.message?.includes('Unknown column')) {
+        if ((columnError as Error).message?.includes('Unknown column')) {
           console.log('Using fallback SQL without purchase_type/stock_quantity columns');
           result = await query(fallbackSql, fallbackParams);
-          useFallback = true;
+          // useFallback = true;
         } else {
           throw columnError;
         }
@@ -497,7 +571,7 @@ export async function PUT(
         WHERE p.slug = ?
       `, [newSlug || productSlug]);
       
-      const categoryInfo = updatedCategoryInfo[0] as any;
+      const categoryInfo = updatedCategoryInfo[0] as CategoryInfo;
       console.log('✅ Final categorization confirmed:');
       console.log(`  Category: ${categoryInfo?.category_name || 'None'}`);
       console.log(`  Subcategory: ${categoryInfo?.subcategory_name || 'None'}`);
@@ -512,11 +586,11 @@ export async function PUT(
           brand: categoryInfo?.brand_name || 'None'
         }
       });
-    } catch (updateError: any) {
+    } catch (updateError: unknown) {
       console.error('Update error:', updateError);
       
       // If it's a foreign key constraint error, try without subcategory_id
-      if (updateError.message && updateError.message.includes('foreign key constraint')) {
+      if (updateError instanceof Error && updateError.message && updateError.message.includes('foreign key constraint')) {
         console.log('Retrying update without subcategory_id due to constraint error');
         
         // Update SQL without subcategory_id
@@ -610,7 +684,7 @@ export async function DELETE(
 
     // Delete the product (hard delete)
     const deleteSql = 'DELETE FROM products WHERE slug = ?';
-    const result = await query(deleteSql, [productSlug]) as any;
+    const result = await query(deleteSql, [productSlug]) as DeleteResult;
 
     // Check if deletion was successful
     if (result?.affectedRows === 0) {

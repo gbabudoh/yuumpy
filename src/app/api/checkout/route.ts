@@ -2,13 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { query } from '@/lib/database';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16'
 });
+
+interface CustomerJwtPayload extends JwtPayload {
+  customerId: number;
+}
+
+interface DBProduct {
+  id: number;
+  name: string;
+  slug: string;
+  price: string | number;
+  image_url: string;
+  purchase_type: 'affiliate' | 'direct';
+  stock_quantity: number | null;
+}
+
+interface DBInsertResult {
+  insertId: number;
+}
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -25,9 +43,9 @@ function getCustomerIdFromToken(request: NextRequest): number | null {
       return null;
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, JWT_SECRET) as CustomerJwtPayload;
     return decoded.customerId || null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -36,9 +54,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      productId,
-      productSlug,
-      quantity = 1,
+      items, // Support for multiple items (cart)
+      productId, // Compatibility for single product
+      productSlug, // Compatibility for single product
+      quantity = 1, // Compatibility for single product
       email,
       firstName,
       lastName,
@@ -55,78 +74,115 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!productId || !email || !firstName || !lastName || !addressLine1 || !city || !postcode) {
+    if (!email || !firstName || !lastName || !addressLine1 || !city || !postcode) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required customer information' },
         { status: 400 }
       );
     }
 
-    // Get product details
-    const productResult = await query(
-      'SELECT id, name, slug, price, image_url, purchase_type, stock_quantity FROM products WHERE id = ? AND is_active = 1',
-      [productId]
-    );
+    // Normalize items to an array
+    interface CartItemInput {
+      id: number;
+      quantity: number;
+      slug?: string;
+    }
 
-    if (!Array.isArray(productResult) || productResult.length === 0) {
+    let cartItems: CartItemInput[] = items;
+    if (!cartItems && productId) {
+      cartItems = [{ id: productId, quantity, slug: productSlug }];
+    }
+
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
       return NextResponse.json(
-        { error: 'Product not found' },
+        { error: 'No items in cart' },
+        { status: 400 }
+      );
+    }
+
+    // Fetch all products in the cart to verify availability and prices
+    const productIds = cartItems.map(item => item.id);
+    const placeholders = productIds.map(() => '?').join(',');
+    const productResults = await query(
+      `SELECT id, name, slug, price, image_url, purchase_type, stock_quantity 
+       FROM products 
+       WHERE id IN (${placeholders}) AND is_active = 1`,
+      productIds
+    ) as DBProduct[];
+
+    if (!Array.isArray(productResults) || productResults.length === 0) {
+      return NextResponse.json(
+        { error: 'Products not found' },
         { status: 404 }
       );
     }
 
-    const product = productResult[0] as any;
+    // Map database results for easy lookup and verification
+    const dbProducts = new Map<number, DBProduct>(productResults.map(p => [p.id, p]));
+    const verifiedItems = [];
+    let subtotal = 0;
 
-    // Verify this is a direct sale product
-    if (product.purchase_type !== 'direct') {
-      return NextResponse.json(
-        { error: 'This product is not available for direct purchase' },
-        { status: 400 }
-      );
+    for (const item of cartItems) {
+      const dbProduct = dbProducts.get(item.id);
+      if (!dbProduct) {
+        return NextResponse.json(
+          { error: `Product ID ${item.id} not found or inactive` },
+          { status: 404 }
+        );
+      }
+
+      if (dbProduct.purchase_type !== 'direct') {
+        return NextResponse.json(
+          { error: `Product "${dbProduct.name}" is not available for direct purchase` },
+          { status: 400 }
+        );
+      }
+
+      const q = parseInt(item.quantity.toString()) || 1;
+      if (dbProduct.stock_quantity !== null && dbProduct.stock_quantity < q) {
+        return NextResponse.json(
+          { error: `Insufficient stock for "${dbProduct.name}"` },
+          { status: 400 }
+        );
+      }
+
+      const unitPrice = typeof dbProduct.price === 'string' ? parseFloat(dbProduct.price) : dbProduct.price;
+      const itemTotal = unitPrice * q;
+      subtotal += itemTotal;
+
+      verifiedItems.push({
+        ...dbProduct,
+        quantity: q,
+        unitPrice,
+        totalPrice: itemTotal
+      });
     }
 
-    // Check stock if applicable
-    if (product.stock_quantity !== null && product.stock_quantity < quantity) {
-      return NextResponse.json(
-        { error: 'Insufficient stock available' },
-        { status: 400 }
-      );
-    }
-
-    // Calculate totals
-    const unitPrice = parseFloat(product.price);
-    const subtotal = unitPrice * quantity;
     const shippingCost = 0; // Free shipping
-    const taxAmount = 0; // Can be calculated based on requirements
+    const taxAmount = 0; 
     const totalAmount = subtotal + shippingCost + taxAmount;
 
-    // Generate order number
     const orderNumber = generateOrderNumber();
+    let customerId: number | null = getCustomerIdFromToken(request);
 
-    // Check if customer is already logged in
-    let customerId = getCustomerIdFromToken(request);
-
-    // Handle customer account creation if requested (only if not already logged in)
+    // Handle account creation
     if (!customerId && createAccount && password) {
-      // Check if customer already exists
       const existingCustomer = await query(
         'SELECT id FROM customers WHERE email = ?',
         [email]
-      );
+      ) as { id: number }[];
 
       if (Array.isArray(existingCustomer) && existingCustomer.length > 0) {
-        customerId = (existingCustomer[0] as any).id;
+        customerId = existingCustomer[0].id;
       } else {
-        // Create new customer account
         const passwordHash = await bcrypt.hash(password, 10);
         const customerResult = await query(
           `INSERT INTO customers (email, password_hash, first_name, last_name, phone)
            VALUES (?, ?, ?, ?, ?)`,
           [email, passwordHash, firstName, lastName, phone || null]
-        );
-        customerId = (customerResult as any).insertId;
+        ) as DBInsertResult;
+        customerId = customerResult.insertId;
 
-        // Save shipping address
         await query(
           `INSERT INTO customer_addresses 
            (customer_id, address_type, first_name, last_name, address_line1, address_line2, city, county, postcode, country, phone, is_default)
@@ -136,7 +192,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create order in database
+    // Create Order
     const orderResult = await query(
       `INSERT INTO orders (
         order_number, customer_id, customer_email, customer_first_name, customer_last_name, customer_phone,
@@ -145,65 +201,51 @@ export async function POST(request: NextRequest) {
         payment_status, order_status, customer_notes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'GBP', 'pending', 'pending', ?)`,
       [
-        orderNumber,
-        customerId,
-        email,
-        firstName,
-        lastName,
-        phone || null,
-        addressLine1,
-        addressLine2 || null,
-        city,
-        county || null,
-        postcode,
-        country,
-        subtotal,
-        shippingCost,
-        taxAmount,
-        totalAmount,
-        customerNotes || null
+        orderNumber, customerId, email, firstName, lastName, phone || null,
+        addressLine1, addressLine2 || null, city, county || null, postcode, country,
+        subtotal, shippingCost, taxAmount, totalAmount, customerNotes || null
       ]
-    );
+    ) as DBInsertResult;
 
-    const orderId = (orderResult as any).insertId;
+    const orderId = orderResult.insertId;
 
-    // Create order item
-    await query(
-      `INSERT INTO order_items (order_id, product_id, product_name, product_slug, product_image_url, quantity, unit_price, total_price)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [orderId, product.id, product.name, product.slug, product.image_url, quantity, unitPrice, subtotal]
-    );
+    // Create Order Items
+    for (const item of verifiedItems) {
+      await query(
+        `INSERT INTO order_items (order_id, product_id, product_name, product_slug, product_image_url, quantity, unit_price, total_price)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [orderId, item.id, item.name, item.slug, item.image_url, item.quantity, item.unitPrice, item.totalPrice]
+      );
+    }
 
-    // Create Stripe Checkout Session
+    // Stripe Checkout
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     
+    const line_items = verifiedItems.map(item => ({
+      price_data: {
+        currency: 'gbp',
+        product_data: {
+          name: item.name,
+          images: item.image_url ? [item.image_url] : [],
+        },
+        unit_amount: Math.round(item.unitPrice * 100),
+      },
+      quantity: item.quantity,
+    }));
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
       customer_email: email,
-      line_items: [
-        {
-          price_data: {
-            currency: 'gbp',
-            product_data: {
-              name: product.name,
-              images: product.image_url ? [product.image_url] : [],
-            },
-            unit_amount: Math.round(unitPrice * 100), // Convert to pence
-          },
-          quantity: quantity,
-        },
-      ],
+      line_items,
       metadata: {
         order_id: orderId.toString(),
         order_number: orderNumber,
-        product_id: product.id.toString(),
       },
       success_url: `${baseUrl}/checkout/success?order=${orderNumber}`,
-      cancel_url: `${baseUrl}/checkout/${productSlug}?cancelled=true`,
+      cancel_url: productId ? `${baseUrl}/checkout/${productSlug}?cancelled=true` : `${baseUrl}/cart?cancelled=true`,
     });
 
-    // Update order with Stripe session ID
     await query(
       'UPDATE orders SET stripe_payment_intent_id = ? WHERE id = ?',
       [session.id, orderId]
@@ -219,10 +261,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Checkout error:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to process checkout',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to process checkout', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
