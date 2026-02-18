@@ -100,11 +100,7 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
   );
 
   const toggleColor = (color: string) => {
-    setSelectedColors(prev => 
-      prev.includes(color) 
-        ? prev.filter(c => c !== color) 
-        : [...prev, color]
-    );
+    setSelectedColors([color]);
     setActiveGalleryColor(color);
   };
 
@@ -322,7 +318,7 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-2 italic">
-                  * You can select multiple colors to add them to your cart at once.
+                  * Select a colour to view its images and add to cart.
                 </p>
               </div>
             )}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, Edit, Calendar, PoundSterling, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Plus, Edit, Calendar, PoundSterling, Eye, EyeOff, Trash2, CheckCircle, XCircle, AlertTriangle, X } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
 interface BannerAd {
@@ -41,6 +41,12 @@ export default function BannerAdsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning'; visible: boolean }>({ message: '', type: 'success', visible: false });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 4000);
+  };
 
   useEffect(() => {
     fetchBannerAds();
@@ -194,7 +200,7 @@ export default function BannerAdsPage() {
     try {
       // Check if image is provided (either new file or existing image for edit)
       if (!selectedImage && !imagePreview && !editingAd) {
-        alert('Please upload a banner image');
+        showToast('Please upload a banner image', 'warning');
         setSubmitting(false);
         return;
       }
@@ -214,7 +220,7 @@ export default function BannerAdsPage() {
           const uploadData = await uploadResponse.json();
           imageUrl = uploadData.url;
         } else {
-          alert('Failed to upload image');
+          showToast('Failed to upload image', 'error');
           setSubmitting(false);
           return;
         }
@@ -261,7 +267,7 @@ export default function BannerAdsPage() {
         resetForm();
         setShowCreateForm(false);
         setEditingAd(null);
-        alert(editingAd ? 'Banner ad updated successfully!' : 'Banner ad created successfully!');
+        showToast(editingAd ? 'Banner ad updated successfully!' : 'Banner ad created successfully!', 'success');
         
         // Refresh the list to ensure we have the latest data
         await fetchBannerAds();
@@ -275,11 +281,11 @@ export default function BannerAdsPage() {
           console.error('❌ Failed to parse error response:', parseError);
           errorMessage = `Server error: ${response.status} ${response.statusText}`;
         }
-        alert(errorMessage);
+        showToast(errorMessage, 'error');
       }
     } catch (error) {
       console.error('Error saving banner ad:', error);
-      alert('An error occurred while saving the banner ad');
+      showToast('An error occurred while saving the banner ad', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -308,7 +314,7 @@ export default function BannerAdsPage() {
     try {
       if (!ad) {
         console.error('Banner ad is null or undefined');
-        alert('Error: No banner ad data provided');
+        showToast('Error: No banner ad data provided', 'error');
         return;
       }
       
@@ -330,7 +336,7 @@ export default function BannerAdsPage() {
       setShowCreateForm(true);
     } catch (error) {
       console.error('Error in handleEdit:', error);
-      alert('Error editing banner ad: ' + error.message);
+      showToast('Error editing banner ad: ' + error.message, 'error');
     }
   };
 
@@ -373,6 +379,36 @@ export default function BannerAdsPage() {
 
   return (
     <AdminLayout>
+      {/* Toast Notification */}
+      <div
+        className={`fixed top-6 right-6 z-[100] transition-all duration-500 ease-out ${
+          toast.visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+        }`}
+      >
+        <div className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border min-w-[320px] max-w-[440px] ${
+          toast.type === 'success' ? 'bg-green-50 border-green-200' :
+          toast.type === 'error' ? 'bg-red-50 border-red-200' :
+          'bg-amber-50 border-amber-200'
+        }`}>
+          {toast.type === 'success' && <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />}
+          {toast.type === 'error' && <XCircle className="w-6 h-6 text-red-500 flex-shrink-0" />}
+          {toast.type === 'warning' && <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />}
+          <p className={`text-sm font-medium flex-1 ${
+            toast.type === 'success' ? 'text-green-800' :
+            toast.type === 'error' ? 'text-red-800' :
+            'text-amber-800'
+          }`}>
+            {toast.message}
+          </p>
+          <button
+            onClick={() => setToast(prev => ({ ...prev, visible: false }))}
+            className="text-gray-400 hover:text-gray-600 cursor-pointer flex-shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
       <div>
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
