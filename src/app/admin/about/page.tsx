@@ -111,7 +111,7 @@ export default function AboutPageManagement() {
           </div>
           <div className="flex items-center space-x-4">
             <a
-              href="/about"
+              href="/about-yuumpy"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2 cursor-pointer"

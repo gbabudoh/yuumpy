@@ -61,6 +61,19 @@ export interface Product {
   banner_ad_end_date?: string;
   banner_ad_is_active?: boolean;
   variations?: ProductVariation[];
+  seller_id?: number;
+  seller_store_name?: string;
+  seller_store_slug?: string;
+  seller_logo_url?: string;
+  seller_city?: string;
+  seller_state_province?: string;
+  seller_country?: string;
+  seller_total_orders?: number;
+  seller_average_rating?: number;
+  seller_total_reviews?: number;
+  seller_is_verified?: boolean;
+  seller_processing_time?: string;
+  regions?: string | string[];
 }
 
 export interface ProductSEO {

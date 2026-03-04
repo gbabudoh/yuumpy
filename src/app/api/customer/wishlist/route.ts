@@ -47,11 +47,13 @@ export async function GET(request: NextRequest) {
         p.product_condition,
         p.stock_quantity,
         b.name as brand_name,
-        c.name as category_name
+        c.name as category_name,
+        sel.store_slug as seller_store_slug
       FROM wishlist w
       INNER JOIN products p ON w.product_id = p.id
       LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN sellers sel ON p.seller_id = sel.id
       WHERE w.customer_id = ? AND p.is_active = TRUE
       ORDER BY w.created_at DESC`,
       [customerId]

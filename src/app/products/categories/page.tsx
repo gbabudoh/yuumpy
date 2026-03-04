@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { Search, X, List, LayoutGrid } from 'lucide-react';
 import CategoryCard from '@/components/CategoryCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -21,7 +21,9 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState<'name' | 'count'>('name');
+  const [viewMode, setViewMode] = useState<'grid' | 'compact'>('grid');
 
   useEffect(() => {
     fetchCategories();
@@ -29,13 +31,10 @@ export default function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      // Fetch only main categories (parent_id IS NULL)
       const response = await fetch('/api/categories?parent_only=true');
       if (response.ok) {
         const data = await response.json();
         setCategories(Array.isArray(data) ? data : []);
-      } else {
-        console.error('Failed to fetch categories:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -45,159 +44,126 @@ export default function CategoriesPage() {
     }
   };
 
-  // Handle category checkbox changes
-  const handleCategoryChange = (categorySlug: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCategories([...selectedCategories, categorySlug]);
-    } else {
-      setSelectedCategories(selectedCategories.filter(slug => slug !== categorySlug));
-    }
-  };
+  const filteredCategories = categories
+    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      if (sortBy === 'count') return b.product_count - a.product_count;
+      return a.name.localeCompare(b.name);
+    });
 
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchQuery('');
-    setSelectedCategories([]);
-  };
-
-  const filteredCategories = categories.filter(category => {
-    // Search filter
-    const matchesSearch = category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         category.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Category filter
-    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(category.slug);
-    
-    return matchesSearch && matchesCategory;
-  });
-
-
-
+  const totalProducts = categories.reduce((sum, c) => sum + c.product_count, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Main Categories</h1>
-          <p className="text-gray-600">Browse products by main category</p>
+
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Hero Header */}
+        <div className="relative rounded-2xl overflow-hidden mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-purple-900 to-gray-900" />
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(139,92,246,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(99,102,241,0.4) 0%, transparent 50%)',
+          }} />
+          <div className="relative px-6 py-10 md:px-10 md:py-14">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Browse Categories</h1>
+            <p className="text-gray-400 text-sm md:text-base max-w-xl">
+              Explore {categories.length} categories with {totalProducts} products from verified sellers across the marketplace.
+            </p>
+
+            {/* Search Bar */}
+            <div className="mt-6 max-w-lg">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search categories..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-11 pr-10 py-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-400/50 transition-all"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Mobile Layout: Stack vertically */}
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Filters Section - Top on mobile, Sidebar on desktop */}
-          <div className="w-full lg:w-80 lg:flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-lg p-4 lg:p-6 lg:sticky lg:top-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 lg:mb-6">Filters</h3>
-              
-              {/* Search */}
-              <div className="mb-4 lg:mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Search Categories</label>
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search categories..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  />
-                </div>
-              </div>
+        {/* Toolbar */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-gray-500">
+              {filteredCategories.length} {filteredCategories.length === 1 ? 'category' : 'categories'}
+              {searchQuery && <span className="text-purple-600 font-medium"> matching &ldquo;{searchQuery}&rdquo;</span>}
+            </p>
+          </div>
 
-              {/* Categories Filter */}
-              <div className="mb-4 lg:mb-6">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Categories</h4>
-                <div className="space-y-2 lg:space-y-2">
-                  <div className="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:gap-0">
-                    {categories.slice(0, Math.ceil(categories.length / 2)).map((category) => (
-                      <label key={category.id} className="flex items-center space-x-1 lg:space-x-2 text-xs lg:text-sm">
-                        <input
-                          type="checkbox"
-                          checked={selectedCategories.includes(category.slug)}
-                          onChange={(e) => handleCategoryChange(category.slug, e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
-                        />
-                        <span className="text-gray-700 truncate">{category.name}</span>
-                        <span className="text-gray-500 flex-shrink-0">({category.product_count})</span>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:gap-0">
-                    {categories.slice(Math.ceil(categories.length / 2)).map((category) => (
-                      <label key={category.id} className="flex items-center space-x-1 lg:space-x-2 text-xs lg:text-sm">
-                        <input
-                          type="checkbox"
-                          checked={selectedCategories.includes(category.slug)}
-                          onChange={(e) => handleCategoryChange(category.slug, e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
-                        />
-                        <span className="text-gray-700 truncate">{category.name}</span>
-                        <span className="text-gray-500 flex-shrink-0">({category.product_count})</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
+          <div className="flex items-center gap-2">
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'name' | 'count')}
+              className="text-xs px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
+            >
+              <option value="name">A — Z</option>
+              <option value="count">Most Products</option>
+            </select>
 
-              {/* Clear Filters */}
-              <button 
-                onClick={clearFilters}
-                className="w-full text-sm text-gray-600 hover:text-gray-800 underline"
+            {/* View Toggle */}
+            <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 transition-colors cursor-pointer ${viewMode === 'grid' ? 'bg-purple-50 text-purple-600' : 'text-gray-400 hover:text-gray-600'}`}
               >
-                Clear All Filters
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('compact')}
+                className={`p-2 transition-colors cursor-pointer ${viewMode === 'compact' ? 'bg-purple-50 text-purple-600' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <List className="w-4 h-4" />
               </button>
             </div>
           </div>
-
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Results Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Main Categories</h2>
-                <p className="text-gray-600 text-sm">
-                  {filteredCategories.length} main categories found
-                </p>
-              </div>
-            </div>
-
-            {/* Categories Grid */}
-            {loading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl shadow-lg overflow-hidden animate-pulse">
-                    <div className="h-32 md:h-48 bg-gray-200"></div>
-                    <div className="p-3 md:p-6">
-                      <div className="h-4 md:h-6 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-3 md:h-4 bg-gray-200 rounded w-2/3 mb-2 md:mb-4"></div>
-                      <div className="flex justify-between items-center">
-                        <div className="h-3 md:h-4 bg-gray-200 rounded w-16 md:w-20"></div>
-                        <div className="h-6 md:h-8 bg-gray-200 rounded w-16 md:w-24"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredCategories.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MagnifyingGlassIcon className="w-12 h-12 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No categories found</h3>
-                <p className="text-gray-600">Try adjusting your search criteria</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6">
-                {filteredCategories.map((category) => (
-                  <CategoryCard key={category.id} category={category} />
-                ))}
-              </div>
-            )}
-          </div>
         </div>
+
+        {/* Categories Grid */}
+        {loading ? (
+          <div className={`grid gap-3 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            {[...Array(9)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100" />
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-gray-100 rounded w-1/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredCategories.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Search className="w-7 h-7 text-gray-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">No categories found</h3>
+            <p className="text-sm text-gray-500 mb-4">Try a different search term</p>
+            <button onClick={() => setSearchQuery('')}
+              className="text-sm text-purple-600 hover:text-purple-700 font-medium cursor-pointer">
+              Clear search
+            </button>
+          </div>
+        ) : (
+          <div className={`grid gap-3 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            {filteredCategories.map((category) => (
+              <CategoryCard key={category.id} category={category} />
+            ))}
+          </div>
+        )}
       </div>
 
       <Footer />

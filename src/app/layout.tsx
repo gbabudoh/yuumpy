@@ -17,11 +17,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com'),
   ...generateSEOMetadata({
-    title: "Yuumpy - Discover Amazing Products",
-    description: "Discover amazing products from our curated collection. Find the best deals and quality products for your needs.",
-    keywords: "products, deals, shopping, online store, curated collection, affiliate marketplace",
-    ogTitle: "Yuumpy - Discover Amazing Products",
-    ogDescription: "Discover amazing products from our curated collection. Find the best deals and quality products for your needs.",
+    title: "Yuumpy — The Marketplace You Can Trust",
+    description: "Buy from verified sellers with escrow protection. Every purchase is backed by the Yuumpy Guarantee. Shop confidently, sell successfully.",
+    keywords: "marketplace, escrow, trusted sellers, verified products, online shopping, sell online, Yuumpy Guarantee",
+    ogTitle: "Yuumpy — The Marketplace You Can Trust",
+    ogDescription: "Buy from verified sellers with escrow protection. Every purchase is backed by the Yuumpy Guarantee.",
     ogImage: "/logo.png" }),
   icons: {
     icon: [
@@ -42,7 +42,7 @@ export default function RootLayout({
   children }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const organizationSchema = generateStructuredData('organization', {});
+  const organizationSchema = generateStructuredData('organization');
 
   return (
     <html lang="en">

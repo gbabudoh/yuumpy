@@ -3,328 +3,167 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  Gift, ShoppingBag, Sparkles, User, LogOut, Settings, Bell,
-  Package, TrendingUp, Award, Clock, Calendar, ArrowUpRight
+import {
+  Gift, ShoppingBag, Sparkles, TrendingUp, Award, Clock,
+  Calendar, ArrowUpRight, ArrowLeft, Info
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
-interface RewardsData {
-  pointsBalance: number;
-  lifetimeEarned: number;
-  lifetimeRedeemed: number;
-}
-
-interface RewardsHistoryItem {
-  id: number;
-  points: number;
-  transaction_type: 'earned' | 'redeemed' | 'expired' | 'adjusted';
-  description: string;
-  order_number?: string;
-  created_at: string;
-}
-
-interface Customer {
-  id: number;
-  email: string;
-  firstName: string;
-  lastName: string;
-}
+interface RewardsData { pointsBalance: number; lifetimeEarned: number; lifetimeRedeemed: number; }
+interface HistoryItem { id: number; points: number; transaction_type: 'earned' | 'redeemed' | 'expired' | 'adjusted'; description: string; order_number?: string; created_at: string; }
 
 export default function RewardsPage() {
   const router = useRouter();
-  const [customer, setCustomer] = useState<Customer | null>(null);
   const [rewards, setRewards] = useState<RewardsData | null>(null);
-  const [history, setHistory] = useState<RewardsHistoryItem[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  useEffect(() => { checkAuth(); }, []);
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/customer/auth/me');
-      if (!response.ok) {
-        router.push('/account/login');
-        return;
-      }
-      const data = await response.json();
-      setCustomer(data.customer);
+      const res = await fetch('/api/customer/auth/me');
+      if (!res.ok) { router.push('/account/login'); return; }
       fetchRewards();
-    } catch {
-      router.push('/account/login');
-    }
+    } catch { router.push('/account/login'); }
   };
 
   const fetchRewards = async () => {
     try {
-      const response = await fetch('/api/customer/rewards');
-      if (response.ok) {
-        const data = await response.json();
-        setRewards(data.rewards);
-        setHistory(data.history || []);
-      }
-    } catch (error) {
-      console.error('Error fetching rewards:', error);
-    } finally {
-      setLoading(false);
-    }
+      const res = await fetch('/api/customer/rewards');
+      if (res.ok) { const d = await res.json(); setRewards(d.rewards); setHistory(d.history || []); }
+    } catch {} finally { setLoading(false); }
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/customer/auth/logout', { method: 'POST' });
-      router.push('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
-      case 'earned':
-        return <TrendingUp className="w-5 h-5 text-green-600" />;
-      case 'redeemed':
-        return <Gift className="w-5 h-5 text-purple-600" />;
-      case 'expired':
-        return <Clock className="w-5 h-5 text-red-600" />;
-      default:
-        return <Award className="w-5 h-5 text-blue-600" />;
-    }
-  };
-
-  const getTransactionColor = (type: string) => {
-    switch (type) {
-      case 'earned':
-        return 'bg-green-50 border-green-200 text-green-700';
-      case 'redeemed':
-        return 'bg-purple-50 border-purple-200 text-purple-700';
-      case 'expired':
-        return 'bg-red-50 border-red-200 text-red-700';
-      default:
-        return 'bg-blue-50 border-blue-200 text-blue-700';
-    }
+  const txStyle: Record<string, { icon: any; color: string; bg: string; sign: string }> = {
+    earned:   { icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', sign: '+' },
+    redeemed: { icon: Gift,       color: 'text-violet-600',  bg: 'bg-violet-50',  sign: '-' },
+    expired:  { icon: Clock,      color: 'text-red-600',     bg: 'bg-red-50',     sign: '-' },
+    adjusted: { icon: Award,      color: 'text-blue-600',    bg: 'bg-blue-50',    sign: '' },
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8f8fa] flex items-center justify-center">
         <div className="text-center">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-amber-200 rounded-full animate-spin border-t-amber-600 mx-auto"></div>
-            <Sparkles className="w-6 h-6 text-amber-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+          <div className="relative w-14 h-14 mx-auto">
+            <div className="w-14 h-14 border-[3px] border-gray-200 rounded-full animate-spin border-t-gray-900" />
+            <Sparkles className="w-5 h-5 text-gray-900 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
           </div>
-          <p className="mt-4 text-gray-600 font-medium">Loading your rewards...</p>
+          <p className="mt-4 text-gray-400 text-sm">Loading rewards...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-[#f8f8fa]">
       <Header />
-      
-      {/* Hero Section */}
-      <div className="bg-[#DCDCDC] text-gray-800">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center ring-4 ring-amber-400/30">
-                <Gift className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm">My Rewards</p>
-                <h1 className="text-2xl md:text-3xl font-bold">
-                  {customer?.firstName} {customer?.lastName}
-                </h1>
-                <p className="text-gray-500 text-sm">{customer?.email}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="p-2 bg-gray-500/20 hover:bg-gray-500/30 rounded-xl transition-colors cursor-pointer">
-                <Bell className="w-5 h-5" />
-              </button>
-              <button className="p-2 bg-gray-500/20 hover:bg-gray-500/30 rounded-xl transition-colors cursor-pointer">
-                <Settings className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-500/20 hover:bg-gray-500/30 rounded-xl transition-colors text-sm font-medium cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </button>
+      <div className="bg-white border-b border-gray-100/80">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
+          <div className="flex items-center gap-3">
+            <Link href="/account" className="p-2 -ml-2 rounded-xl hover:bg-gray-50 transition-colors" aria-label="Back to account">
+              <ArrowLeft className="w-5 h-5 text-gray-400" />
+            </Link>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">My Rewards</h1>
+              <p className="text-[13px] text-gray-400 mt-0.5">Earn and redeem points</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Points Balance Card */}
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl shadow-lg shadow-amber-500/30 p-8 mb-8 text-white">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-amber-100 text-sm mb-2">Available Points</p>
-              <p className="text-5xl font-bold">{rewards?.pointsBalance || 0}</p>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        {/* Points Balance */}
+        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl p-7 sm:p-8 text-white shadow-xl shadow-gray-900/20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-gray-400 text-sm mb-1">Available Points</p>
+                <p className="text-4xl sm:text-5xl font-bold tracking-tight">{rewards?.pointsBalance || 0}</p>
+              </div>
+              <div className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                <Gift className="w-7 h-7 text-white" />
+              </div>
             </div>
-            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-              <Gift className="w-10 h-10 text-white" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/20">
-            <div>
-              <p className="text-amber-100 text-xs mb-1">Lifetime Earned</p>
-              <p className="text-2xl font-bold">{rewards?.lifetimeEarned || 0}</p>
-            </div>
-            <div>
-              <p className="text-amber-100 text-xs mb-1">Lifetime Redeemed</p>
-              <p className="text-2xl font-bold">{rewards?.lifetimeRedeemed || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Info Card */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
-          <div className="flex items-start gap-3">
-            <Award className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-blue-900 mb-1">How Rewards Work</p>
-              <p className="text-sm text-blue-700">
-                Earn 1 point for every £1 spent on direct purchases. Points can be redeemed for discounts on future orders. 
-                Points expire 1 year after being earned.
-              </p>
+            <div className="grid grid-cols-2 gap-4 pt-5 border-t border-white/10">
+              <div>
+                <p className="text-gray-400 text-[12px] mb-0.5">Lifetime Earned</p>
+                <p className="text-xl font-bold">{rewards?.lifetimeEarned || 0}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-[12px] mb-0.5">Lifetime Redeemed</p>
+                <p className="text-xl font-bold">{rewards?.lifetimeRedeemed || 0}</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
-          <Link href="/account/orders" className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-green-300 hover:shadow-md transition-all group">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-              <Package className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 text-sm">My Orders</p>
-              <p className="text-xs text-gray-500">View orders</p>
-            </div>
-          </Link>
-          <Link href="/" className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all group">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-              <ShoppingBag className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 text-sm">Continue Shopping</p>
-              <p className="text-xs text-gray-500">Earn more points</p>
-            </div>
-          </Link>
-          <Link href="/contact" className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all group">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-              <Settings className="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 text-sm">Get Help</p>
-              <p className="text-xs text-gray-500">Contact support</p>
-            </div>
-          </Link>
+        {/* How it works */}
+        <div className="flex items-start gap-3 p-4 bg-blue-50/60 border border-blue-100 rounded-xl">
+          <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-blue-900 mb-0.5">How Rewards Work</p>
+            <p className="text-[13px] text-blue-700/80 leading-relaxed">Earn 1 point for every £1 spent on direct purchases. Redeem points for discounts on future orders. Points expire 1 year after being earned.</p>
+          </div>
         </div>
 
-        {/* Rewards History */}
-        <div className="bg-white rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Calendar className="w-6 h-6 text-amber-600" />
-              Rewards History
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">Track your points earned and redeemed</p>
+        {/* History */}
+        <section className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-50">
+            <h2 className="text-[17px] font-semibold text-gray-900">Points History</h2>
+            <p className="text-[13px] text-gray-400 mt-0.5">Track your earned and redeemed points</p>
           </div>
 
           {history.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="w-10 h-10 text-gray-400" />
+            <div className="px-6 py-16 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
+                <Award className="w-7 h-7 text-gray-300" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No rewards history yet</h3>
-              <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                Start earning points by making purchases. You'll earn 1 point for every £1 spent!
-              </p>
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-amber-500/30 transition-all"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                Start Shopping
+              <p className="text-sm font-medium text-gray-900 mb-1">No history yet</p>
+              <p className="text-[13px] text-gray-400 mb-5">Start earning points by making purchases</p>
+              <Link href="/products" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors">
+                <ShoppingBag className="w-4 h-4" /> Start Shopping
               </Link>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
-              {history.map((item) => (
-                <div
-                  key={item.id}
-                  className={`p-6 hover:bg-gray-50/50 transition-colors ${getTransactionColor(item.transaction_type)}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="flex-shrink-0">
-                        {getTransactionIcon(item.transaction_type)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-gray-900 capitalize">
-                            {item.transaction_type}
-                          </p>
-                          {item.order_number && (
-                            <>
-                              <span className="text-gray-400">•</span>
-                              <Link
-                                href={`/account/orders/${item.order_number}`}
-                                className="text-sm text-gray-600 hover:text-amber-600 transition-colors flex items-center gap-1"
-                              >
-                                Order #{item.order_number}
-                                <ArrowUpRight className="w-3 h-3" />
-                              </Link>
-                            </>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600">{item.description}</p>
-                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(item.created_at)}
-                        </p>
+            <div className="divide-y divide-gray-50">
+              {history.map((item) => {
+                const s = txStyle[item.transaction_type] || txStyle.adjusted;
+                const Icon = s.icon;
+                return (
+                  <div key={item.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/60 transition-colors">
+                    <div className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
+                      <Icon className={`w-[18px] h-[18px] ${s.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 capitalize">{item.transaction_type}</p>
+                      <p className="text-[12px] text-gray-500 truncate">{item.description}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] text-gray-400">{fmtDate(item.created_at)}</span>
+                        {item.order_number && (
+                          <Link href={`/account/orders/${item.order_number}`} className="text-[11px] text-blue-600 hover:text-blue-700 font-medium flex items-center gap-0.5">
+                            #{item.order_number} <ArrowUpRight className="w-3 h-3" />
+                          </Link>
+                        )}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`text-xl font-bold ${
-                        item.transaction_type === 'earned' ? 'text-green-600' : 
-                        item.transaction_type === 'redeemed' ? 'text-purple-600' : 
-                        'text-red-600'
-                      }`}>
-                        {item.transaction_type === 'earned' ? '+' : '-'}
-                        {item.points}
-                      </p>
-                      <p className="text-xs text-gray-500">points</p>
-                    </div>
+                    <span className={`text-lg font-bold ${s.color} shrink-0`}>
+                      {s.sign}{item.points}
+                    </span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
-        </div>
-      </div>
-
+        </section>
+      </main>
       <Footer />
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -24,13 +24,13 @@ export default function TermsOfService() {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
                 <p className="text-gray-700 leading-relaxed mb-4">
-                  By accessing and using Yuumpy ("the Service"), you accept and agree to be bound by the 
+                  By accessing and using Yuumpy (&quot;the Service&quot;), you accept and agree to be bound by the 
                   terms and provision of this agreement. If you do not agree to abide by the above, 
                   please do not use this service.
                 </p>
                 <p className="text-gray-700 leading-relaxed">
-                  These Terms of Service ("Terms") govern your use of our website located at yuumpy.com 
-                  (the "Service") operated by Yuumpy ("us", "we", or "our").
+                  These Terms of Service (&quot;Terms&quot;) govern your use of our website located at yuumpy.com 
+                  (the &quot;Service&quot;) operated by Yuumpy (&quot;us&quot;, &quot;we&quot;, or &quot;our&quot;).
                 </p>
               </section>
 
@@ -125,7 +125,7 @@ export default function TermsOfService() {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Disclaimer of Warranties</h2>
                 <p className="text-gray-700 leading-relaxed mb-4">
-                  The information on this Service is provided on an "as is" basis. To the fullest extent 
+                  The information on this Service is provided on an &quot;as is&quot; basis. To the fullest extent 
                   permitted by law, Yuumpy excludes:
                 </p>
                 <ul className="list-disc list-inside text-gray-700 mb-4 space-y-2">
@@ -151,7 +151,7 @@ export default function TermsOfService() {
                   You agree to defend, indemnify, and hold harmless Yuumpy and its licensee and licensors, 
                   and their employees, contractors, agents, officers and directors, from and against any 
                   and all claims, damages, obligations, losses, liabilities, costs or debt, and expenses 
-                  (including but not limited to attorney's fees).
+                  (including but not limited to attorney&apos;s fees).
                 </p>
               </section>
 

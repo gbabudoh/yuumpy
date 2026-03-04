@@ -137,10 +137,12 @@ export async function GET(
     try {
       const sql = `
         SELECT p.*, c.name as category_name, c.slug as category_slug,
-               s.name as subcategory_name, s.slug as subcategory_slug
+               s.name as subcategory_name, s.slug as subcategory_slug,
+               sel.store_slug as seller_store_slug, sel.store_name as seller_store_name
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
         LEFT JOIN categories s ON p.subcategory_id = s.id
+        LEFT JOIN sellers sel ON p.seller_id = sel.id
         WHERE p.slug = ? AND p.is_active = 1
       `;
 

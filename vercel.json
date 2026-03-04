@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/release-escrow?secret=${CRON_SECRET}",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}

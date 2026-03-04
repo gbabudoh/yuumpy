@@ -3,7 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { 
+  Search, 
+  SlidersHorizontal, 
+  LayoutGrid, 
+  List, 
+  ChevronRight,
+  FilterX
+} from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -26,6 +33,7 @@ interface Product {
   affiliate_url?: string;
   purchase_type?: 'affiliate' | 'direct';
   product_condition?: 'new' | 'refurbished' | 'used';
+  seller_store_slug?: string;
 }
 
 interface Category {
@@ -292,11 +300,11 @@ export default function CategoryView({ initialSlug }: CategoryViewProps) {
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
-            <Link href="/" className="hover:text-purple-600 transition-colors cursor-pointer">Home</Link>
-            <span>/</span>
-            <Link href="/products" className="hover:text-purple-600 transition-colors cursor-pointer">Products</Link>
-            <span>/</span>
+          <nav className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6">
+            <Link href="/" className="hover:text-indigo-600 transition-colors cursor-pointer">Home</Link>
+            <ChevronRight className="w-3 h-3" />
+            <Link href="/products" className="hover:text-indigo-600 transition-colors cursor-pointer">Products</Link>
+            <ChevronRight className="w-3 h-3" />
             <span className="text-gray-900">{category.name}</span>
           </nav>
           
@@ -325,19 +333,22 @@ export default function CategoryView({ initialSlug }: CategoryViewProps) {
 
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           <div className="w-full lg:w-72 lg:flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-lg p-4 lg:p-6 lg:sticky lg:top-8 z-10">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 lg:mb-6">Filters</h3>
+            <div className="bg-white rounded-2xl shadow-xl shadow-indigo-500/5 p-4 lg:p-6 lg:sticky lg:top-8 z-10 border border-gray-100">
+              <div className="flex items-center gap-2 mb-6">
+                <SlidersHorizontal className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-lg font-bold text-gray-900">Filters</h3>
+              </div>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Search Products</label>
-                <div className="relative border border-gray-100 rounded-lg">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Search Products</label>
+                <div className="relative group">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-indigo-600 transition-colors" />
                   <input
                     type="text"
-                    placeholder="Search products..."
+                    placeholder="Search in {category.name}..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm transition-all outline-none"
                   />
                 </div>
               </div>
@@ -480,9 +491,10 @@ export default function CategoryView({ initialSlug }: CategoryViewProps) {
 
               <button 
                 onClick={clearFilters}
-                className="w-full text-sm text-gray-600 hover:text-purple-600 underline cursor-pointer transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
               >
-                Clear All Filters
+                <FilterX className="w-4 h-4" />
+                <span>Clear All Filters</span>
               </button>
             </div>
           </div>
@@ -496,48 +508,39 @@ export default function CategoryView({ initialSlug }: CategoryViewProps) {
                 </p>
               </div>
               
-              <div className="flex items-center space-x-2 border border-gray-200 rounded-lg overflow-hidden">
+              <div className="flex items-center bg-white border border-gray-100 rounded-xl p-1 shadow-sm">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 cursor-pointer transition-colors ${
+                  className={`p-2 rounded-lg transition-all cursor-pointer ${
                     viewMode === 'grid' 
-                      ? 'text-white' 
-                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                      ? 'bg-[#020617] text-white shadow-lg' 
+                      : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
                   }`}
-                  style={viewMode === 'grid' ? { backgroundColor: '#8827ee' } : {}}
                 >
-                  <div className="w-5 h-5 grid grid-cols-2 gap-0.5">
-                    <div className="bg-current rounded-sm"></div>
-                    <div className="bg-current rounded-sm"></div>
-                    <div className="bg-current rounded-sm"></div>
-                    <div className="bg-current rounded-sm"></div>
-                  </div>
+                  <LayoutGrid className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 cursor-pointer transition-colors ${
+                  className={`p-2 rounded-lg transition-all cursor-pointer ${
                     viewMode === 'list' 
-                      ? 'text-white' 
-                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                      ? 'bg-[#020617] text-white shadow-lg' 
+                      : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
                   }`}
-                  style={viewMode === 'list' ? { backgroundColor: '#8827ee' } : {}}
                 >
-                  <div className="w-5 h-5 flex flex-col space-y-1">
-                    <div className="bg-current rounded-full w-1 h-1"></div>
-                    <div className="bg-current rounded-full w-1 h-1"></div>
-                    <div className="bg-current rounded-full w-1 h-1"></div>
-                  </div>
+                  <List className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
             {sortedAndFilteredProducts.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <MagnifyingGlassIcon className="w-10 h-10 text-gray-300" />
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-16 text-center">
+                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Search className="w-10 h-10 text-gray-200" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
-                <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No results found</h3>
+                <p className="text-gray-400 text-sm max-w-xs mx-auto text-balance">
+                  We couldn&apos;t find any products matching your current filters. Try adjusting them.
+                </p>
               </div>
             ) : (
               <div className={
@@ -559,7 +562,8 @@ export default function CategoryView({ initialSlug }: CategoryViewProps) {
                       isBestseller: Boolean(product.is_bestseller),
                       affiliate_url: product.affiliate_url,
                       purchase_type: product.purchase_type,
-                      product_condition: product.product_condition
+                      product_condition: product.product_condition,
+                      seller_store_slug: product.seller_store_slug
                     }} 
                     viewMode={viewMode}
                   />

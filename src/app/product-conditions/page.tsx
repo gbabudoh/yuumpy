@@ -1,6 +1,6 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { CheckCircle, RefreshCw, Package } from 'lucide-react';
 
 export const metadata: Metadata = {

@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
 // JWT Configuration
 export const JWT_CONFIG = {
@@ -23,19 +24,19 @@ export const JWT_CONFIG = {
 
 // Generate JWT token with custom options
 export function generateJWT(
-  payload: any,
+  payload: object,
   type: keyof typeof JWT_CONFIG.expiresIn = 'access'
 ): string {
   const expiresInValue = JWT_CONFIG.expiresIn[type];
   const options: jwt.SignOptions = {
-    expiresIn: expiresInValue as any,
+    expiresIn: expiresInValue as jwt.SignOptions['expiresIn'],
     algorithm: JWT_CONFIG.algorithm };
 
   return jwt.sign(payload, JWT_CONFIG.secret, options);
 }
 
 // Verify JWT token
-export function verifyJWT(token: string): any {
+export function verifyJWT(token: string): unknown {
   try {
     return jwt.verify(token, JWT_CONFIG.secret);
   } catch (error) {
@@ -45,7 +46,7 @@ export function verifyJWT(token: string): any {
 }
 
 // Decode JWT token without verification (for debugging)
-export function decodeJWT(token: string): any {
+export function decodeJWT(token: string): unknown {
   try {
     return jwt.decode(token);
   } catch (error) {
@@ -57,18 +58,18 @@ export function decodeJWT(token: string): any {
 // Check if token is expired
 export function isTokenExpired(token: string): boolean {
   try {
-    const decoded = jwt.decode(token) as any;
+    const decoded = jwt.decode(token) as jwt.JwtPayload | null;
     if (!decoded || !decoded.exp) return true;
     
     const currentTime = Math.floor(Date.now() / 1000);
     return decoded.exp < currentTime;
-  } catch (error) {
+  } catch {
     return true;
   }
 }
 
 // Generate admin-specific token
-export function generateAdminToken(userId: number, role: string, permissions: any): string {
+export function generateAdminToken(userId: number, role: string, permissions: unknown): string {
   const payload = {
     userId,
     role,
@@ -137,6 +138,5 @@ export function validateJWTSecret(): boolean {
 
 // Generate a secure JWT secret (for development)
 export function generateSecureSecret(): string {
-  const crypto = require('crypto');
   return crypto.randomBytes(64).toString('hex');
 }

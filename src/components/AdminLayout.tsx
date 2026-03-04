@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, User } from 'lucide-react';
 import AdminSidebar from './AdminSidebar';
@@ -39,51 +39,67 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-slate-50 flex font-sans">
       {/* Sidebar */}
       <AdminSidebar />
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <div className="bg-white shadow-sm px-6 py-4">
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-100 px-8 py-5 sticky top-0 z-30">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Admin Panel</h1>
-              <p className="text-sm text-gray-600">Manage your Yuumpy marketplace</p>
+            <div className="animate-fadeIn">
+              <h1 className="text-xl font-black text-slate-900 tracking-tight">Admin Terminal</h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Operational</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
+            
+            <div className="flex items-center gap-6">
+              {/* Notifications or other actions could go here */}
+              
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-purple-200 hover:bg-purple-50 transition-all cursor-pointer group"
                 >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer" style={{ backgroundColor: '#8827ee' }}>
-                    <User className="w-4 h-4 text-white" />
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-200 group-hover:scale-105 transition-transform">
+                    <User className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-sm font-medium text-gray-700">adminaces1</span>
+                  <div className="text-left hidden sm:block">
+                    <p className="text-xs font-black text-slate-900 leading-none mb-0.5">Admin Ace</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Super Admin</p>
+                  </div>
                 </button>
                 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <div className="absolute right-0 mt-3 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-purple-200/50 border border-purple-100 py-2 z-50 animate-fadeInUp">
+                    <div className="px-4 py-3 border-b border-slate-50 mb-1">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Account Management</p>
+                    </div>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-600 hover:bg-red-50 hover:text-red-500 transition-all cursor-pointer"
                     >
-                      <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
+                      <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                        <LogOut className="w-4 h-4" />
+                      </div>
+                      <span>Sign Out</span>
                     </button>
                   </div>
                 )}
               </div>
             </div>
           </div>
-        </div>
+        </header>
         
         {/* Page Content */}
-        <div className="flex-1 p-6">
-          {children}
-        </div>
+        <main className="flex-1 p-8">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );

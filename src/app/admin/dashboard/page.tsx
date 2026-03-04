@@ -1,25 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   Package, 
-  Users, 
   DollarSign, 
-  TrendingUp, 
-  ShoppingBag,
   Eye,
   MousePointer,
   CreditCard,
   Settings,
-  Database,
-  FileText,
   Shield,
   Plus,
-  Edit,
-  Trash2,
-  Mail
+  FileText
 } from 'lucide-react';
+import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import AdminAuthWrapper from '@/components/AdminAuthWrapper';
 
@@ -114,317 +108,143 @@ export default function AdminDashboard() {
   return (
     <AdminAuthWrapper>
       <AdminLayout>
-      <div>
+      <div className="animate-fadeIn">
         {/* Dashboard Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-          <p className="text-gray-600">Yuumpy Affiliate Marketplace - Control Panel</p>
+        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart3 className="w-5 h-5 text-purple-600" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Executive Summary</span>
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Admin Dashboard</h1>
+            <p className="text-slate-500 font-medium mt-1">Real-time marketplace oversight & control panel.</p>
+          </div>
+          <div className="flex gap-3">
+            <button className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer shadow-sm">
+              Export Report
+            </button>
+            <button className="px-5 py-2.5 bg-purple-600 rounded-xl text-xs font-bold text-white hover:bg-purple-700 transition-all cursor-pointer shadow-lg shadow-purple-200">
+              Refresh Data
+            </button>
+          </div>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Products</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalProducts}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          {[
+            { label: 'Total Products', value: stats.totalProducts, icon: Package, color: 'purple', trend: '+12%' },
+            { label: 'Total Revenue', value: `£${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'blue', trend: '+5%' },
+            { label: 'Page Views', value: stats.totalViews.toLocaleString(), icon: Eye, color: 'indigo', trend: '+18%' },
+            { label: 'Affiliate Clicks', value: stats.totalClicks.toLocaleString(), icon: MousePointer, color: 'orange', trend: '+24%' }
+          ].map((item, idx) => (
+            <div key={idx} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-purple-100/50 transition-all duration-500 group">
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-12 h-12 rounded-2xl bg-${item.color}-50 flex items-center justify-center text-${item.color}-600 group-hover:scale-110 transition-transform`}>
+                  <item.icon className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black text-green-500 bg-green-50 px-2.5 py-1 rounded-full">{item.trend}</span>
               </div>
-              <Package className="w-8 h-8 text-blue-600" />
-            </div>
-            <div className="mt-4 flex items-center text-sm text-gray-500">
-              <TrendingUp className="w-4 h-4 mr-1" />
-              <span>0% this month</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">£{stats.totalRevenue.toLocaleString()}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{item.label}</p>
+              <h3 className="text-3xl font-black text-slate-900 tracking-tight">{item.value}</h3>
+              <div className="mt-4 pt-4 border-t border-slate-50">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Updated 2 mins ago</p>
               </div>
-              <DollarSign className="w-8 h-8 text-green-600" />
             </div>
-            <div className="mt-4 flex items-center text-sm text-gray-500">
-              <TrendingUp className="w-4 h-4 mr-1" />
-              <span>0% this month</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Page Views</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalViews.toLocaleString()}</p>
-              </div>
-              <Eye className="w-8 h-8 text-purple-600" />
-            </div>
-            <div className="mt-4 flex items-center text-sm text-gray-500">
-              <TrendingUp className="w-4 h-4 mr-1" />
-              <span>0% this month</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Affiliate Clicks</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalClicks.toLocaleString()}</p>
-              </div>
-              <MousePointer className="w-8 h-8 text-orange-600" />
-            </div>
-            <div className="mt-4 flex items-center text-sm text-gray-500">
-              <TrendingUp className="w-4 h-4 mr-1" />
-              <span>0% this month</span>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Quick Setup Guide */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-          <h2 className="text-lg font-semibold text-blue-900 mb-3">📋 Quick Setup Guide</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
-            <div>
-              <strong>1. Create Categories:</strong> Go to Categories → Add main categories (Electronics, Fashion, etc.)
-            </div>
-            <div>
-              <strong>2. Add Subcategories:</strong> In Categories → Select parent category when adding (Smartphones under Electronics)
-            </div>
-            <div>
-              <strong>3. Create Brands:</strong> Go to Brands → Add brands (Apple, Samsung, Nike, etc.)
-            </div>
-            <div>
-              <strong>4. Add Products:</strong> Go to Products → Select category/subcategory and optional brand
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-3xl p-8 mb-10 relative overflow-hidden shadow-2xl shadow-purple-200">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -mr-20 -mt-20 rounded-full" />
+          <div className="relative z-10">
+            <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Shield className="w-5 h-5" />
+              </div>
+              Onboarding Checklist
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { step: '1', title: 'Categories', desc: 'Define your main taxonomy' },
+                { step: '2', title: 'Sub-cats', desc: 'Granular product mapping' },
+                { step: '3', title: 'Brands', desc: 'Add verified manufacturers' },
+                { step: '4', title: 'Inventory', desc: 'Import your affiliate products' }
+              ].map((item, idx) => (
+                <div key={idx} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+                  <span className="text-[10px] font-black text-purple-200 mb-1 block">STEP 0{item.step}</span>
+                  <h4 className="font-bold text-white mb-1">{item.title}</h4>
+                  <p className="text-xs text-purple-100/70 font-medium leading-tight">{item.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Management Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Content Management */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-              <Package className="w-6 h-6 mr-3 text-blue-600" />
-              Content Management
-            </h2>
-            <div className="space-y-4">
-              <a
-                href="/admin/products"
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors group"
-              >
-                <div className="flex items-center space-x-3">
-                  <Package className="w-5 h-5 text-blue-600 group-hover:text-blue-700" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">Products</h3>
-                    <p className="text-sm text-gray-600">{stats.totalProducts} items</p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Left: Content Management */}
+          <div className="lg:col-span-12">
+            <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+                    <Package className="w-5 h-5" />
                   </div>
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Ecosystem Management</h2>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button className="p-1 text-blue-600 hover:bg-blue-100 rounded">
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <button className="p-1 text-gray-600 hover:bg-gray-100 rounded">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                </div>
-              </a>
-
-              <a
-                href="/admin/categories"
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors group"
-              >
-                <div className="flex items-center space-x-3">
-                  <BarChart3 className="w-5 h-5 text-green-600 group-hover:text-green-700" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">Categories & Sub-categories</h3>
-                    <p className="text-sm text-gray-600">{stats.totalCategories} categories</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button className="p-1 text-green-600 hover:bg-green-100 rounded">
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <button className="p-1 text-gray-600 hover:bg-gray-100 rounded">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                </div>
-              </a>
-
-              <a
-                href="/admin/brands"
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors group"
-              >
-                <div className="flex items-center space-x-3">
-                  <Shield className="w-5 h-5 text-purple-600 group-hover:text-purple-700" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">Brands</h3>
-                    <p className="text-sm text-gray-600">{stats.totalBrands} brands</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button className="p-1 text-purple-600 hover:bg-purple-100 rounded">
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <button className="p-1 text-gray-600 hover:bg-gray-100 rounded">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                </div>
-              </a>
-
-              <a
-                href="/admin/banner-ads"
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-colors group"
-              >
-                <div className="flex items-center space-x-3">
-                  <CreditCard className="w-5 h-5 text-orange-600 group-hover:text-orange-700" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">Banner Ads</h3>
-                    <p className="text-sm text-gray-600">{stats.totalBannerAds} campaigns</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button className="p-1 text-orange-600 hover:bg-orange-100 rounded">
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <button className="p-1 text-gray-600 hover:bg-gray-100 rounded">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                </div>
-              </a>
-
-              <a
-                href="/admin/emails"
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-colors group"
-              >
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-5 h-5 text-indigo-600 group-hover:text-indigo-700" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">Email Inquiries</h3>
-                    <p className="text-sm text-gray-600">{stats.totalEmails} total, {stats.newEmails} new</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {stats.newEmails > 0 && (
-                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                      {stats.newEmails}
-                    </span>
-                  )}
-                  <button className="p-1 text-indigo-600 hover:bg-indigo-100 rounded">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </div>
-              </a>
-            </div>
-          </div>
-
-          {/* Analytics & Reports */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-              <BarChart3 className="w-6 h-6 mr-3 text-purple-600" />
-              Analytics & Reports
-            </h2>
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-gray-900 mb-3">Performance Overview</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Conversion Rate</p>
-                    <p className="font-semibold text-gray-400">0.0%</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Avg. Order Value</p>
-                    <p className="font-semibold text-gray-400">£0.00</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Click-through Rate</p>
-                    <p className="font-semibold text-gray-400">0.0%</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Revenue per Click</p>
-                    <p className="font-semibold text-gray-400">£0.00</p>
-                  </div>
-                </div>
+                <Link href="/admin/products" className="text-xs font-bold text-purple-600 hover:text-purple-700 tracking-wide uppercase">Manage All →</Link>
               </div>
               
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-gray-900 mb-3">Top Performing Categories</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Electronics</span>
-                    <span className="font-semibold text-gray-400">0%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Fashion</span>
-                    <span className="font-semibold text-gray-400">0%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Household</span>
-                    <span className="font-semibold text-gray-400">0%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Cosmetics</span>
-                    <span className="font-semibold text-gray-400">0%</span>
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  { name: 'Products', count: stats.totalProducts, icon: Package, href: '/admin/products', color: 'blue' },
+                  { name: 'Categories', count: stats.totalCategories, icon: BarChart3, href: '/admin/categories', color: 'green' },
+                  { name: 'Brands', count: stats.totalBrands, icon: Shield, href: '/admin/brands', color: 'purple' }
+                ].map((section, idx) => (
+                  <Link 
+                    key={idx}
+                    href={section.href}
+                    className="group bg-slate-50/50 hover:bg-white border border-slate-100 hover:border-purple-200 p-6 rounded-2xl transition-all duration-300 hover:shadow-xl hover:shadow-purple-100/50"
+                  >
+                    <div className={`w-12 h-12 rounded-xl bg-${section.color}-50 flex items-center justify-center text-${section.color}-600 mb-4 group-hover:scale-110 transition-transform`}>
+                      <section.icon className="w-6 h-6" />
+                    </div>
+                    <h3 className="font-bold text-slate-900 mb-1">{section.name}</h3>
+                    <p className="text-xs text-slate-500 font-medium">{section.count} indexed items</p>
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-            <Settings className="w-6 h-6 mr-3 text-gray-600" />
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <a
-              href="/admin/products?action=add"
-              className="p-4 text-center border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors group"
-            >
-              <Package className="w-6 h-6 mx-auto mb-2 text-blue-600 group-hover:text-blue-700" />
-              <span className="text-sm font-medium text-gray-900">Add Product</span>
-            </a>
-
-            <a
-              href="/admin/categories?action=add"
-              className="p-4 text-center border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors group"
-            >
-              <BarChart3 className="w-6 h-6 mx-auto mb-2 text-green-600 group-hover:text-green-700" />
-              <span className="text-sm font-medium text-gray-900">Add Category</span>
-            </a>
-
-            <a
-              href="/admin/brands?action=add"
-              className="p-4 text-center border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors group"
-            >
-              <Shield className="w-6 h-6 mx-auto mb-2 text-purple-600 group-hover:text-purple-700" />
-              <span className="text-sm font-medium text-gray-900">Add Brand</span>
-            </a>
-
-            <a
-              href="/admin/banner-ads?action=add"
-              className="p-4 text-center border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-colors group"
-            >
-              <CreditCard className="w-6 h-6 mx-auto mb-2 text-orange-600 group-hover:text-orange-700" />
-              <span className="text-sm font-medium text-gray-900">Create Ad</span>
-            </a>
-
-            <a
-              href="/admin/analytics"
-              className="p-4 text-center border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-colors group"
-            >
-              <BarChart3 className="w-6 h-6 mx-auto mb-2 text-indigo-600 group-hover:text-indigo-700" />
-              <span className="text-sm font-medium text-gray-900">View Reports</span>
-            </a>
-
-            <a
-              href="/admin/settings"
-              className="p-4 text-center border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors group"
-            >
-              <Settings className="w-6 h-6 mx-auto mb-2 text-gray-600 group-hover:text-gray-700" />
-              <span className="text-sm font-medium text-gray-900">Settings</span>
-            </a>
+        <div className="mt-10">
+          <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+                <Settings className="w-5 h-5" />
+              </div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">System Short-cuts</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+              {[
+                { name: 'Add Product', icon: Plus, href: '/admin/products?action=add' },
+                { name: 'New Category', icon: Plus, href: '/admin/categories?action=add' },
+                { name: 'Register Brand', icon: Shield, href: '/admin/brands?action=add' },
+                { name: 'Create Ad', icon: CreditCard, href: '/admin/banner-ads?action=add' },
+                { name: 'Reports', icon: FileText, href: '/admin/analytics' },
+                { name: 'Settings', icon: Settings, href: '/admin/settings' }
+              ].map((action, idx) => (
+                <Link
+                  key={idx}
+                  href={action.href}
+                  className="flex flex-col items-center justify-center p-6 bg-slate-50/50 rounded-2xl border border-dotted border-slate-200 hover:border-purple-300 hover:bg-purple-50 transition-all group"
+                >
+                  <action.icon className="w-5 h-5 text-slate-400 group-hover:text-purple-600 group-hover:scale-110 transition-all mb-3" />
+                  <span className="text-[10px] font-black uppercase tracking-tight text-slate-500 group-hover:text-purple-700 text-center">{action.name}</span>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </div>

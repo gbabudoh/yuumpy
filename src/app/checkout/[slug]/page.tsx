@@ -370,7 +370,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href={`/products/${product.slug}`} className="flex items-center text-gray-600 hover:text-gray-900">
+            <Link href={product.seller_store_slug ? `/products/${product.seller_store_slug}/${product.slug}` : `/products/${product.slug}`} className="flex items-center text-gray-600 hover:text-gray-900">
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to Product
             </Link>
@@ -800,6 +800,21 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Lock className="w-4 h-4 text-green-600" />
                   <span>Your data is protected</span>
+                </div>
+              </div>
+
+              {/* Yuumpy Guarantee */}
+              <div className="mt-4 p-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #eef2ff, #f0fdf4)', border: '1px solid #c7d2fe' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="w-5 h-5 text-indigo-600" />
+                  <span className="text-sm font-bold text-indigo-900">Yuumpy Guarantee</span>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Your payment is held in escrow until delivery is confirmed. If anything goes wrong, our dispute team has you covered. Funds are released to the seller 7 days after delivery.
+                </p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Lock className="w-3.5 h-3.5 text-green-600" />
+                  <span className="text-xs font-semibold text-green-700">Escrow Protected</span>
                 </div>
               </div>
             </div>

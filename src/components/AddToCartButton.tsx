@@ -42,7 +42,12 @@ export default function AddToCartButton({ product, isDirectSale, selectedColors 
           product_condition: product.product_condition,
           affiliate_url: product.affiliate_url,
           color: colorName,
-          color_image: colorImageUrl
+          color_image: colorImageUrl,
+          seller_store_name: product.seller_store_name,
+          seller_store_slug: product.seller_store_slug,
+          seller_city: product.seller_city,
+          seller_country: product.seller_country,
+          seller_processing_time: product.seller_processing_time,
         });
       });
     } else {
@@ -57,6 +62,11 @@ export default function AddToCartButton({ product, isDirectSale, selectedColors 
         purchase_type: product.purchase_type,
         product_condition: product.product_condition,
         affiliate_url: product.affiliate_url,
+        seller_store_name: product.seller_store_name,
+        seller_store_slug: product.seller_store_slug,
+        seller_city: product.seller_city,
+        seller_country: product.seller_country,
+        seller_processing_time: product.seller_processing_time,
       });
     }
     router.push('/cart');

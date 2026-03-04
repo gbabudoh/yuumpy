@@ -61,13 +61,33 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Check if customer has a linked seller account
+    let sellerInfo = null;
+    try {
+      const sellerResult = await query(
+        'SELECT id, store_name, store_slug, status, is_verified FROM sellers WHERE customer_id = ?',
+        [decoded.customerId]
+      );
+      if (Array.isArray(sellerResult) && sellerResult.length > 0) {
+        const s = sellerResult[0] as any;
+        sellerInfo = {
+          id: s.id,
+          storeName: s.store_name,
+          storeSlug: s.store_slug,
+          status: s.status,
+          isVerified: s.is_verified,
+        };
+      }
+    } catch { /* sellers table may not exist yet */ }
+
     return NextResponse.json({
       customer: {
         id: customer.id,
         email: customer.email,
         firstName: customer.first_name,
         lastName: customer.last_name,
-        phone: customer.phone
+        phone: customer.phone,
+        seller: sellerInfo,
       }
     });
   } catch (error) {

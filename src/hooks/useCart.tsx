@@ -15,6 +15,11 @@ export interface CartItem {
   affiliate_url?: string;
   color?: string;
   color_image?: string;
+  seller_store_name?: string;
+  seller_store_slug?: string;
+  seller_city?: string;
+  seller_country?: string;
+  seller_processing_time?: string;
 }
 
 interface CartContextType {
@@ -72,6 +77,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         affiliate_url: product.affiliate_url,
         color: product.color,
         color_image: product.color_image,
+        seller_store_name: product.seller_store_name,
+        seller_store_slug: product.seller_store_slug,
+        seller_city: product.seller_city,
+        seller_country: product.seller_country,
+        seller_processing_time: product.seller_processing_time,
         quantity
       }];
     });

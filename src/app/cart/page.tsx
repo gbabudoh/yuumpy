@@ -6,6 +6,7 @@ import { useCart } from '@/hooks/useCart';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { TrashIcon, PlusIcon, MinusIcon, ShoppingBagIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { Store, MapPin, Clock, ChevronRight } from 'lucide-react';
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, cartTotal, cartCount } = useCart();
@@ -48,59 +49,99 @@ export default function CartPage() {
               <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                 <ul className="divide-y divide-gray-100">
                   {cart.map((item) => (
-                    <li key={`${item.id}-${item.color || 'none'}`} className="p-6 flex items-center sm:items-start space-x-6">
-                      <div className="relative w-24 h-24 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden">
-                        <Image
-                          src={item.color_image || item.image_url}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      
-                      <div className="flex-grow min-w-0">
-                        <div className="flex justify-between items-start">
+                    <li key={`${item.id}-${item.color || 'none'}`} className="p-6">
+                      {/* Seller Info Bar */}
+                      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                            <Store className="w-4 h-4 text-purple-600" />
+                          </div>
                           <div>
-                            <Link href={`/products/${item.slug}`} className="text-lg font-semibold text-gray-900 hover:text-purple-600 transition-colors line-clamp-1 cursor-pointer">
-                              {item.name}
-                            </Link>
-                            {item.color && (
-                              <p className="text-sm text-gray-500 mt-0.5">
-                                Color: <span className="font-medium text-purple-600">{item.color}</span>
-                              </p>
-                            )}
-                            <p className="text-purple-600 font-bold mt-1">£{item.price.toFixed(2)}</p>
+                            <div className="flex items-center gap-2">
+                              {item.seller_store_slug ? (
+                                <Link href={`/store/${item.seller_store_slug}`} className="text-sm font-bold text-gray-900 hover:text-purple-600 transition-colors cursor-pointer">
+                                  {item.seller_store_name || 'Yuumpy Store'}
+                                </Link>
+                              ) : (
+                                <span className="text-sm font-bold text-gray-900">{item.seller_store_name || 'Yuumpy Store'}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5">
+                              {(item.seller_city || item.seller_country) && (
+                                <span className="flex items-center gap-1 text-xs text-gray-400">
+                                  <MapPin className="w-3 h-3" />
+                                  {[item.seller_city, item.seller_country].filter(Boolean).join(', ')}
+                                </span>
+                              )}
+                              <span className="flex items-center gap-1 text-xs text-gray-400">
+                                <Clock className="w-3 h-3" />
+                                Delivery: {item.seller_processing_time || '3-5 business days'}
+                              </span>
+                            </div>
                           </div>
-                          <button 
-                            onClick={() => removeFromCart(item.id, item.color)}
-                            className="text-gray-400 hover:text-red-500 transition-colors p-2 cursor-pointer"
-                            title="Remove item"
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
                         </div>
-                        
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                        {item.seller_store_slug && (
+                          <Link href={`/store/${item.seller_store_slug}`} className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 font-medium cursor-pointer">
+                            Visit Store <ChevronRight className="w-3 h-3" />
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Product Row */}
+                      <div className="flex items-center sm:items-start space-x-6">
+                        <div className="relative w-24 h-24 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden">
+                          <Image
+                            src={item.color_image || item.image_url}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      
+                        <div className="flex-grow min-w-0">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <Link href={item.seller_store_slug ? `/products/${item.seller_store_slug}/${item.slug}` : `/products/${item.slug}`} className="text-lg font-semibold text-gray-900 hover:text-purple-600 transition-colors line-clamp-1 cursor-pointer">
+                                {item.name}
+                              </Link>
+                              {item.color && (
+                                <p className="text-sm text-gray-500 mt-0.5">
+                                  Color: <span className="font-medium text-purple-600">{item.color}</span>
+                                </p>
+                              )}
+                              <p className="text-purple-600 font-bold mt-1">£{item.price.toFixed(2)}</p>
+                            </div>
                             <button 
-                              onClick={() => updateQuantity(item.id, item.quantity - 1, item.color)}
-                              className="p-2 hover:bg-gray-50 text-gray-600 transition-colors cursor-pointer"
+                              onClick={() => removeFromCart(item.id, item.color)}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-2 cursor-pointer"
+                              title="Remove item"
                             >
-                              <MinusIcon className="w-4 h-4" />
-                            </button>
-                            <span className="px-4 py-2 text-gray-900 font-medium border-x border-gray-200 min-w-[3rem] text-center">
-                              {item.quantity}
-                            </span>
-                            <button 
-                              onClick={() => updateQuantity(item.id, item.quantity + 1, item.color)}
-                              className="p-2 hover:bg-gray-50 text-gray-600 transition-colors cursor-pointer"
-                            >
-                              <PlusIcon className="w-4 h-4" />
+                              <TrashIcon className="w-5 h-5" />
                             </button>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-500">Subtotal</p>
-                            <p className="text-lg font-bold text-gray-900">£{(item.price * item.quantity).toFixed(2)}</p>
+                        
+                          <div className="mt-4 flex items-center justify-between">
+                            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                              <button 
+                                onClick={() => updateQuantity(item.id, item.quantity - 1, item.color)}
+                                className="p-2 hover:bg-gray-50 text-gray-600 transition-colors cursor-pointer"
+                              >
+                                <MinusIcon className="w-4 h-4" />
+                              </button>
+                              <span className="px-4 py-2 text-gray-900 font-medium border-x border-gray-200 min-w-[3rem] text-center">
+                                {item.quantity}
+                              </span>
+                              <button 
+                                onClick={() => updateQuantity(item.id, item.quantity + 1, item.color)}
+                                className="p-2 hover:bg-gray-50 text-gray-600 transition-colors cursor-pointer"
+                              >
+                                <PlusIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-gray-500">Subtotal</p>
+                              <p className="text-lg font-bold text-gray-900">£{(item.price * item.quantity).toFixed(2)}</p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -132,9 +173,16 @@ export default function CartPage() {
 
                 <Link
                   href="/checkout"
-                  className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold text-center block hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 transform hover:-translate-y-1 mb-4 cursor-pointer"
+                  className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold text-center block hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 transform hover:-translate-y-1 mb-3 cursor-pointer"
                 >
                   Proceed to Checkout
+                </Link>
+
+                <Link
+                  href="/products"
+                  className="w-full border border-gray-200 text-gray-700 py-3 rounded-xl font-semibold text-center block hover:bg-gray-50 transition-colors mb-4 cursor-pointer text-sm"
+                >
+                  Continue Shopping
                 </Link>
                 
                 <p className="text-center text-xs text-gray-400 px-4">

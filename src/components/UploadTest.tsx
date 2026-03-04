@@ -1,20 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function UploadTest() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{ url: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [configStatus, setConfigStatus] = useState<any>(null);
+  const [configStatus, setConfigStatus] = useState<Record<string, unknown> | null>(null);
 
   const checkConfig = async () => {
     try {
       const response = await fetch('/api/upload/test');
       const data = await response.json();
       setConfigStatus(data);
-    } catch (err) {
+    } catch {
       setError('Failed to check configuration');
     }
   };
@@ -98,7 +99,7 @@ export default function UploadTest() {
           <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
             <h3 className="font-bold mb-2">Upload Successful!</h3>
             <p><strong>URL:</strong> <a href={result.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{result.url}</a></p>
-            <img src={result.url} alt="Uploaded" className="mt-2 max-w-xs rounded" />
+            <Image src={result.url} alt="Uploaded" width={320} height={240} className="mt-2 max-w-xs rounded" />
           </div>
         )}
       </div>

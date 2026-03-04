@@ -43,6 +43,8 @@ interface Product {
   is_featured: boolean;
   is_bestseller: boolean;
   is_active: boolean;
+  seller_id?: number;
+  seller_approved?: boolean;
   meta_title?: string;
   meta_description?: string;
   created_at: string;
@@ -1176,10 +1178,51 @@ export default function ProductsPage() {
                             Bestseller
                           </span>
                         )}
+                        {product.seller_id && (
+                          product.seller_approved ? (
+                            <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-medium">
+                              Seller ✓
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium animate-pulse">
+                              Pending Approval
+                            </span>
+                          )
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
+                        {product.seller_id && !product.seller_approved && (
+                          <button
+                            onClick={async () => {
+                              await fetch('/api/admin/products/approve', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ productId: product.id, approved: true }),
+                              });
+                              fetchProducts();
+                            }}
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors cursor-pointer"
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {product.seller_id && product.seller_approved && (
+                          <button
+                            onClick={async () => {
+                              await fetch('/api/admin/products/approve', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ productId: product.id, approved: false }),
+                              });
+                              fetchProducts();
+                            }}
+                            className="px-3 py-1.5 text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors cursor-pointer"
+                          >
+                            Revoke
+                          </button>
+                        )}
                         <button
                           onClick={() => handleEdit(product)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"

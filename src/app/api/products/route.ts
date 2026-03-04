@@ -41,11 +41,13 @@ export async function GET(request: NextRequest) {
              p.banner_ad_duration, p.banner_ad_is_repeating, p.banner_ad_start_date, p.banner_ad_end_date, p.banner_ad_is_active,
              c.name as category_name, c.slug as category_slug, 
              b.name as brand_name, b.slug as brand_slug,
-             s.name as subcategory_name, s.slug as subcategory_slug
+             s.name as subcategory_name, s.slug as subcategory_slug,
+             sel.store_slug as seller_store_slug
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN categories s ON p.subcategory_id = s.id
+      LEFT JOIN sellers sel ON p.seller_id = sel.id
     `;
     const params: (string | number | boolean | null)[] = [];
     const whereConditions = [];
