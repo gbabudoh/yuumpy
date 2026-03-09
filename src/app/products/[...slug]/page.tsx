@@ -234,7 +234,7 @@ export default async function Page({ params }: PageProps) {
     // Try as category
     const category = await getCategory(productSlug);
     if (category) {
-      return <CategoryView category={category as Category} />;
+      return <CategoryView initialSlug={productSlug} />;
     }
   }
 
