@@ -30,12 +30,15 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
   const [sellerOnline, setSellerOnline] = useState<boolean | null>(null);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
 
+  const [isRinging, setIsRinging] = useState(false); // buyer joined room, waiting for seller to answer
+
   const roomRef = useRef<Room | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const ringbackRef = useRef<{ stop: () => void } | null>(null);
+  const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const participant = buyerName || `buyer-${Date.now()}`;
 
   // --- Ringback tone (buyer waiting for seller to answer) ---
@@ -72,6 +75,10 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
 
   const stopRingback = useCallback(() => {
     ringbackRef.current?.stop();
+    if (ringTimeoutRef.current) {
+      clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = null;
+    }
   }, []);
 
   // Check seller online status
@@ -107,7 +114,11 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
   useEffect(() => { scrollToBottom(); }, [messages]);
 
   useEffect(() => {
-    return () => { if (roomRef.current) roomRef.current.disconnect(); };
+    return () => {
+      if (roomRef.current) roomRef.current.disconnect();
+      if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
+      ringbackRef.current?.stop();
+    };
   }, []);
 
   // Attach local camera to preview once connected and video element is rendered
@@ -188,6 +199,25 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
 
       room.on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => { track.detach(); });
 
+      // Detect when seller actually joins the room (answers the call)
+      room.on(RoomEvent.ParticipantConnected, (p) => {
+        try {
+          const meta = p.metadata ? JSON.parse(p.metadata) : {};
+          if (meta.role === 'seller') {
+            stopRingback(); // seller answered — stop ringback
+            setIsRinging(false);
+            setIsConnected(true);
+            if (contactMode === 'chat') {
+              setMessages(prev => [...prev, {
+                sender: 'system',
+                text: `Connected to ${sellerName}'s chat. Send a message to start the conversation.`,
+                timestamp: new Date(),
+              }]);
+            }
+          }
+        } catch { /* ignore */ }
+      });
+
       await room.connect(livekitUrl, token);
 
       if (contactMode === 'voice' || contactMode === 'video') {
@@ -197,18 +227,36 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
         await room.localParticipant.setCameraEnabled(true);
       }
 
-      setIsConnected(true);
-      stopRingback(); // Stop ringing once connected
       if (contactMode === 'chat') {
+        // Chat connects immediately without needing seller to answer
+        setIsConnected(true);
+        stopRingback();
         setMessages(prev => [...prev, {
           sender: 'system',
           text: `Connected to ${sellerName}'s chat. Send a message to start the conversation.`,
           timestamp: new Date(),
         }]);
+      } else {
+        // Voice/video: buyer is now in the room, ringing seller
+        setIsRinging(true);
+
+        // Auto-disconnect after 45 seconds if seller doesn't answer
+        ringTimeoutRef.current = setTimeout(() => {
+          if (roomRef.current) {
+            roomRef.current.disconnect();
+            roomRef.current = null;
+          }
+          stopRingback();
+          setIsRinging(false);
+          setIsConnected(false);
+          setMode(null);
+          setError('No answer. The seller did not pick up.');
+        }, 45000);
       }
     } catch (err) {
       console.error('Connection error:', err);
       setError('Could not connect. Please try again later.');
+      stopRingback();
     } finally {
       setIsConnecting(false);
     }
@@ -218,6 +266,7 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
     if (roomRef.current) { roomRef.current.disconnect(); roomRef.current = null; }
     stopRingback();
     setIsConnected(false);
+    setIsRinging(false);
     setMode(null);
     setMessages([]);
     setIsMuted(false);
@@ -342,6 +391,26 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
         <div className="p-6 text-center">
           <div className="w-8 h-8 border-2 border-gray-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-gray-500">Connecting to {sellerName}...</p>
+        </div>
+      )}
+
+      {/* Ringing — buyer in room, waiting for seller to answer */}
+      {!isConnecting && isRinging && !isConnected && (
+        <div className="p-6 text-center">
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse ${
+            mode === 'voice' ? 'bg-green-100' : 'bg-purple-100'
+          }`}>
+            {mode === 'voice'
+              ? <Phone className="w-8 h-8 text-green-600 animate-bounce" />
+              : <Video className="w-8 h-8 text-purple-600 animate-bounce" />}
+          </div>
+          <p className="text-sm font-semibold text-gray-800 mb-1">Calling {sellerName}...</p>
+          <p className="text-xs text-gray-400 mb-4">Ringing • waiting for seller to answer</p>
+          <button onClick={disconnect}
+            className="flex items-center gap-2 mx-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-full transition-colors cursor-pointer">
+            <PhoneOff className="w-4 h-4" />
+            Cancel
+          </button>
         </div>
       )}
 
