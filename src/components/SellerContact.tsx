@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Room, RoomEvent, Track, RemoteTrack } from 'livekit-client';
-import { X, MessageCircle, Phone, Video, Send, PhoneOff, Mic, MicOff, Camera, CameraOff } from 'lucide-react';
+import { X, MessageCircle, Phone, Video, Send, PhoneOff, Mic, MicOff, Camera, CameraOff, Lock, User } from 'lucide-react';
+import Link from 'next/link';
 
 type ContactMode = 'chat' | 'voice' | 'video' | null;
 
@@ -29,6 +30,8 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
   const [error, setError] = useState<string | null>(null);
   const [sellerOnline, setSellerOnline] = useState<boolean | null>(null);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginHint, setShowLoginHint] = useState(false);
 
   const [isRinging, setIsRinging] = useState(false); // buyer joined room, waiting for seller to answer
 
@@ -96,7 +99,19 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
       }
     };
 
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/customer/auth/me');
+        if (response.ok) {
+          setIsLoggedIn(true);
+        }
+      } catch {
+        // Not logged in
+      }
+    };
+
     checkPresence();
+    checkAuth();
     // Poll every 30 seconds
     const interval = setInterval(checkPresence, 30000);
     return () => clearInterval(interval);
@@ -181,7 +196,10 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
       const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
       if (!livekitUrl) throw new Error('LiveKit URL not configured');
 
-      const room = new Room();
+      const room = new Room({
+        adaptiveStream: true,
+        dynacast: true,
+      });
       roomRef.current = room;
 
       room.on(RoomEvent.DataReceived, (payload: Uint8Array) => {
@@ -220,12 +238,31 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
 
       await room.connect(livekitUrl, token);
 
-      if (contactMode === 'voice' || contactMode === 'video') {
-        await room.localParticipant.setMicrophoneEnabled(true);
-      }
-      if (contactMode === 'video') {
-        await room.localParticipant.setCameraEnabled(true);
-      }
+      // Give the engine a moment to fully stabilize before publishing
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const enableTracks = async () => {
+        try {
+          if (contactMode === 'voice' || contactMode === 'video') {
+            await room.localParticipant.setMicrophoneEnabled(true);
+          }
+          if (contactMode === 'video') {
+            await room.localParticipant.setCameraEnabled(true);
+          }
+        } catch (publishErr) {
+          console.warn('Initial track publish failed, retrying...', publishErr);
+          // One retry after another short delay
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          if (contactMode === 'voice' || contactMode === 'video') {
+            await room.localParticipant.setMicrophoneEnabled(true);
+          }
+          if (contactMode === 'video') {
+            await room.localParticipant.setCameraEnabled(true);
+          }
+        }
+      };
+
+      await enableTracks();
 
       if (contactMode === 'chat') {
         // Chat connects immediately without needing seller to answer
@@ -296,6 +333,10 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
   }, [isCameraOff]);
 
   const startContact = (contactMode: ContactMode) => {
+    if (!isLoggedIn) {
+      setShowLoginHint(true);
+      return;
+    }
     setMode(contactMode);
     if (contactMode === 'voice' || contactMode === 'video') {
       startRingback();
@@ -305,6 +346,37 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
 
   // No active mode — show status + buttons
   if (!mode) {
+    if (showLoginHint) {
+      return (
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100/50 shadow-sm text-center space-y-4 animate-fadeIn">
+          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto shadow-sm">
+            <Lock className="w-6 h-6 text-indigo-600" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-slate-900">Registration Required</h4>
+            <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
+              To ensure a secure experience, please login or create an account to start a {showLoginHint && 'session'} with {sellerName}.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Link 
+              href="/account/login"
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
+            >
+              <User className="w-3 h-3" />
+              Login to Contact
+            </Link>
+            <button 
+              onClick={() => setShowLoginHint(false)}
+              className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-3">
         {/* Online Status */}
@@ -324,34 +396,37 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => startContact('chat')}
-            className="flex flex-col items-center gap-1 p-2.5 rounded-lg transition-colors cursor-pointer bg-blue-50 hover:bg-blue-100"
+            className="group relative flex flex-col items-center gap-1 p-2.5 rounded-lg transition-colors cursor-pointer bg-blue-50 hover:bg-blue-100"
           >
+            {!isLoggedIn && <Lock className="absolute top-1 right-1 w-2.5 h-2.5 text-blue-300 group-hover:text-blue-500 transition-colors" />}
             <MessageCircle className="w-4 h-4 text-blue-600" />
             <span className="text-[10px] font-medium text-blue-700">Chat</span>
           </button>
           <button
-            onClick={() => sellerOnline && startContact('voice')}
-            disabled={!sellerOnline}
-            className={`flex flex-col items-center gap-1 p-2.5 rounded-lg transition-colors ${
-              sellerOnline
+            onClick={() => (sellerOnline || !isLoggedIn) && startContact('voice')}
+            disabled={sellerOnline === false && isLoggedIn}
+            className={`group relative flex flex-col items-center gap-1 p-2.5 rounded-lg transition-colors ${
+              (sellerOnline || !isLoggedIn)
                 ? 'bg-green-50 hover:bg-green-100 cursor-pointer'
                 : 'bg-gray-50 opacity-60 cursor-not-allowed'
             }`}
           >
-            <Phone className={`w-4 h-4 ${sellerOnline ? 'text-green-600' : 'text-gray-400'}`} />
-            <span className={`text-[10px] font-medium ${sellerOnline ? 'text-green-700' : 'text-gray-400'}`}>Call</span>
+            {!isLoggedIn && <Lock className="absolute top-1 right-1 w-2.5 h-2.5 text-green-300 group-hover:text-green-500 transition-colors" />}
+            <Phone className={`w-4 h-4 ${(sellerOnline || !isLoggedIn) ? 'text-green-600' : 'text-gray-400'}`} />
+            <span className={`text-[10px] font-medium ${(sellerOnline || !isLoggedIn) ? 'text-green-700' : 'text-gray-400'}`}>Call</span>
           </button>
           <button
-            onClick={() => sellerOnline && startContact('video')}
-            disabled={!sellerOnline}
-            className={`flex flex-col items-center gap-1 p-2.5 rounded-lg transition-colors ${
-              sellerOnline
+            onClick={() => (sellerOnline || !isLoggedIn) && startContact('video')}
+            disabled={sellerOnline === false && isLoggedIn}
+            className={`group relative flex flex-col items-center gap-1 p-2.5 rounded-lg transition-colors ${
+              (sellerOnline || !isLoggedIn)
                 ? 'bg-purple-50 hover:bg-purple-100 cursor-pointer'
                 : 'bg-gray-50 opacity-60 cursor-not-allowed'
             }`}
           >
-            <Video className={`w-4 h-4 ${sellerOnline ? 'text-purple-600' : 'text-gray-400'}`} />
-            <span className={`text-[10px] font-medium ${sellerOnline ? 'text-purple-700' : 'text-gray-400'}`}>Video</span>
+            {!isLoggedIn && <Lock className="absolute top-1 right-1 w-2.5 h-2.5 text-purple-300 group-hover:text-purple-500 transition-colors" />}
+            <Video className={`w-4 h-4 ${(sellerOnline || !isLoggedIn) ? 'text-purple-600' : 'text-gray-400'}`} />
+            <span className={`text-[10px] font-medium ${(sellerOnline || !isLoggedIn) ? 'text-purple-700' : 'text-gray-400'}`}>Video</span>
           </button>
         </div>
 

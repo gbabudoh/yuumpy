@@ -62,6 +62,16 @@ export async function GET(request: Request) {
         averageRating = Number(reviews[0].avg_rating) || 0;
       }
     } catch { /* reviews table might not exist yet */ }
+    
+    // Get custom inquiries count
+    let pendingInquiries = 0;
+    try {
+      const inquiries = await query(
+        'SELECT COUNT(*) as count FROM custom_requests WHERE seller_id = ? AND status = ?',
+        [seller.id, 'pending']
+      ) as { count: number }[];
+      pendingInquiries = inquiries[0]?.count || 0;
+    } catch { /* inquiries table might not exist */ }
 
     return NextResponse.json({
       stats: {
@@ -73,6 +83,7 @@ export async function GET(request: Request) {
         averageRating,
         totalProducts: products[0]?.count || 0,
         totalReviews,
+        pendingInquiries,
       }
     });
   } catch (error) {

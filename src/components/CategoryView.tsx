@@ -14,38 +14,9 @@ import {
 import ProductCard from '@/components/ProductCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { Product } from '@/types/product';
 
-interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  price: string;
-  original_price?: string;
-  image_url: string;
-  description?: string;
-  short_description?: string;
-  is_featured: boolean;
-  is_bestseller: boolean;
-  category_name: string;
-  category_id?: number;
-  category_slug?: string;
-  brand_id?: number;
-  created_at?: string;
-  affiliate_url?: string;
-  purchase_type?: 'affiliate' | 'direct';
-  product_condition?: 
-    | 'Handcrafted' 
-    | 'Hand-altered' 
-    | 'Hand-assembled' 
-    | 'Hand-designed' 
-    | 'Upcycled' 
-    | 'Repurposed' 
-    | 'Bespoke' 
-    | 'Sourced/Handpicked' 
-    | 'Imperfectly Perfect'
-    | 'new' | 'refurbished' | 'used';
-  seller_store_slug?: string;
-}
+
 
 interface Category {
   id: number;
@@ -573,23 +544,12 @@ export default function CategoryView({ initialSlug }: CategoryViewProps) {
                   <ProductCard 
                     key={product.id} 
                     product={{
-                      id: product.id,
-                      name: product.name,
-                      slug: product.slug,
-                      description: product.description || '',
-                      short_description: product.short_description || '',
-                      price: parseFloat(product.price) || 0,
-                      original_price: product.original_price ? parseFloat(product.original_price) : undefined,
-                      image_url: product.image_url || '',
-                      category_name: product.category_name || '',
-                      category_slug: product.category_slug || '',
+                      ...product,
+                      price: Number(product.price) || 0,
+                      original_price: product.original_price ? Number(product.original_price) : undefined,
                       is_featured: Boolean(product.is_featured),
                       is_bestseller: Boolean(product.is_bestseller),
                       is_active: true,
-                      affiliate_url: product.affiliate_url || '',
-                      purchase_type: product.purchase_type as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-                      product_condition: product.product_condition as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-                      seller_store_slug: product.seller_store_slug
                     }} 
                     viewMode={viewMode}
                   />

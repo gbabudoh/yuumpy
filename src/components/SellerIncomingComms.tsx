@@ -154,7 +154,10 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
           const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
           if (!livekitUrl) continue;
 
-          const room = new Room();
+          const room = new Room({
+            adaptiveStream: true,
+            dynacast: true,
+          });
 
           room.on(RoomEvent.ParticipantConnected, (p: RemoteParticipant) => {
             // A buyer joined — show incoming request
@@ -228,7 +231,10 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
         listenerRoomsRef.current.splice(listenerIdx, 1);
       }
 
-      const room = new Room();
+      const room = new Room({
+        adaptiveStream: true,
+        dynacast: true,
+      });
       roomRef.current = room;
 
       room.on(RoomEvent.DataReceived, (payload: Uint8Array) => {
@@ -252,13 +258,32 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
       });
 
       await room.connect(livekitUrl, token);
+      
+      // Give the engine a moment to fully stabilize before publishing
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      if (request.mode === 'voice' || request.mode === 'video') {
-        await room.localParticipant.setMicrophoneEnabled(true);
-      }
-      if (request.mode === 'video') {
-        await room.localParticipant.setCameraEnabled(true);
-      }
+      const enableTracks = async () => {
+        try {
+          if (request.mode === 'voice' || request.mode === 'video') {
+            await room.localParticipant.setMicrophoneEnabled(true);
+          }
+          if (request.mode === 'video') {
+            await room.localParticipant.setCameraEnabled(true);
+          }
+        } catch (publishErr) {
+          console.warn('Initial track publish failed, retrying...', publishErr);
+          // One retry after another short delay
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          if (request.mode === 'voice' || request.mode === 'video') {
+            await room.localParticipant.setMicrophoneEnabled(true);
+          }
+          if (request.mode === 'video') {
+            await room.localParticipant.setCameraEnabled(true);
+          }
+        }
+      };
+
+      await enableTracks();
 
       setIsConnected(true);
       setIncomingRequests(prev => prev.filter(r => r.roomName !== request.roomName));

@@ -19,14 +19,14 @@ async function getFeaturedProducts(): Promise<Product[]> {
       const data = await response.json();
       const products = Array.isArray(data) ? data : (data.products || []);
       
-      return products.map((product: any): Product => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+      return products.map((product: Product): Product => ({
         id: Number(product.id),
         name: product.name,
         slug: product.slug,
         description: product.description || '',
         short_description: product.short_description || '',
-        price: parseFloat(product.price) || 0,
-        original_price: product.original_price ? parseFloat(product.original_price) : undefined,
+        price: Number(product.price) || 0,
+        original_price: product.original_price ? Number(product.original_price) : undefined,
         image_url: product.image_url || '',
         category_name: product.category_name || '',
         category_slug: product.category_slug || '',

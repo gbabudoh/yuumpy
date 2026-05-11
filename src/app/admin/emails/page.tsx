@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { 
   Mail, 
   Search, 
-  Filter, 
   Eye, 
   Reply, 
   Trash2, 
@@ -13,7 +12,6 @@ import {
   AlertCircle,
   User,
   Building,
-  Phone,
   Calendar,
   RefreshCw
 } from 'lucide-react';
@@ -45,7 +43,7 @@ export default function AdminEmails() {
   const fetchEmails = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch('/api/emails');
+      const response = await fetch('/api/contact');
       if (response.ok) {
         const result = await response.json();
         setEmails(result.data || []);

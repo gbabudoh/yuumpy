@@ -3,7 +3,9 @@
 import React from 'react';
 import Image from 'next/image';
 import ProductCard from './ProductCard';
+import { Product } from '@/types/product';
 import { Star, MapPin, Globe, Instagram, Twitter, PenTool, Award, Users, Package } from 'lucide-react';
+import { CustomRequestModal } from './CustomRequestModal';
 
 interface MakerProfileProps {
   seller: {
@@ -35,19 +37,12 @@ interface MakerProfileProps {
     is_verified: boolean;
     created_at: string;
   };
-  products: {
-    id: number;
-    name: string;
-    slug: string;
-    price: number;
-    original_price?: number;
-    image_url: string;
-    product_condition?: string;
-    seller_store_slug?: string;
-  }[];
+  products: Product[];
 }
 
 export const MakerProfile: React.FC<MakerProfileProps> = ({ seller, products }) => {
+  const [isCustomRequestOpen, setIsCustomRequestOpen] = React.useState(false);
+
   return (
     <div className="min-h-screen bg-neutral-50 pb-20">
       {/* Banner Section */}
@@ -134,7 +129,10 @@ export const MakerProfile: React.FC<MakerProfileProps> = ({ seller, products }) 
               <button className="w-full md:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition-all">
                 Follow Maker
               </button>
-              <button className="w-full md:w-auto px-8 py-3 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-semibold rounded-xl transition-all flex items-center justify-center gap-2">
+              <button 
+                onClick={() => setIsCustomRequestOpen(true)}
+                className="w-full md:w-auto px-8 py-3 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+              >
                 <PenTool className="w-4 h-4" />
                 Custom Request
               </button>
@@ -152,7 +150,7 @@ export const MakerProfile: React.FC<MakerProfileProps> = ({ seller, products }) 
                 <PenTool className="w-3 h-3" />
                 The Maker&apos;s Journey
               </div>
-              <h2 className="text-3xl md:text-4xl font-black text-neutral-900 leading-tight">Crafting with Passion & Purpose</h2>
+              <h2 className="text-3xl md:text-4xl font-black text-neutral-900 leading-tight">Crafting with Passion &amp; Purpose</h2>
               <div className="prose prose-lg text-neutral-600 leading-relaxed max-w-none">
                 {seller.artisan_story || seller.description}
               </div>
@@ -241,6 +239,14 @@ export const MakerProfile: React.FC<MakerProfileProps> = ({ seller, products }) 
           </section>
         </div>
       </div>
+
+
+      <CustomRequestModal 
+        isOpen={isCustomRequestOpen}
+        onClose={() => setIsCustomRequestOpen(false)}
+        sellerId={seller.id}
+        sellerName={seller.store_name}
+      />
     </div>
   );
 };

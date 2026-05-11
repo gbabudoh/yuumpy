@@ -17,7 +17,8 @@ import {
   X,
   CreditCard,
   ShieldCheck,
-  Users
+  Users,
+  MessageSquare
 } from 'lucide-react';
 import SellerPresenceHeartbeat from '@/components/SellerPresenceHeartbeat';
 import SellerIncomingComms from '@/components/SellerIncomingComms';
@@ -62,6 +63,7 @@ const navItems = [
   { href: '/seller/products', label: 'Products', icon: Package },
   { href: '/seller/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/seller/maker-profile', label: 'Maker Profile', icon: Users },
+  { href: '/seller/inquiries', label: 'Inquiries', icon: MessageSquare },
   { href: '/seller/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/seller/settings', label: 'Settings', icon: Settings },
 ];

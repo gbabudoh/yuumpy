@@ -7,7 +7,7 @@ import { getAuthenticatedCustomer } from '@/lib/customer-auth';
 export async function POST(request: Request) {
   try {
     const customer = await getAuthenticatedCustomer(request);
-    if (!customer) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    if (!customer) return NextResponse.json({ error: 'Please login as a customer to send a request' }, { status: 401 });
 
     const body = await request.json();
     const { sellerId, productId, description, attachmentUrls } = body;

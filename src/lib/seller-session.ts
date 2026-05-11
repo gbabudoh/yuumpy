@@ -3,7 +3,10 @@ import { query } from './database';
 import jwt from 'jsonwebtoken';
 import { extractSellerToken, verifySellerSession, Seller } from './seller-auth';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables');
+}
 
 /**
  * Get the authenticated seller from the request.

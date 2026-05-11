@@ -309,7 +309,7 @@ export default function SellerSettingsPage() {
                     <Truck className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900">Shipping & Returns</h3>
+                    <h3 className="text-xl font-black text-slate-900">Shipping &amp; Returns</h3>
                     <p className="text-slate-500 text-sm font-medium">Define how you ship items and handle customer returns</p>
                   </div>
                 </div>
@@ -370,7 +370,7 @@ export default function SellerSettingsPage() {
                   <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-2 border-b border-slate-50">
                       <ShieldCheck className="w-4 h-4 text-slate-300" />
-                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Customer Trust & Returns</h4>
+                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Customer Trust &amp; Returns</h4>
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-8 items-start">

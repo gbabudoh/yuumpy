@@ -30,6 +30,7 @@ interface DashboardStats {
   averageRating: number;
   totalProducts: number;
   totalReviews: number;
+  pendingInquiries: number;
 }
 
 export default function SellerDashboard() {
@@ -43,6 +44,7 @@ export default function SellerDashboard() {
     averageRating: 0,
     totalProducts: 0,
     totalReviews: 0,
+    pendingInquiries: 0,
   });
 
   useEffect(() => {
@@ -72,6 +74,7 @@ export default function SellerDashboard() {
     { label: 'Store Rating', value: stats.averageRating > 0 ? `${stats.averageRating.toFixed(1)}` : 'N/A', icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-100' },
     { label: 'Active Products', value: stats.totalProducts.toString(), icon: Package, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
     { label: 'Total Reviews', value: stats.totalReviews.toString(), icon: MessageSquare, color: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-100' },
+    { label: 'Pending Inquiries', value: stats.pendingInquiries.toString(), icon: MessageSquare, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
   ], [stats]);
 
   if (loading) {
@@ -182,6 +185,7 @@ export default function SellerDashboard() {
             {[
               { href: '/seller/products', label: 'Products', desc: 'Listing management', icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-50' },
               { href: '/seller/orders', label: 'Orders', desc: 'Track fulfillment', icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { href: '/seller/inquiries', label: 'Inquiries', desc: 'Bespoke requests', icon: MessageSquare, color: 'text-amber-600', bg: 'bg-amber-50' },
               { href: '/seller/maker-profile', label: 'Maker Profile', desc: 'Story & Branding', icon: Users, color: 'text-rose-600', bg: 'bg-rose-50' },
               { href: '/seller/settings', label: 'Settings', desc: 'Store profile', icon: Settings, color: 'text-purple-600', bg: 'bg-purple-50' },
             ].map((action, i) => {

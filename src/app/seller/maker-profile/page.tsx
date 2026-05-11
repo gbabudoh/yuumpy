@@ -192,7 +192,7 @@ export default function MakerProfileManagement() {
             Your Artisan Story
           </h2>
           <div className="space-y-4">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Biography & Process</label>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Biography &amp; Process</label>
             <textarea 
               value={artisanStory}
               onChange={(e) => setArtisanStory(e.target.value)}

@@ -196,7 +196,7 @@ export default function ContactForm({ isOpen, onClose }: ContactFormProps) {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-green-800">
-                    Thank you! Your message has been sent successfully. We'll get back to you soon.
+                    Thank you! Your message has been sent successfully. We&apos;ll get back to you soon.
                   </p>
                 </div>
               </div>

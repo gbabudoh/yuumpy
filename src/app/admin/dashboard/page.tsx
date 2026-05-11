@@ -17,6 +17,11 @@ import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import AdminAuthWrapper from '@/components/AdminAuthWrapper';
 
+interface EmailInquiry {
+  id: number;
+  status: string;
+}
+
 interface DashboardStats {
   totalProducts: number;
   totalCategories: number;
@@ -48,17 +53,22 @@ export default function AdminDashboard() {
     const fetchDashboardStats = async () => {
       try {
         // Fetch real data from database
-        const [productsRes, categoriesRes, brandsRes] = await Promise.all([
+        const [productsRes, categoriesRes, brandsRes, emailsRes] = await Promise.all([
           fetch('/api/products'),
           fetch('/api/categories'),
-          fetch('/api/brands')
+          fetch('/api/brands'),
+          fetch('/api/contact')
         ]);
 
-        const [productsData, categories, brands] = await Promise.all([
+        const [productsData, categories, brands, emailsData] = await Promise.all([
           productsRes.json(),
           categoriesRes.json(),
-          brandsRes.json()
+          brandsRes.json(),
+          emailsRes.json()
         ]);
+
+        const emails = (emailsData.data || []) as EmailInquiry[];
+        const newEmailsCount = emails.filter((e) => e.status === 'new').length;
 
         setStats({
           totalProducts: productsData.pagination?.total || productsData.products?.length || 0,
@@ -68,8 +78,8 @@ export default function AdminDashboard() {
           totalViews: 0,
           totalClicks: 0,
           totalBannerAds: 0,
-          totalEmails: 0,
-          newEmails: 0
+          totalEmails: emails.length,
+          newEmails: newEmailsCount
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -117,7 +127,7 @@ export default function AdminDashboard() {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Executive Summary</span>
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Admin Dashboard</h1>
-            <p className="text-slate-500 font-medium mt-1">Real-time marketplace oversight & control panel.</p>
+            <p className="text-slate-500 font-medium mt-1">Real-time marketplace oversight &amp; control panel.</p>
           </div>
           <div className="flex gap-3">
             <button className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer shadow-sm">

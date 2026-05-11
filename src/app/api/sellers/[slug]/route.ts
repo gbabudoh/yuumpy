@@ -7,6 +7,13 @@ export async function GET(
 ) {
   try {
     const { slug } = await context.params;
+    
+    interface SellerStats {
+      total_sold?: number;
+      avg_rating?: number;
+      total_reviews?: number;
+      revenue?: number;
+    }
 
     // 1. Fetch seller profile
     interface Seller {
@@ -37,7 +44,7 @@ export async function GET(
       `SELECT id, store_name, store_slug, business_name, description, 
               artisan_story, studio_images, specialties, social_links, profile_video_url,
               logo_url, banner_url, city, state_province, country,
-              total_sales, total_orders, average_rating, total_reviews, is_verified, created_at
+              is_verified, created_at
        FROM sellers 
        WHERE store_slug = ? AND status = 'approved'`,
       [slug]
@@ -60,7 +67,34 @@ export async function GET(
       [seller.id]
     );
 
-    // 3. Parse JSON fields
+    // 3. Fetch Dynamic Stats
+    try {
+      // Total Items Sold
+      const soldResult = await query(
+        'SELECT SUM(quantity) as total_sold FROM order_items WHERE seller_id = ?',
+        [seller.id]
+      ) as SellerStats[];
+      seller.total_orders = Number(soldResult[0]?.total_sold || 0);
+
+      // Average Rating & Review Count
+      const reviewsResult = await query(
+        'SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM seller_reviews WHERE seller_id = ? AND is_visible = 1',
+        [seller.id]
+      ) as SellerStats[];
+      seller.average_rating = Number(reviewsResult[0]?.avg_rating || 0);
+      seller.total_reviews = Number(reviewsResult[0]?.total_reviews || 0);
+      
+      // Total Sales Revenue
+      const salesResult = await query(
+        'SELECT SUM(total_price) as revenue FROM order_items WHERE seller_id = ?',
+        [seller.id]
+      ) as SellerStats[];
+      seller.total_sales = Number(salesResult[0]?.revenue || 0);
+    } catch (err) {
+      console.error('Error fetching dynamic seller stats:', err);
+    }
+
+    // 4. Parse JSON fields
     if (seller.studio_images && typeof seller.studio_images === 'string') {
       try { seller.studio_images = JSON.parse(seller.studio_images); } catch { seller.studio_images = []; }
     }

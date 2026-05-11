@@ -1,22 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendContactAdminNotification, sendContactUserConfirmation } from '@/lib/email';
+import { query } from '@/lib/database';
 
-// Function to save email locally for admin panel
-async function saveEmailLocally(contactData: any) {
+interface ContactData {
+  name: string;
+  email: string;
+  company: string | null;
+  phone: string | null;
+  ad_type: string;
+  message: string;
+  status: string;
+  created_at?: string;
+}
+
+// Function to save contact submission to database
+async function saveContactToDatabase(contactData: ContactData) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/emails`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json' },
-      body: JSON.stringify(contactData) });
-
-    if (!response.ok) {
-      console.error('Failed to save email locally:', response.status, response.statusText);
-    } else {
-      console.log('Email saved locally for admin panel');
-    }
+    await query(
+      `INSERT INTO contact_submissions (name, email, company, phone, ad_type, message, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        contactData.name,
+        contactData.email,
+        contactData.company,
+        contactData.phone,
+        contactData.ad_type,
+        contactData.message,
+        contactData.status
+      ]
+    );
+    console.log('Contact submission saved to database');
   } catch (error) {
-    console.error('Error saving email locally:', error);
+    console.error('Error saving contact to database:', error);
   }
 }
 
@@ -54,8 +69,8 @@ export async function POST(request: NextRequest) {
       status: 'new'
     };
 
-    // Save to local storage for admin panel
-    await saveEmailLocally(contactData);
+    // Save to database
+    await saveContactToDatabase(contactData);
     
     // Save to database (if you have a database setup)
     // await saveContactToDatabase(contactData);
@@ -110,31 +125,38 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Contact form error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
 }
 
-// Optional: Add GET method to retrieve contact submissions (for admin)
+// GET method to retrieve contact submissions (for admin)
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Implement admin authentication check
-    // TODO: Retrieve contact submissions from database
+    // 1. Verify admin authentication
+    const token = request.cookies.get('adminAuth')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Retrieve contact submissions from database
+    const submissions = await query(
+      'SELECT * FROM contact_submissions ORDER BY created_at DESC'
+    );
     
-    // For now, return empty array
     return NextResponse.json({
       success: true,
-      data: []
+      data: submissions
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error retrieving contacts:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

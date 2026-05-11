@@ -4,7 +4,7 @@ import crypto from 'crypto';
 // JWT Configuration
 export const JWT_CONFIG = {
   // Secret key - should be in environment variables
-  secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
+  secret: process.env.JWT_SECRET!,
   
   // Token expiration times
   expiresIn: {

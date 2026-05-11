@@ -57,45 +57,73 @@ async function getSellerProduct(storeSlug: string, productSlug: string): Promise
   }
 }
 
+interface SellerStats {
+  total_sold?: number;
+  avg_rating?: number;
+  total_reviews?: number;
+  revenue?: number;
+  processing_time?: string;
+}
+
 async function attachSellerInfo(product: Product) {
   try {
     const sellerResult = await query(
       `SELECT s.id as seller_id, s.store_name as seller_store_name, s.store_slug as seller_store_slug,
               s.logo_url as seller_logo_url, s.city as seller_city, s.state_province as seller_state_province,
-              s.country as seller_country, s.total_orders as seller_total_orders,
-              s.average_rating as seller_average_rating, s.total_reviews as seller_total_reviews,
-              s.is_verified as seller_is_verified
+              s.country as seller_country, s.is_verified as seller_is_verified
        FROM sellers s INNER JOIN products p ON p.seller_id = s.id WHERE p.id = ?`,
       [product.id]
     );
     if (Array.isArray(sellerResult) && sellerResult.length > 0) {
       const s = sellerResult[0] as Record<string, unknown>;
-      product.seller_id = s.seller_id as number;
+      const sellerId = s.seller_id as number;
+      
+      product.seller_id = sellerId;
       product.seller_store_name = s.seller_store_name as string;
       product.seller_store_slug = s.seller_store_slug as string;
       product.seller_logo_url = s.seller_logo_url as string;
       product.seller_city = s.seller_city as string;
       product.seller_state_province = s.seller_state_province as string;
       product.seller_country = s.seller_country as string;
-      product.seller_total_orders = s.seller_total_orders as number;
-      product.seller_average_rating = s.seller_average_rating as number;
-      product.seller_total_reviews = s.seller_total_reviews as number;
       product.seller_is_verified = Boolean(s.seller_is_verified);
+
+      // Fetch Dynamic Stats
       try {
-        const settings = await query('SELECT processing_time FROM seller_settings WHERE seller_id = ?', [product.seller_id]);
+        // 1. Total Items Sold
+        const soldResult = await query(
+          'SELECT SUM(quantity) as total_sold FROM order_items WHERE seller_id = ?',
+          [sellerId]
+        ) as SellerStats[];
+        product.seller_total_orders = Number(soldResult[0]?.total_sold || 0);
+
+        // 2. Average Rating & Review Count
+        const reviewsResult = await query(
+          'SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM seller_reviews WHERE seller_id = ? AND is_visible = 1',
+          [sellerId]
+        ) as SellerStats[];
+        product.seller_average_rating = Number(reviewsResult[0]?.avg_rating || 0);
+        product.seller_total_reviews = Number(reviewsResult[0]?.total_reviews || 0);
+        
+        // 3. Settings (Processing time)
+        const settings = await query('SELECT processing_time FROM seller_settings WHERE seller_id = ?', [sellerId]) as SellerStats[];
         if (Array.isArray(settings) && settings.length > 0) {
-          product.seller_processing_time = (settings[0] as Record<string, unknown>).processing_time as string;
+          product.seller_processing_time = settings[0].processing_time || '';
         }
-      } catch { /* ignore */ }
+      } catch (err) {
+        console.error('Error fetching dynamic seller stats:', err);
+      }
     }
-  } catch { /* ignore */ }
+  } catch (error) {
+    console.error('attachSellerInfo error:', error);
+  }
 }
 
 async function attachVariations(product: Product) {
   try {
     const rows = await query('SELECT * FROM product_variations WHERE product_id = ? ORDER BY sort_order ASC, id ASC', [product.id]);
     if (Array.isArray(rows) && rows.length > 0) {
-      product.variations = rows.map((v: Record<string, unknown>) => ({
+      const variationRows = rows as unknown as Record<string, unknown>[];
+      product.variations = variationRows.map((v) => ({
         id: v.id as number, product_id: v.product_id as number,
         colour_name: v.colour_name as string, colour_hex: (v.colour_hex as string) || null,
         main_image_url: (v.main_image_url as string) || null,
@@ -107,7 +135,7 @@ async function attachVariations(product: Product) {
 
   if (!product.variations || product.variations.length === 0) {
     try {
-      const raw = (product as Record<string, unknown>).colour_variants;
+      const raw = (product as unknown as Record<string, unknown>).colour_variants;
       if (raw) {
         const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
         if (Array.isArray(parsed) && parsed.length > 0) {

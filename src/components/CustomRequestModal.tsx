@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Send, Camera, Info, Loader2 } from 'lucide-react';
+import { X, Send, Camera, Info, Loader2, AlertCircle, User } from 'lucide-react';
+import { useEffect } from 'react';
+import Link from 'next/link';
 
 interface CustomRequestModalProps {
   isOpen: boolean;
@@ -23,12 +25,38 @@ export const CustomRequestModal: React.FC<CustomRequestModalProps> = ({
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      checkAuth();
+    }
+  }, [isOpen]);
+
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/customer/auth/me');
+      if (res.ok) {
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+    } catch {
+      setIsLoggedIn(false);
+    } finally {
+      setIsCheckingAuth(false);
+    }
+  };
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     
     try {
       const res = await fetch('/api/custom-requests', {
@@ -48,9 +76,13 @@ export const CustomRequestModal: React.FC<CustomRequestModalProps> = ({
           setSuccess(false);
           setDescription('');
         }, 3000);
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to send request. Please ensure you are logged in.');
       }
-    } catch (error) {
-      console.error('Submit custom request error:', error);
+    } catch (err) {
+      console.error('Submit custom request error:', err);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -91,43 +123,79 @@ export const CustomRequestModal: React.FC<CustomRequestModalProps> = ({
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-neutral-700">Describe what you&apos;re looking for</label>
-                <textarea 
-                  required
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="e.g. &apos;I love this table but could you make it 10cm wider and in a darker oak finish?&apos;"
-                  className="w-full h-32 p-4 bg-neutral-50 border border-neutral-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-neutral-900 placeholder:text-neutral-400"
-                />
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-neutral-700">Inspiration Images (Optional)</label>
-                  <button type="button" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Browse</button>
+              {error && (
+                <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-3">
+                  <AlertCircle className="w-4 h-4 text-rose-500 mt-0.5" />
+                  <p className="text-xs text-rose-700 font-bold">{error}</p>
                 </div>
-                <div className="flex items-center justify-center w-full h-24 border-2 border-dashed border-neutral-200 rounded-2xl bg-neutral-50 hover:bg-neutral-100 transition-colors cursor-pointer group">
-                  <div className="flex flex-col items-center gap-1">
-                    <Camera className="w-6 h-6 text-neutral-400 group-hover:text-indigo-500" />
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Upload Files</span>
+              )}
+
+              {!isCheckingAuth && !isLoggedIn ? (
+                <div className="py-10 flex flex-col items-center text-center space-y-6 animate-fadeIn">
+                  <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                    <User className="w-8 h-8 text-indigo-600" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-bold text-neutral-900">Registration Required</h3>
+                    <p className="text-sm text-neutral-500 max-w-xs">
+                      To protect your purchases and manage your custom orders, please register or login first.
+                    </p>
+                  </div>
+                  <div className="flex flex-col w-full gap-3">
+                    <Link 
+                      href="/account/login"
+                      className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 text-center"
+                    >
+                      Login to Yuumpy
+                    </Link>
+                    <Link 
+                      href="/account/register"
+                      className="w-full py-4 bg-white border border-neutral-100 hover:bg-neutral-50 text-neutral-900 rounded-2xl text-xs font-black uppercase tracking-widest transition-all text-center"
+                    >
+                      Create Account
+                    </Link>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-neutral-700">Describe what you&apos;re looking for</label>
+                    <textarea 
+                      required
+                      placeholder="Share your ideas, dimensions, or specific requirements..."
+                      className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-100 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all outline-none text-sm font-medium min-h-[120px] resize-none"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </div>
 
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-neutral-400 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 active:scale-95"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" /> Send Request
-                  </>
-                )}
-              </button>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold text-neutral-700">Inspiration Images (Optional)</label>
+                      <button type="button" className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-700 transition-colors">Browse</button>
+                    </div>
+                    <div className="group cursor-pointer">
+                      <div className="border-2 border-dashed border-neutral-100 group-hover:border-indigo-200 group-hover:bg-indigo-50/30 rounded-2xl p-8 transition-all duration-300 text-center">
+                        <Camera className="w-8 h-8 text-neutral-300 group-hover:text-indigo-400 mx-auto mb-3 transition-colors" />
+                        <p className="text-xs font-black text-neutral-400 group-hover:text-indigo-500 uppercase tracking-widest">Upload Files</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit"
+                    disabled={loading || description.length < 10}
+                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 group"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    )}
+                    Send Request
+                  </button>
+                </>
+              )}
             </>
           )}
         </form>

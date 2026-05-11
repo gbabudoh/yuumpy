@@ -4,7 +4,10 @@ import { query } from '@/lib/database';
 import bcrypt from 'bcryptjs';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not configured in environment variables');
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16'
@@ -119,7 +122,6 @@ export async function POST(request: NextRequest) {
     // Verify items and build verified list
     const dbProducts = new Map<number, DBProduct>(productResults.map(p => [p.id, p]));
     const verifiedItems: Array<DBProduct & { quantity: number; unitPrice: number; totalPrice: number }> = [];
-    let grandTotal = 0;
 
     for (const item of cartItems) {
       const dbProduct = dbProducts.get(item.id);
@@ -135,7 +137,6 @@ export async function POST(request: NextRequest) {
       }
       const unitPrice = typeof dbProduct.price === 'string' ? parseFloat(dbProduct.price) : dbProduct.price;
       const itemTotal = unitPrice * q;
-      grandTotal += itemTotal;
       verifiedItems.push({ ...dbProduct, quantity: q, unitPrice, totalPrice: itemTotal });
     }
 

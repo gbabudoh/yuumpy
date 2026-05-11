@@ -70,7 +70,7 @@ export default function ContactPage() {
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">Get in Touch</h1>
             <p className="text-xl text-purple-100 mb-8">
-              Have questions about advertising opportunities or need support? We're here to help!
+              Have questions about advertising opportunities or need support? We&apos;re here to help!
             </p>
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function ContactPage() {
             <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Send us a Message</h2>
               <p className="text-gray-600 mb-8">
-                Fill out the form below and we'll get back to you as soon as possible.
+                Fill out the form below and we&apos;ll get back to you as soon as possible.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -253,7 +253,7 @@ export default function ContactPage() {
                       <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-green-800">
-                          Thank you! Your message has been sent successfully. We'll get back to you soon.
+                          Thank you! Your message has been sent successfully. We&apos;ll get back to you soon.
                         </p>
                       </div>
                     </div>

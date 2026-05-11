@@ -220,7 +220,7 @@ export default function SettingsPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Contact & Social</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Contact &amp; Social</h2>
                   <p className="text-sm text-gray-600">Manage contact information and social media links</p>
                 </div>
               </div>

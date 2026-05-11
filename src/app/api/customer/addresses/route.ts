@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables');
+}
+
+interface CustomerJwtPayload {
+  customerId: number;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,9 +23,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify token
-    let decoded: any;
+    let decoded: CustomerJwtPayload;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, JWT_SECRET) as CustomerJwtPayload;
     } catch {
       return NextResponse.json(
         { error: 'Invalid token' },
@@ -60,9 +67,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify token
-    let decoded: any;
+    let decoded: CustomerJwtPayload;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, JWT_SECRET) as CustomerJwtPayload;
     } catch {
       return NextResponse.json(
         { error: 'Invalid token' },
@@ -125,7 +132,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      addressId: (result as any).insertId
+      addressId: (result as { insertId: number }).insertId
     });
   } catch (error) {
     console.error('Error creating address:', error);
@@ -149,9 +156,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify token
-    let decoded: any;
+    let decoded: CustomerJwtPayload;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, JWT_SECRET) as CustomerJwtPayload;
     } catch {
       return NextResponse.json(
         { error: 'Invalid token' },
@@ -194,7 +201,7 @@ export async function PUT(request: NextRequest) {
     const addressCheck = await query(
       'SELECT id FROM customer_addresses WHERE id = ? AND customer_id = ?',
       [id, decoded.customerId]
-    ) as any[];
+    ) as { id: number }[];
 
     if (!Array.isArray(addressCheck) || addressCheck.length === 0) {
       return NextResponse.json(
@@ -261,9 +268,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify token
-    let decoded: any;
+    let decoded: CustomerJwtPayload;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, JWT_SECRET) as CustomerJwtPayload;
     } catch {
       return NextResponse.json(
         { error: 'Invalid token' },
@@ -281,11 +288,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Verify address belongs to customer
     const addressCheck = await query(
       'SELECT id FROM customer_addresses WHERE id = ? AND customer_id = ?',
       [addressId, decoded.customerId]
-    ) as any[];
+    ) as { id: number }[];
 
     if (!Array.isArray(addressCheck) || addressCheck.length === 0) {
       return NextResponse.json(
@@ -293,6 +299,7 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       );
     }
+
 
     // Delete address
     await query(
