@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   Zap,
   DollarSign,
-  Settings
+  Settings,
+  Users
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -181,6 +182,7 @@ export default function SellerDashboard() {
             {[
               { href: '/seller/products', label: 'Products', desc: 'Listing management', icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-50' },
               { href: '/seller/orders', label: 'Orders', desc: 'Track fulfillment', icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { href: '/seller/maker-profile', label: 'Maker Profile', desc: 'Story & Branding', icon: Users, color: 'text-rose-600', bg: 'bg-rose-50' },
               { href: '/seller/settings', label: 'Settings', desc: 'Store profile', icon: Settings, color: 'text-purple-600', bg: 'bg-purple-50' },
             ].map((action, i) => {
               const Icon = action.icon;

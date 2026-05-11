@@ -78,7 +78,7 @@ export async function POST(request: Request) {
         price, originalPrice || null, currency || 'USD', regionsJson,
         coloursJson, clothingJson, shoeJson,
         categoryId || null, brandId || null,
-        imageUrl || null, productCondition || 'new', stockQuantity || null,
+        imageUrl || null, productCondition || 'Handcrafted', stockQuantity || null,
         seller.id
       ]
     ) as { insertId: number };
@@ -127,7 +127,7 @@ export async function PUT(request: Request) {
         name, newSlug, description || null, shortDescription || null, price,
         originalPrice || null, currency || 'USD', regionsJson, coloursJson, clothingJson, shoeJson,
         categoryId || null, brandId || null,
-        imageUrl || null, productCondition || 'new', stockQuantity || null,
+        imageUrl || null, productCondition || 'Handcrafted', stockQuantity || null,
         id, seller.id
       ]
     );

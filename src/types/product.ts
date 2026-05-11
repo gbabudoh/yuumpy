@@ -28,7 +28,16 @@ export interface Product {
   affiliate_partner_name?: string;
   external_purchase_info?: string;
   purchase_type?: 'affiliate' | 'direct';
-  product_condition?: 'new' | 'refurbished' | 'used';
+  product_condition?: 
+    | 'Handcrafted' 
+    | 'Hand-altered' 
+    | 'Hand-assembled' 
+    | 'Hand-designed' 
+    | 'Upcycled' 
+    | 'Repurposed' 
+    | 'Bespoke / Customised' 
+    | 'Sourced / Handpicked' 
+    | 'Imperfectly Perfect';
   stock_quantity?: number;
   image_url: string;
   gallery?: string | string[];

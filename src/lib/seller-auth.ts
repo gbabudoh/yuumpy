@@ -32,6 +32,14 @@ export interface Seller {
   total_reviews: number;
   email_verified: boolean;
   last_login: string;
+  
+  // Artisan fields
+  artisan_story?: string;
+  studio_images?: string;
+  specialties?: string;
+  social_links?: string;
+  profile_video_url?: string;
+  
   created_at: string;
   updated_at: string;
 }

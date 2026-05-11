@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS products (
   original_price DECIMAL(10, 2),
   affiliate_url VARCHAR(1000) NOT NULL,
   purchase_type ENUM('affiliate', 'direct') DEFAULT 'affiliate',
-  product_condition ENUM('new', 'refurbished', 'used') DEFAULT 'new',
+  product_condition VARCHAR(100) DEFAULT 'Handcrafted',
   stock_quantity INT DEFAULT NULL,
   image_url LONGTEXT,
   gallery JSON,
@@ -192,5 +192,5 @@ INSERT INTO products (name, slug, description, short_description, price, origina
 
 -- Migration: Add new columns to existing products table (run if upgrading existing database)
 -- ALTER TABLE products ADD COLUMN purchase_type ENUM('affiliate', 'direct') DEFAULT 'affiliate' AFTER affiliate_url;
--- ALTER TABLE products ADD COLUMN product_condition ENUM('new', 'refurbished', 'used') DEFAULT 'new' AFTER purchase_type;
+-- ALTER TABLE products ADD COLUMN product_condition VARCHAR(100) DEFAULT 'Handcrafted' AFTER purchase_type;
 -- ALTER TABLE products ADD COLUMN stock_quantity INT DEFAULT NULL AFTER product_condition;

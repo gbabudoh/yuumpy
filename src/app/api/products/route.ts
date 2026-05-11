@@ -87,59 +87,71 @@ export async function GET(request: NextRequest) {
       // Advanced search across all text fields with intelligent matching
       const searchTerm = search.trim().toLowerCase();
       
-      // Check if searching for a product condition specifically
-      const conditionTerms = ['new', 'refurbished', 'used'];
-      if (conditionTerms.includes(searchTerm)) {
-        // Exact match on product_condition field only
-        whereConditions.push('LOWER(p.product_condition) = ?');
-        params.push(searchTerm);
+      // Map common search terms to full condition strings
+      const conditionMap: Record<string, string> = {
+        'handcrafted': 'Handcrafted',
+        'hand-altered': 'Hand-altered',
+        'hand-assembled': 'Hand-assembled',
+        'hand-designed': 'Hand-designed',
+        'upcycled': 'Upcycled',
+        'repurposed': 'Repurposed',
+        'bespoke': 'Bespoke / Customised',
+        'customised': 'Bespoke / Customised',
+        'sourced': 'Sourced / Handpicked',
+        'handpicked': 'Sourced / Handpicked',
+        'imperfect': 'Imperfectly Perfect'
+      };
+
+      if (conditionMap[searchTerm]) {
+        whereConditions.push('p.product_condition = ?');
+        params.push(conditionMap[searchTerm]);
       } else {
-      // Split search term into individual words for better matching
-      const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0);
-      
-      if (searchWords.length === 1) {
-        // Single word search - comprehensive field coverage
-        const word = searchWords[0];
-        whereConditions.push(`(
-          LOWER(p.name) LIKE ? OR 
-          LOWER(p.description) LIKE ? OR
-          LOWER(p.short_description) LIKE ? OR
-          LOWER(p.long_description) LIKE ? OR
-          LOWER(p.product_review) LIKE ? OR
-          LOWER(c.name) LIKE ? OR
-          LOWER(b.name) LIKE ? OR
-          LOWER(s.name) LIKE ? OR
-          LOWER(p.slug) LIKE ? OR
-          LOWER(p.product_condition) LIKE ?
-        )`);
+        // Split search term into individual words for better matching
+        const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0);
         
-        // Add wildcard search for all fields (10 fields now including product_condition)
-        const wildcardWord = `%${word}%`;
-        params.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
-      } else {
-        // Multi-word search - each word must be found in at least one field
-        const wordConditions = searchWords.map(() => `(
-          LOWER(p.name) LIKE ? OR 
-          LOWER(p.description) LIKE ? OR
-          LOWER(p.short_description) LIKE ? OR
-          LOWER(p.long_description) LIKE ? OR
-          LOWER(p.product_review) LIKE ? OR
-          LOWER(c.name) LIKE ? OR
-          LOWER(b.name) LIKE ? OR
-          LOWER(s.name) LIKE ? OR
-          LOWER(p.slug) LIKE ? OR
-          LOWER(p.product_condition) LIKE ?
-        )`).join(' AND ');
-        
-        whereConditions.push(`(${wordConditions})`);
-        
-        // For each word, add all field variations (10 fields now including product_condition)
-        searchWords.forEach(word => {
+        if (searchWords.length === 1) {
+          // Single word search - comprehensive field coverage
+          const word = searchWords[0];
+          whereConditions.push(`(
+            LOWER(p.name) LIKE ? OR 
+            LOWER(p.description) LIKE ? OR
+            LOWER(p.short_description) LIKE ? OR
+            LOWER(p.long_description) LIKE ? OR
+            LOWER(p.product_review) LIKE ? OR
+            LOWER(c.name) LIKE ? OR
+            LOWER(b.name) LIKE ? OR
+            LOWER(s.name) LIKE ? OR
+            LOWER(p.slug) LIKE ? OR
+            LOWER(p.product_condition) LIKE ?
+          )`);
+          
+          // Add wildcard search for all fields (10 fields now including product_condition)
           const wildcardWord = `%${word}%`;
           params.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
-        });
+        } else {
+          // Multi-word search - each word must be found in at least one field
+          const wordConditions = searchWords.map(() => `(
+            LOWER(p.name) LIKE ? OR 
+            LOWER(p.description) LIKE ? OR
+            LOWER(p.short_description) LIKE ? OR
+            LOWER(p.long_description) LIKE ? OR
+            LOWER(p.product_review) LIKE ? OR
+            LOWER(c.name) LIKE ? OR
+            LOWER(b.name) LIKE ? OR
+            LOWER(s.name) LIKE ? OR
+            LOWER(p.slug) LIKE ? OR
+            LOWER(p.product_condition) LIKE ?
+          )`).join(' AND ');
+          
+          whereConditions.push(`(${wordConditions})`);
+          
+          // For each word, add all field variations (10 fields now including product_condition)
+          searchWords.forEach(word => {
+            const wildcardWord = `%${word}%`;
+            params.push(wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord, wildcardWord);
+          });
+        }
       }
-      } // Close the else block for non-condition searches
     }
 
     if (minPrice) {
@@ -462,7 +474,7 @@ export async function POST(request: NextRequest) {
         affiliate_partner_name || null,
         external_purchase_info || null,
         purchase_type || 'affiliate',
-        product_condition || 'new',
+        product_condition || 'Handcrafted',
         stock_quantity || null,
         image_url || null,
         gallery || null,

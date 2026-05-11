@@ -92,7 +92,7 @@ export default function SellerProductsPage() {
 
   const [form, setForm] = useState({
     name: '', description: '', shortDescription: '', price: '', originalPrice: '',
-    categoryId: '', brandId: '', imageUrl: '', productCondition: 'new', stockQuantity: '',
+    categoryId: '', brandId: '', imageUrl: '', productCondition: 'Handcrafted', stockQuantity: '',
     currency: 'USD', regions: [] as string[],
     colourVariants: [] as ColourVariant[],
     clothingSizes: [] as string[],
@@ -126,7 +126,7 @@ export default function SellerProductsPage() {
   };
 
   const resetForm = () => {
-    setForm({ name: '', description: '', shortDescription: '', price: '', originalPrice: '', categoryId: '', brandId: '', imageUrl: '', productCondition: 'new', stockQuantity: '', currency: 'USD', regions: [], colourVariants: [], clothingSizes: [], shoeSizes: [], shoeSizeSystem: 'UK' });
+    setForm({ name: '', description: '', shortDescription: '', price: '', originalPrice: '', categoryId: '', brandId: '', imageUrl: '', productCondition: 'Handcrafted', stockQuantity: '', currency: 'USD', regions: [], colourVariants: [], clothingSizes: [], shoeSizes: [], shoeSizeSystem: 'UK' });
     setShowColours(false); setShowClothingSizes(false); setShowShoeSizes(false);
     setUploadingVariantIdx(null);
     setEditingProduct(null);
@@ -406,9 +406,15 @@ export default function SellerProductsPage() {
                       value={form.productCondition} 
                       onChange={e => setForm(f => ({ ...f, productCondition: e.target.value }))}
                     >
-                      <option value="new">New</option>
-                      <option value="refurbished">Refurbished</option>
-                      <option value="used">Used</option>
+                      <option value="Handcrafted">Handcrafted (Made entirely from raw materials)</option>
+                      <option value="Hand-altered">Hand-altered (Modified from a pre-made base)</option>
+                      <option value="Hand-assembled">Hand-assembled (Components combined by hand)</option>
+                      <option value="Hand-designed">Hand-designed (Original digital or physical art)</option>
+                      <option value="Upcycled">Upcycled (Refurbished to a higher quality)</option>
+                      <option value="Repurposed">Repurposed (Transformed for a new use)</option>
+                      <option value="Bespoke / Customised">Bespoke / Customised (Made to specific order)</option>
+                      <option value="Sourced / Handpicked">Sourced / Handpicked (Curated vintage or natural items)</option>
+                      <option value="Imperfectly Perfect">Imperfectly Perfect (Brand new with minor artisan flaws)</option>
                     </select>
                     <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>

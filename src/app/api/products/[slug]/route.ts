@@ -165,12 +165,22 @@ export async function GET(
           [product.id]
         );
         if (Array.isArray(variationRows)) {
-          variations = variationRows.map((v: { gallery_images?: string | string[] | null; [key: string]: unknown }) => ({
-            ...v,
-            gallery_images: v.gallery_images
-              ? (typeof v.gallery_images === 'string' ? JSON.parse(v.gallery_images) : v.gallery_images)
-              : []
-          }));
+          variations = (variationRows as Array<{ gallery_images?: string | string[] | null; [key: string]: unknown }>).map((v) => {
+            let galleryImages: string[] = [];
+            if (v.gallery_images) {
+              try {
+                galleryImages = typeof v.gallery_images === 'string' 
+                  ? JSON.parse(v.gallery_images) 
+                  : (v.gallery_images as string[]);
+              } catch (e) {
+                console.error('Error parsing gallery_images:', e);
+              }
+            }
+            return {
+              ...v,
+              gallery_images: Array.isArray(galleryImages) ? galleryImages : []
+            };
+          });
         }
       } catch {
         // Table may not exist yet, that's fine
@@ -274,7 +284,7 @@ export async function PUT(
 
     // Use existing values if not provided in the update request
     const finalPurchaseType = purchase_type !== undefined ? purchase_type : (existing?.purchase_type || 'affiliate');
-    const finalProductCondition = product_condition !== undefined ? product_condition : (existing?.product_condition || 'new');
+    const finalProductCondition = product_condition !== undefined ? product_condition : (existing?.product_condition || 'Handcrafted');
     const finalStockQuantity = stock_quantity !== undefined ? stock_quantity : existing?.stock_quantity;
 
     // Validate required fields

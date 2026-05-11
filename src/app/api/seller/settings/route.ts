@@ -28,6 +28,11 @@ export async function GET(request: Request) {
         state_province: seller.state_province,
         postal_code: seller.postal_code,
         country: seller.country,
+        artisan_story: seller.artisan_story,
+        studio_images: seller.studio_images,
+        specialties: seller.specialties,
+        social_links: seller.social_links,
+        profile_video_url: seller.profile_video_url,
       }
     });
   } catch (error) {
@@ -45,11 +50,26 @@ export async function PUT(request: Request) {
     const { type } = body; // 'profile' or 'settings'
 
     if (type === 'profile') {
-      const { storeName, description, phone, website, city, stateProvince, postalCode, country } = body;
+      const { 
+        storeName, description, phone, website, city, stateProvince, postalCode, country,
+        artisanStory, studioImages, specialties, socialLinks, profileVideoUrl 
+      } = body;
+      
       await query(
         `UPDATE sellers SET store_name = ?, description = ?, phone = ?, website = ?,
-          city = ?, state_province = ?, postal_code = ?, country = ? WHERE id = ?`,
-        [storeName, description, phone, website, city, stateProvince, postalCode, country || 'United States', seller.id]
+          city = ?, state_province = ?, postal_code = ?, country = ?,
+          artisan_story = ?, studio_images = ?, specialties = ?, social_links = ?, profile_video_url = ?
+         WHERE id = ?`,
+        [
+          storeName, description, phone, website, 
+          city, stateProvince, postalCode, country || 'United States',
+          artisanStory || null, 
+          studioImages ? JSON.stringify(studioImages) : null,
+          specialties ? JSON.stringify(specialties) : null,
+          socialLinks ? JSON.stringify(socialLinks) : null,
+          profileVideoUrl || null,
+          seller.id
+        ]
       );
     } else if (type === 'settings') {
       const {

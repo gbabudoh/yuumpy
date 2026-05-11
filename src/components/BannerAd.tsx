@@ -53,12 +53,6 @@ export default function BannerAd() {
 
   return (
     <div className="relative group/banner overflow-hidden bg-[#020617]">
-      {/* Absolute mesh background */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-600 blur-[150px] animate-mesh" />
-        <div className="absolute -bottom-[10%] -right-[10%] w-[50%] h-[50%] rounded-full bg-purple-600 blur-[150px] animate-mesh" style={{ animationDelay: '-5s' }} />
-      </div>
-
       <Swiper
         modules={[Navigation, Pagination, Autoplay, EffectFade]}
         effect="fade"
@@ -83,17 +77,13 @@ export default function BannerAd() {
         {bannerAds.map((ad) => (
           <SwiperSlide key={ad.id}>
             <div className="relative h-full w-full flex items-center">
-              {/* Background Image with Overlay */}
-              <div className="absolute inset-0 overflow-hidden">
-                <Image
-                  src={ad.image_url}
-                  alt={ad.title}
-                  fill
-                  className="object-cover object-center scale-105 transition-transform duration-[10s] ease-linear group-hover/banner:scale-110"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#020617] via-[#020617]/40 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent" />
+              {/* Background — dark with mesh only, no image */}
+              <div className="absolute inset-0 bg-[#020617]" />
+
+              {/* Ambient mesh — above image overlays, below text content */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
+                <div className="absolute -top-[10%] -left-[5%] w-[45%] h-[70%] rounded-full bg-indigo-600/20 blur-[120px] animate-mesh" />
+                <div className="absolute bottom-0 right-[5%] w-[35%] h-[55%] rounded-full bg-purple-600/15 blur-[100px] animate-mesh" style={{ animationDelay: '-7s' }} />
               </div>
 
               {/* Content Container */}
@@ -138,7 +128,7 @@ export default function BannerAd() {
 
                 {/* Optional Right Side Asset / Floating Element */}
                 <div className={`hidden lg:block transition-all duration-1000 delay-300 ${activeId === ad.id ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
-                  <div className="relative aspect-square max-w-md ml-auto">
+                  <div className="relative aspect-square max-w-lg ml-auto">
                     <div className="absolute inset-0 rounded-3xl glass shadow-2xl animate-float border border-white/20 p-4">
                       <div className="w-full h-full rounded-2xl overflow-hidden relative">
                         <Image

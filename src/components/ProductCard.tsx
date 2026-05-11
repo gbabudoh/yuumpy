@@ -17,8 +17,9 @@ interface Product {
   isBestseller?: boolean;
   affiliate_url?: string;
   purchase_type?: 'affiliate' | 'direct';
-  product_condition?: 'new' | 'refurbished' | 'used';
+  product_condition?: string;
   seller_store_slug?: string;
+  seller_name?: string;
 }
 
 interface ProductCardProps {
@@ -48,30 +49,14 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
 
   // Get condition badge styling
   const getConditionBadge = () => {
-    const condition = product.product_condition || 'new';
+    const condition = product.product_condition;
+    if (!condition) return null;
     
-    if (condition === 'new') {
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800">
-          New
-        </span>
-      );
-    }
-    if (condition === 'refurbished') {
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
-          Refurbished
-        </span>
-      );
-    }
-    if (condition === 'used') {
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
-          Used
-        </span>
-      );
-    }
-    return null;
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-wider whitespace-nowrap">
+        {condition}
+      </span>
+    );
   };
 
   if (viewMode === 'list') {
@@ -191,11 +176,18 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
       {/* Product Info */}
       <div className="p-6 flex flex-col flex-grow">
         <div className="flex items-start justify-between gap-2 mb-4">
-          <Link href={productUrl}>
-            <h3 className="text-lg font-black text-gray-900 group-hover:text-primary transition-colors cursor-pointer leading-tight tracking-tight">
-              {product.name}
-            </h3>
-          </Link>
+          <div className="flex flex-col gap-1">
+            <Link href={productUrl}>
+              <h3 className="text-lg font-black text-gray-900 group-hover:text-primary transition-colors cursor-pointer leading-tight tracking-tight">
+                {product.name}
+              </h3>
+            </Link>
+            {product.seller_name && (
+              <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">
+                by {product.seller_name}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Price & Condition */}

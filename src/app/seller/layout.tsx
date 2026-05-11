@@ -16,7 +16,8 @@ import {
   Menu,
   X,
   CreditCard,
-  ShieldCheck
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 import SellerPresenceHeartbeat from '@/components/SellerPresenceHeartbeat';
 import SellerIncomingComms from '@/components/SellerIncomingComms';
@@ -28,10 +29,23 @@ interface Seller {
   email: string;
   status: string;
   logo_url: string;
+  banner_url: string;
+  description: string;
   total_sales: number;
   total_orders: number;
   average_rating: number;
   commission_rate: number;
+  phone: string;
+  website: string;
+  city: string;
+  state_province: string;
+  postal_code: string;
+  country: string;
+  artisan_story?: string;
+  studio_images?: string;
+  specialties?: string;
+  social_links?: string;
+  profile_video_url?: string;
 }
 
 const SellerContext = createContext<{ seller: Seller | null; loading: boolean }>({
@@ -47,6 +61,7 @@ const navItems = [
   { href: '/seller/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/seller/products', label: 'Products', icon: Package },
   { href: '/seller/orders', label: 'Orders', icon: ShoppingBag },
+  { href: '/seller/maker-profile', label: 'Maker Profile', icon: Users },
   { href: '/seller/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/seller/settings', label: 'Settings', icon: Settings },
 ];

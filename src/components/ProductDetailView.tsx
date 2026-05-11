@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   ExternalLink, Shield, MapPin, Package, Star, Store,
-  ChevronRight, MessageCircle, ShieldCheck, Truck, RotateCcw, BadgeCheck, Sparkles, Globe
+  ChevronRight, MessageCircle, ShieldCheck, Truck, RotateCcw, BadgeCheck, Sparkles, Globe, PenTool, Users
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -14,6 +14,7 @@ import ProductTabs from '@/components/ProductTabs';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AddToCartButton from '@/components/AddToCartButton';
 import SellerContact from '@/components/SellerContact';
+import { CustomRequestModal } from '@/components/CustomRequestModal';
 import { generateStructuredData } from '@/lib/seo';
 import { Product, ColorOption, ProductVariation } from '@/types/product';
 
@@ -22,6 +23,7 @@ interface ProductDetailViewProps {
 }
 
 export default function ProductDetailView({ product }: ProductDetailViewProps) {
+  const [showCustomModal, setShowCustomModal] = useState(false);
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com';
 
   const productSchema = generateStructuredData('product', {
@@ -117,6 +119,7 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
 
   // Seller data
   const seller = product.seller_id && product.seller_store_name ? {
+    id: product.seller_id,
     store_name: product.seller_store_name,
     store_slug: product.seller_store_slug || '',
     logo_url: product.seller_logo_url,
@@ -128,6 +131,7 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
     total_reviews: product.seller_total_reviews || 0,
     is_verified: product.seller_is_verified || false,
   } : {
+    id: 0,
     store_name: 'Yuumpy Store',
     store_slug: '',
     logo_url: undefined as string | undefined,
@@ -167,13 +171,16 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
   }, [product.regions]);
 
   const conditionBadge = () => {
-    if (!product.product_condition || product.product_condition === 'new') 
-      return { label: 'New', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
-    if (product.product_condition === 'refurbished') 
-      return { label: 'Refurbished', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' };
-    if (product.product_condition === 'used') 
-      return { label: 'Used', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
-    return { label: product.product_condition, bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' };
+    const condition = product.product_condition;
+    if (!condition) return { label: 'Handcrafted', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
+    
+    // Default style for artisan categories
+    return { 
+      label: condition, 
+      bg: 'bg-indigo-50', 
+      text: 'text-indigo-700', 
+      border: 'border-indigo-100' 
+    };
   };
 
   const cond = conditionBadge();
@@ -465,13 +472,21 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
                 </div>
               </div>
 
-              {/* Contact */}
+              {/* Contact & Customization */}
               <div className="p-5 space-y-3">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact Seller</p>
-                <SellerContact
-                  sellerName={seller.store_name}
-                  sellerSlug={seller.store_slug || 'yuumpy-store'}
-                />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Artisan Interaction</p>
+                <div className="flex flex-col gap-2">
+                  <SellerContact
+                    sellerName={seller.store_name}
+                    sellerSlug={seller.store_slug || 'yuumpy-store'}
+                  />
+                  <button 
+                    onClick={() => setShowCustomModal(true)}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    <PenTool className="w-3.5 h-3.5" /> Request Custom Order
+                  </button>
+                </div>
               </div>
 
               {/* Regions */}
@@ -492,13 +507,19 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
               )}
 
               {/* Store Link */}
-              <div className="px-5 pb-5">
+              <div className="px-5 pb-5 flex flex-col gap-2">
                 {seller.store_slug ? (
-                  <Link href={`/store/${seller.store_slug}`}
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-black transition-all active:scale-95 shadow-lg shadow-indigo-600/20 cursor-pointer text-white"
-                    style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
-                    <Store className="w-4 h-4" /> Visit Storefront
-                  </Link>
+                  <>
+                    <Link href={`/maker/${seller.store_slug}`}
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-black transition-all active:scale-95 shadow-lg shadow-indigo-600/20 cursor-pointer text-white"
+                      style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
+                      <Users className="w-4 h-4" /> Meet the Maker
+                    </Link>
+                    <Link href={`/store/${seller.store_slug}`}
+                      className="text-center text-[11px] font-bold text-slate-400 hover:text-indigo-600 transition-colors py-1">
+                      View full storefront
+                    </Link>
+                  </>
                 ) : (
                   <div className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-black transition-all text-white cursor-pointer"
                     style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
@@ -528,6 +549,15 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
       </div>
 
       <Footer />
+
+      <CustomRequestModal 
+        isOpen={showCustomModal}
+        onClose={() => setShowCustomModal(false)}
+        sellerId={seller.id}
+        sellerName={seller.store_name}
+        productId={product.id}
+        productName={product.name}
+      />
     </div>
   );
 }

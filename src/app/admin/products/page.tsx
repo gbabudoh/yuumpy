@@ -31,7 +31,7 @@ interface Product {
   affiliate_partner_name?: string;
   external_purchase_info?: string;
   purchase_type?: 'affiliate' | 'direct';
-  product_condition?: 'new' | 'refurbished' | 'used';
+  product_condition?: string;
   stock_quantity?: number;
   image_url: string;
   gallery?: string[];
@@ -133,7 +133,7 @@ export default function ProductsPage() {
     affiliate_partner_name: '',
     external_purchase_info: '',
     purchase_type: 'affiliate' as 'affiliate' | 'direct',
-    product_condition: 'new' as 'new' | 'refurbished' | 'used',
+    product_condition: 'Handcrafted',
     stock_quantity: '',
     colors: [] as ColorOption[],
     main_category_id: '',
@@ -1308,19 +1308,37 @@ export default function ProductsPage() {
                       <select
                         required
                         value={formData.product_condition}
-                        onChange={(e) => setFormData({...formData, product_condition: e.target.value as 'new' | 'refurbished' | 'used'})}
+                        onChange={(e) => setFormData({...formData, product_condition: e.target.value})}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
-                        <option value="new">New</option>
-                        <option value="refurbished">Refurbished</option>
-                        <option value="used">Used</option>
+                        <option value="Handcrafted">Handcrafted (Made entirely from raw materials)</option>
+                        <option value="Hand-altered">Hand-altered (Modified from a pre-made base)</option>
+                        <option value="Hand-assembled">Hand-assembled (Components combined by hand)</option>
+                        <option value="Hand-designed">Hand-designed (Original digital or physical art)</option>
+                        <option value="Upcycled">Upcycled (Refurbished to a higher quality)</option>
+                        <option value="Repurposed">Repurposed (Transformed for a new use)</option>
+                        <option value="Bespoke / Customised">Bespoke / Customised (Made to specific order)</option>
+                        <option value="Sourced / Handpicked">Sourced / Handpicked (Curated vintage or natural items)</option>
+                        <option value="Imperfectly Perfect">Imperfectly Perfect (Brand new with minor artisan flaws)</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">
-                        {formData.product_condition === 'new' 
-                          ? 'Brand new, unused product in original packaging'
-                          : formData.product_condition === 'refurbished'
-                          ? 'Professionally restored to working condition with warranty'
-                          : 'Previously owned, may show signs of use'
+                        {formData.product_condition === 'Handcrafted' 
+                          ? 'Made entirely from raw materials by the artisan'
+                          : formData.product_condition === 'Hand-altered'
+                          ? 'Modified or decorated from a pre-made base item'
+                          : formData.product_condition === 'Hand-assembled'
+                          ? 'Various components combined by hand to create the final piece'
+                          : formData.product_condition === 'Hand-designed'
+                          ? 'Original digital or physical art designed by the maker'
+                          : formData.product_condition === 'Upcycled'
+                          ? 'Items given new life through creative refurbishment'
+                          : formData.product_condition === 'Repurposed'
+                          ? 'Items transformed for a completely new use case'
+                          : formData.product_condition === 'Bespoke / Customised'
+                          ? 'Products made to a customer\'s specific order or measurements'
+                          : formData.product_condition === 'Sourced / Handpicked'
+                          ? 'Curated vintage items or natural objects selected by the maker'
+                          : 'Brand new item with minor flaws that add to its unique character'
                         }
                       </p>
                     </div>
