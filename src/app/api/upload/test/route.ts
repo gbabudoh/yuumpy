@@ -1,34 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCloudinaryStatus } from '@/lib/cloudinary';
+import { NextResponse } from 'next/server';
+import { getMinioStatus } from '@/lib/storage';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const status = getCloudinaryStatus();
+    const status = getMinioStatus();
     
     return NextResponse.json({
       success: true,
       environment: process.env.NODE_ENV,
-      cloudinary: {
+      storage: {
+        type: 'MinIO',
         configured: status.configured,
-        cloudName: status.hasCloudName ? `✅ Set (${status.cloudName})` : '❌ Missing',
-        apiKey: status.hasApiKey ? '✅ Set' : '❌ Missing',
-        apiSecret: status.hasApiSecret ? '✅ Set' : '❌ Missing'
+        endpoint: status.endpoint ? `✅ Set (${status.endpoint})` : '❌ Missing',
+        bucket: status.bucket ? `✅ Set (${status.bucket})` : '❌ Missing',
+        port: status.port ? `✅ Set (${status.port})` : '❌ Missing'
       },
       environmentVariables: {
-        CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME ? 'Set' : 'Missing',
-        CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY ? 'Set' : 'Missing',
-        CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ? 'Set' : 'Missing',
-        NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ? 'Set' : 'Missing'
+        MINIO_ENDPOINT: process.env.MINIO_ENDPOINT ? 'Set' : 'Missing',
+        MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY ? 'Set' : 'Missing',
+        MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY ? 'Set' : 'Missing',
+        MINIO_BUCKET: process.env.MINIO_BUCKET ? 'Set' : 'Missing'
       },
       message: status.configured 
-        ? 'Cloudinary is properly configured and ready to upload images.' 
-        : 'Cloudinary is not configured. Please set the required environment variables on your deployment platform.'
+        ? 'MinIO is properly configured and ready to upload images.' 
+        : 'MinIO is not configured. Please set the required environment variables on your deployment platform.'
     });
   } catch (error) {
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to check Cloudinary status',
+        error: 'Failed to check storage status',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

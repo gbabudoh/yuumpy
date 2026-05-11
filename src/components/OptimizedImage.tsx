@@ -3,15 +3,13 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
-// Helper function to generate Cloudinary optimized URLs
-const getCloudinaryUrl = (src: string, width?: number, height?: number, quality: string = 'auto') => {
-  // Check if it's already a Cloudinary URL
+// Helper function to generate optimized storage URLs
+const getStorageUrl = (src: string, width?: number, height?: number, quality: string = 'auto') => {
+  // If it's already a Cloudinary URL, keep using Cloudinary optimization for legacy images
   if (src.includes('cloudinary.com')) {
-    // Extract public_id from Cloudinary URL
     const urlParts = src.split('/');
     const publicId = urlParts[urlParts.length - 1].split('.')[0];
     
-    // Build optimized URL
     const transformations = [];
     if (width) transformations.push(`w_${width}`);
     if (height) transformations.push(`h_${height}`);
@@ -24,7 +22,7 @@ const getCloudinaryUrl = (src: string, width?: number, height?: number, quality:
     return `https://res.cloudinary.com/${cloudName}/image/upload/${transformationString}/${publicId}`;
   }
   
-  // Return original URL if not Cloudinary
+  // For MinIO or other storage, return as is (MinIO doesn't support on-the-fly transformations by default)
   return src;
 };
 
@@ -40,7 +38,6 @@ interface OptimizedImageProps {
   placeholder?: 'blur' | 'empty';
   blurDataURL?: string;
   quality?: string;
-  crop?: 'fill' | 'fit' | 'scale' | 'crop' | 'thumb';
 }
 
 export default function OptimizedImage({
@@ -54,8 +51,7 @@ export default function OptimizedImage({
   priority = false,
   placeholder = 'empty',
   blurDataURL,
-  quality = 'auto',
-  crop = 'fit'
+  quality = 'auto'
 }: OptimizedImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -72,8 +68,8 @@ export default function OptimizedImage({
     setIsLoading(false);
   };
 
-  // Generate optimized Cloudinary URL
-  const optimizedSrc = getCloudinaryUrl(src, width, height, quality);
+  // Generate optimized storage URL
+  const optimizedSrc = getStorageUrl(src, width, height, quality);
 
   const imageProps = {
     src: hasError ? fallbackSrc : optimizedSrc,
@@ -91,6 +87,7 @@ export default function OptimizedImage({
     return (
       <Image
         {...imageProps}
+        alt={alt}
         fill
       />
     );
@@ -99,6 +96,7 @@ export default function OptimizedImage({
   return (
     <Image
       {...imageProps}
+      alt={alt}
       width={width || 400}
       height={height || 400}
     />
