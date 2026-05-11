@@ -1317,8 +1317,8 @@ export default function ProductsPage() {
                         <option value="Hand-designed">Hand-designed (Original digital or physical art)</option>
                         <option value="Upcycled">Upcycled (Refurbished to a higher quality)</option>
                         <option value="Repurposed">Repurposed (Transformed for a new use)</option>
-                        <option value="Bespoke / Customised">Bespoke / Customised (Made to specific order)</option>
-                        <option value="Sourced / Handpicked">Sourced / Handpicked (Curated vintage or natural items)</option>
+                        <option value="Bespoke">Bespoke (Made to specific order)</option>
+                        <option value="Sourced/Handpicked">Sourced/Handpicked (Curated vintage or natural items)</option>
                         <option value="Imperfectly Perfect">Imperfectly Perfect (Brand new with minor artisan flaws)</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">
@@ -1334,9 +1334,9 @@ export default function ProductsPage() {
                           ? 'Items given new life through creative refurbishment'
                           : formData.product_condition === 'Repurposed'
                           ? 'Items transformed for a completely new use case'
-                          : formData.product_condition === 'Bespoke / Customised'
+                          : formData.product_condition === 'Bespoke'
                           ? 'Products made to a customer\'s specific order or measurements'
-                          : formData.product_condition === 'Sourced / Handpicked'
+                          : formData.product_condition === 'Sourced/Handpicked'
                           ? 'Curated vintage items or natural objects selected by the maker'
                           : 'Brand new item with minor flaws that add to its unique character'
                         }

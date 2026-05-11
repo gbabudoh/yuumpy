@@ -100,10 +100,10 @@ export async function GET(request: NextRequest) {
         'hand-designed': 'Hand-designed',
         'upcycled': 'Upcycled',
         'repurposed': 'Repurposed',
-        'bespoke': 'Bespoke / Customised',
-        'customised': 'Bespoke / Customised',
-        'sourced': 'Sourced / Handpicked',
-        'handpicked': 'Sourced / Handpicked',
+        'bespoke': 'Bespoke',
+        'customised': 'Bespoke',
+        'sourced': 'Sourced/Handpicked',
+        'handpicked': 'Sourced/Handpicked',
         'imperfect': 'Imperfectly Perfect'
       };
 

@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Search, SlidersHorizontal, X, LayoutGrid, List, ChevronDown, ChevronUp, Sparkles, TrendingUp, Tag, Package } from 'lucide-react';
+import { Search, SlidersHorizontal, X, LayoutGrid, List, ChevronDown, ChevronUp, Sparkles, TrendingUp, Package, RefreshCw } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
@@ -234,9 +234,15 @@ function ProductsPageContent() {
       <FilterSection title="Condition" defaultOpen={false}>
         <div className="flex flex-wrap gap-2">
           {[
-            { value: 'new', label: 'New', icon: <Sparkles className="w-3 h-3" /> },
-            { value: 'refurbished', label: 'Refurbished', icon: <Package className="w-3 h-3" /> },
-            { value: 'used', label: 'Used', icon: <Tag className="w-3 h-3" /> },
+            { value: 'Handcrafted', label: 'Handcrafted', icon: <Sparkles className="w-3 h-3" /> },
+            { value: 'Hand-altered', label: 'Hand-altered', icon: <Package className="w-3 h-3" /> },
+            { value: 'Hand-assembled', label: 'Hand-assembled', icon: <Package className="w-3 h-3" /> },
+            { value: 'Hand-designed', label: 'Hand-designed', icon: <Sparkles className="w-3 h-3" /> },
+            { value: 'Upcycled', label: 'Upcycled', icon: <RefreshCw className="w-3 h-3" /> },
+            { value: 'Repurposed', label: 'Repurposed', icon: <Package className="w-3 h-3" /> },
+            { value: 'Bespoke', label: 'Bespoke', icon: <Sparkles className="w-3 h-3" /> },
+            { value: 'Sourced/Handpicked', label: 'Handpicked', icon: <Search className="w-3 h-3" /> },
+            { value: 'Imperfectly Perfect', label: 'Imperfect', icon: <TrendingUp className="w-3 h-3" /> },
           ].map((cond) => (
             <button key={cond.value}
               onClick={() => setSelectedConditions(prev => prev.includes(cond.value) ? prev.filter(c => c !== cond.value) : [...prev, cond.value])}

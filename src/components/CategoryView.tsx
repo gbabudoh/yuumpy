@@ -40,8 +40,8 @@ interface Product {
     | 'Hand-designed' 
     | 'Upcycled' 
     | 'Repurposed' 
-    | 'Bespoke / Customised' 
-    | 'Sourced / Handpicked' 
+    | 'Bespoke' 
+    | 'Sourced/Handpicked' 
     | 'Imperfectly Perfect'
     | 'new' | 'refurbished' | 'used';
   seller_store_slug?: string;
@@ -467,7 +467,17 @@ export default function CategoryView({ initialSlug }: CategoryViewProps) {
               <div className="mb-4 lg:mb-6">
                 <h4 className="text-sm font-medium text-gray-900 mb-3">Product Condition</h4>
                 <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 lg:gap-0 lg:space-y-1">
-                  {['new', 'refurbished', 'used'].map((condition) => (
+                  {[
+                    'Handcrafted',
+                    'Hand-altered',
+                    'Hand-assembled',
+                    'Hand-designed',
+                    'Upcycled',
+                    'Repurposed',
+                    'Bespoke',
+                    'Sourced/Handpicked',
+                    'Imperfectly Perfect'
+                  ].map((condition) => (
                     <label key={condition} className="flex items-center space-x-1 lg:space-x-2 text-xs lg:text-sm cursor-pointer group">
                       <input
                         type="checkbox"
@@ -480,7 +490,7 @@ export default function CategoryView({ initialSlug }: CategoryViewProps) {
                         }}
                         className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 flex-shrink-0 cursor-pointer"
                       />
-                      <span className="text-gray-700 capitalize group-hover:text-purple-600 transition-colors">{condition}</span>
+                      <span className="text-gray-700 group-hover:text-purple-600 transition-colors">{condition}</span>
                     </label>
                   ))}
                 </div>

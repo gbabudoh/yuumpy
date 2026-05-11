@@ -18,8 +18,8 @@ export interface CartItem {
     | 'Hand-designed' 
     | 'Upcycled' 
     | 'Repurposed' 
-    | 'Bespoke / Customised' 
-    | 'Sourced / Handpicked' 
+    | 'Bespoke' 
+    | 'Sourced/Handpicked' 
     | 'Imperfectly Perfect'
     | 'new' | 'refurbished' | 'used';
   affiliate_url?: string;

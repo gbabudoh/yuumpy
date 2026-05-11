@@ -412,8 +412,8 @@ export default function SellerProductsPage() {
                       <option value="Hand-designed">Hand-designed (Original digital or physical art)</option>
                       <option value="Upcycled">Upcycled (Refurbished to a higher quality)</option>
                       <option value="Repurposed">Repurposed (Transformed for a new use)</option>
-                      <option value="Bespoke / Customised">Bespoke / Customised (Made to specific order)</option>
-                      <option value="Sourced / Handpicked">Sourced / Handpicked (Curated vintage or natural items)</option>
+                      <option value="Bespoke">Bespoke (Made to specific order)</option>
+                      <option value="Sourced/Handpicked">Sourced/Handpicked (Curated vintage or natural items)</option>
                       <option value="Imperfectly Perfect">Imperfectly Perfect (Brand new with minor artisan flaws)</option>
                     </select>
                     <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
