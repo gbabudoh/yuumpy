@@ -7,11 +7,21 @@ export interface CartItem {
   name: string;
   slug: string;
   price: number;
-  originalPrice?: number;
+  original_price?: number;
   image_url: string;
   quantity: number;
   purchase_type?: 'affiliate' | 'direct';
-  product_condition?: 'new' | 'refurbished' | 'used';
+  product_condition?: 
+    | 'Handcrafted' 
+    | 'Hand-altered' 
+    | 'Hand-assembled' 
+    | 'Hand-designed' 
+    | 'Upcycled' 
+    | 'Repurposed' 
+    | 'Bespoke / Customised' 
+    | 'Sourced / Handpicked' 
+    | 'Imperfectly Perfect'
+    | 'new' | 'refurbished' | 'used';
   affiliate_url?: string;
   color?: string;
   color_image?: string;
@@ -72,8 +82,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         name: product.name,
         slug: product.slug,
         price: product.price,
+        original_price: product.original_price,
         image_url: product.image_url,
         purchase_type: product.purchase_type,
+        product_condition: product.product_condition,
         affiliate_url: product.affiliate_url,
         color: product.color,
         color_image: product.color_image,

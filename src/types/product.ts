@@ -37,7 +37,10 @@ export interface Product {
     | 'Repurposed' 
     | 'Bespoke / Customised' 
     | 'Sourced / Handpicked' 
-    | 'Imperfectly Perfect';
+    | 'Imperfectly Perfect'
+    | 'new'
+    | 'refurbished'
+    | 'used';
   stock_quantity?: number;
   image_url: string;
   gallery?: string | string[];

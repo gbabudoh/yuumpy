@@ -40,7 +40,7 @@ interface MakerProfileProps {
     name: string;
     slug: string;
     price: number;
-    originalPrice?: number;
+    original_price?: number;
     image_url: string;
     product_condition?: string;
     seller_store_slug?: string;

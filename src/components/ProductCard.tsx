@@ -6,21 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ShoppingCart, Eye, ExternalLink } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 
-interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  price: number;
-  originalPrice?: number;
-  image_url: string;
-  isFeatured?: boolean;
-  isBestseller?: boolean;
-  affiliate_url?: string;
-  purchase_type?: 'affiliate' | 'direct';
-  product_condition?: string;
-  seller_store_slug?: string;
-  seller_name?: string;
-}
+import { Product } from '@/types/product';
 
 interface ProductCardProps {
   product: Product;
@@ -36,12 +22,27 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
     : `/products/${product.slug}`;
 
   const handleAddToCart = () => {
-    addToCart(product);
+    addToCart({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: Number(product.price),
+      original_price: product.original_price ? Number(product.original_price) : undefined,
+      image_url: product.image_url,
+      purchase_type: product.purchase_type,
+      product_condition: product.product_condition,
+      affiliate_url: product.affiliate_url,
+      seller_store_name: product.seller_store_name,
+      seller_store_slug: product.seller_store_slug,
+      seller_city: product.seller_city,
+      seller_country: product.seller_country,
+      seller_processing_time: product.seller_processing_time,
+    });
     router.push('/cart');
   };
 
-  const discountPercentage = product.originalPrice 
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  const discountPercentage = product.original_price 
+    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0;
 
   // Determine if this is a direct sale product (no affiliate_url or purchase_type is 'direct')
@@ -97,9 +98,9 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
               <span className="text-lg font-bold text-gray-900">
                 £{Number(product.price).toFixed(2)}
               </span>
-              {product.originalPrice && (
+              {product.original_price && (
                 <span className="text-sm text-gray-500 line-through">
-                  £{Number(product.originalPrice).toFixed(2)}
+                  £{Number(product.original_price).toFixed(2)}
                 </span>
               )}
             </div>
@@ -182,9 +183,9 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
                 {product.name}
               </h3>
             </Link>
-            {product.seller_name && (
+            {product.seller_store_name && (
               <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">
-                by {product.seller_name}
+                by {product.seller_store_name}
               </p>
             )}
           </div>
@@ -196,9 +197,9 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
             <span className="text-2xl font-black text-gray-900">
               £{Number(product.price).toFixed(2)}
             </span>
-            {product.originalPrice && (
+            {product.original_price && (
               <span className="text-sm text-gray-400 line-through font-bold">
-                £{Number(product.originalPrice).toFixed(2)}
+                £{Number(product.original_price).toFixed(2)}
               </span>
             )}
           </div>

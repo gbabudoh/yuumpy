@@ -42,12 +42,17 @@ export async function GET(request: NextRequest) {
              c.name as category_name, c.slug as category_slug, 
              b.name as brand_name, b.slug as brand_slug,
              s.name as subcategory_name, s.slug as subcategory_slug,
-             sel.store_slug as seller_store_slug
+             sel.store_slug as seller_store_slug,
+             sel.store_name as seller_store_name,
+             sel.city as seller_city,
+             sel.country as seller_country,
+             sset.processing_time as seller_processing_time
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN categories s ON p.subcategory_id = s.id
       LEFT JOIN sellers sel ON p.seller_id = sel.id
+      LEFT JOIN seller_settings sset ON sel.id = sset.seller_id
     `;
     const params: (string | number | boolean | null)[] = [];
     const whereConditions = [];

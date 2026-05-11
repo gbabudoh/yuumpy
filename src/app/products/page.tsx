@@ -19,7 +19,17 @@ interface Product {
   original_price?: number;
   affiliate_url: string;
   purchase_type?: 'affiliate' | 'direct';
-  product_condition?: 'new' | 'refurbished' | 'used';
+  product_condition?: 
+    | 'Handcrafted' 
+    | 'Hand-altered' 
+    | 'Hand-assembled' 
+    | 'Hand-designed' 
+    | 'Upcycled' 
+    | 'Repurposed' 
+    | 'Bespoke / Customised' 
+    | 'Sourced / Handpicked' 
+    | 'Imperfectly Perfect'
+    | 'new' | 'refurbished' | 'used';
   image_url: string;
   category_name: string;
   category_slug: string;
@@ -440,12 +450,22 @@ function ProductsPageContent() {
                 {sortedProducts.map((product) => (
                   <ProductCard key={product.id} viewMode={viewMode}
                     product={{
-                      id: product.id, name: product.name, slug: product.slug,
+                      id: product.id,
+                      name: product.name,
+                      slug: product.slug,
+                      description: product.description || '',
+                      short_description: product.short_description || '',
                       price: Number(product.price) || 0,
-                      originalPrice: product.original_price ? Number(product.original_price) : undefined,
-                      image_url: product.image_url || '', isFeatured: Boolean(product.is_featured),
-                      isBestseller: Boolean(product.is_bestseller), affiliate_url: product.affiliate_url,
-                      purchase_type: product.purchase_type, product_condition: product.product_condition,
+                      original_price: product.original_price ? Number(product.original_price) : undefined,
+                      image_url: product.image_url || '',
+                      category_name: product.category_name || '',
+                      category_slug: product.category_slug || '',
+                      is_featured: Boolean(product.is_featured),
+                      is_bestseller: Boolean(product.is_bestseller),
+                      is_active: true,
+                      affiliate_url: product.affiliate_url || '',
+                      purchase_type: product.purchase_type as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+                      product_condition: product.product_condition as any, // eslint-disable-line @typescript-eslint/no-explicit-any
                       seller_store_slug: product.seller_store_slug,
                     }} />
                 ))}

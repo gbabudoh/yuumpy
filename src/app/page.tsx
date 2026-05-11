@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
+import { Product as CoreProduct } from '@/types/product';
 import BannerAd from '@/components/BannerAd';
 import { 
   ShieldCheck, 
@@ -22,15 +23,23 @@ interface Product {
   name: string;
   slug: string;
   price: number;
-  originalPrice?: number;
+  original_price?: number;
   image_url: string;
-  isFeatured: boolean;
-  isBestseller: boolean;
-  affiliate_url?: string;
+  is_featured: boolean;
+  is_bestseller: boolean;
+  affiliate_url: string;
   purchase_type?: 'affiliate' | 'direct';
   product_condition?: string;
-  seller_name?: string;
+  description: string;
+  short_description: string;
+  category_name: string;
+  category_slug: string;
+  is_active: boolean;
+  seller_store_name?: string;
   seller_store_slug?: string;
+  seller_city?: string;
+  seller_country?: string;
+  seller_processing_time?: string;
 }
 
 interface RawProduct {
@@ -47,6 +56,15 @@ interface RawProduct {
   product_condition?: string;
   seller_name?: string;
   store_slug?: string;
+  seller_store_name?: string;
+  seller_store_slug?: string;
+  seller_city?: string;
+  seller_country?: string;
+  seller_processing_time?: string;
+  description?: string;
+  short_description?: string;
+  category_name?: string;
+  category_slug?: string;
 }
 
 export default function Home() {
@@ -65,17 +83,25 @@ export default function Home() {
             name: product.name,
             slug: product.slug,
             price: parseFloat(String(product.price)) || 0,
-            originalPrice: product.original_price ? parseFloat(String(product.original_price)) : undefined,
-            image_url: (product.image_url as string) || '',
-            isFeatured: Boolean(product.is_featured),
-            isBestseller: Boolean(product.is_bestseller),
-            affiliate_url: product.affiliate_url,
-            purchase_type: product.purchase_type,
-            product_condition: product.product_condition,
-            seller_name: product.seller_name,
-            seller_store_slug: product.store_slug,
+            original_price: product.original_price ? parseFloat(String(product.original_price)) : undefined,
+            image_url: product.image_url || '',
+            is_featured: Boolean(product.is_featured),
+            is_bestseller: Boolean(product.is_bestseller),
+            affiliate_url: product.affiliate_url || '',
+            purchase_type: product.purchase_type as CoreProduct['purchase_type'],
+            product_condition: product.product_condition as CoreProduct['product_condition'],
+            description: '',
+            short_description: '',
+            category_name: '',
+            category_slug: '',
+            is_active: true,
+            seller_store_name: product.seller_store_name,
+            seller_store_slug: product.seller_store_slug,
+            seller_city: product.seller_city,
+            seller_country: product.seller_country,
+            seller_processing_time: product.seller_processing_time,
           }));
-          setFeaturedProducts(mappedProducts);
+          setFeaturedProducts(mappedProducts as Product[]);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -234,7 +260,7 @@ export default function Home() {
             {featuredProducts.length > 0 ? (
               featuredProducts.map((product) => (
                 <div key={product.id} className="group">
-                  <ProductCard product={product} />
+                  <ProductCard product={product as unknown as CoreProduct} />
                 </div>
               ))
             ) : (

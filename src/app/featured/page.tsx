@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import React from 'react';
 import { StarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
@@ -6,9 +6,10 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import ProductCard from '@/components/ProductCard';
 import Footer from '@/components/Footer';
+import { Product } from '@/types/product';
 
 // Fetch featured products from API
-async function getFeaturedProducts() {
+async function getFeaturedProducts(): Promise<Product[]> {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products?featured=true`, {
       cache: 'no-store'
@@ -18,18 +19,28 @@ async function getFeaturedProducts() {
       const data = await response.json();
       const products = Array.isArray(data) ? data : (data.products || []);
       
-      return products.map((product: any) => ({
-        id: product.id,
+      return products.map((product: any): Product => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        id: Number(product.id),
         name: product.name,
         slug: product.slug,
+        description: product.description || '',
+        short_description: product.short_description || '',
         price: parseFloat(product.price) || 0,
-        originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
+        original_price: product.original_price ? parseFloat(product.original_price) : undefined,
         image_url: product.image_url || '',
-        isFeatured: Boolean(product.is_featured),
-        isBestseller: Boolean(product.is_bestseller),
-        affiliate_url: product.affiliate_url,
-        purchase_type: product.purchase_type,
-        product_condition: product.product_condition
+        category_name: product.category_name || '',
+        category_slug: product.category_slug || '',
+        is_featured: Boolean(product.is_featured),
+        is_bestseller: Boolean(product.is_bestseller),
+        is_active: true,
+        affiliate_url: product.affiliate_url || '',
+        purchase_type: product.purchase_type as Product['purchase_type'],
+        product_condition: product.product_condition as Product['product_condition'],
+        seller_store_name: product.seller_store_name,
+        seller_store_slug: product.seller_store_slug,
+        seller_city: product.seller_city,
+        seller_country: product.seller_country,
+        seller_processing_time: product.seller_processing_time
       }));
     }
   } catch (error) {
@@ -91,7 +102,7 @@ export default async function FeaturedPage() {
               </div>
               <h3 className="text-2xl font-semibold text-gray-900 mb-4">No Featured Products</h3>
               <p className="text-gray-600 mb-8">
-                We're currently updating our featured collection. Check back soon!
+                We&apos;re currently updating our featured collection. Check back soon!
               </p>
               <Link 
                 href="/products"
