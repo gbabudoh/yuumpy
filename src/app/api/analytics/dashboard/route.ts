@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
     // Fetch overview statistics
     const overviewQuery = `
       SELECT 
-        COUNT(CASE WHEN event_type = 'page_view' THEN 1 END) as total_views,
-        COUNT(CASE WHEN event_type = 'click' THEN 1 END) as total_clicks,
-        COUNT(CASE WHEN event_type = 'purchase' THEN 1 END) as total_purchases,
-        COUNT(DISTINCT user_ip) as unique_visitors
+        COUNT(CASE WHEN event_type = 'page_view' THEN 1 END)::int as total_views,
+        COUNT(CASE WHEN event_type = 'click' THEN 1 END)::int as total_clicks,
+        COUNT(CASE WHEN event_type = 'purchase' THEN 1 END)::int as total_purchases,
+        COUNT(DISTINCT user_ip)::int as unique_visitors
       FROM analytics 
       WHERE created_at >= ? AND created_at <= ?
     `;
@@ -50,9 +50,9 @@ export async function GET(request: NextRequest) {
     const trafficQuery = `
       SELECT 
         DATE(created_at) as date,
-        COUNT(CASE WHEN event_type = 'page_view' THEN 1 END) as views,
-        COUNT(CASE WHEN event_type = 'click' THEN 1 END) as clicks,
-        COUNT(CASE WHEN event_type = 'purchase' THEN 1 END) as purchases
+        COUNT(CASE WHEN event_type = 'page_view' THEN 1 END)::int as views,
+        COUNT(CASE WHEN event_type = 'click' THEN 1 END)::int as clicks,
+        COUNT(CASE WHEN event_type = 'purchase' THEN 1 END)::int as purchases
       FROM analytics 
       WHERE created_at >= ? AND created_at <= ?
       GROUP BY DATE(created_at)
@@ -65,8 +65,8 @@ export async function GET(request: NextRequest) {
     const topPagesQuery = `
       SELECT 
         page_url as page,
-        COUNT(CASE WHEN event_type = 'page_view' THEN 1 END) as views,
-        COUNT(CASE WHEN event_type = 'click' THEN 1 END) as clicks
+        COUNT(CASE WHEN event_type = 'page_view' THEN 1 END)::int as views,
+        COUNT(CASE WHEN event_type = 'click' THEN 1 END)::int as clicks
       FROM analytics 
       WHERE created_at >= ? AND created_at <= ? AND page_url IS NOT NULL
       GROUP BY page_url
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           WHEN user_agent LIKE '%Tablet%' OR user_agent LIKE '%iPad%' THEN 'tablet'
           ELSE 'desktop'
         END as device_type,
-        COUNT(*) as count
+        COUNT(*)::int as count
       FROM analytics 
       WHERE created_at >= ? AND created_at <= ? AND user_agent IS NOT NULL
       GROUP BY device_type
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
           WHEN referrer LIKE '%linkedin%' THEN 'LinkedIn'
           ELSE 'Other'
         END as source,
-        COUNT(*) as visits
+        COUNT(*)::int as visits
       FROM analytics 
       WHERE created_at >= ? AND created_at <= ? AND event_type = 'page_view'
       GROUP BY source
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
     const goalsQuery = `
       SELECT 
         event_type as goal_name,
-        COUNT(*) as completions
+        COUNT(*)::int as completions
       FROM analytics 
       WHERE created_at >= ? AND created_at <= ? 
         AND event_type IN ('product_view', 'add_to_cart', 'purchase', 'email_signup')

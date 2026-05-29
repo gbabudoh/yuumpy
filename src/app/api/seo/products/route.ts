@@ -67,18 +67,18 @@ export async function PUT(request: NextRequest) {
         og_title, og_description, og_image, twitter_title, twitter_description, twitter_image,
         no_index, no_follow
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE
-        meta_title = VALUES(meta_title),
-        meta_description = VALUES(meta_description),
-        meta_keywords = VALUES(meta_keywords),
-        og_title = VALUES(og_title),
-        og_description = VALUES(og_description),
-        og_image = VALUES(og_image),
-        twitter_title = VALUES(twitter_title),
-        twitter_description = VALUES(twitter_description),
-        twitter_image = VALUES(twitter_image),
-        no_index = VALUES(no_index),
-        no_follow = VALUES(no_follow),
+      ON CONFLICT (product_id) DO UPDATE SET
+        meta_title = EXCLUDED.meta_title,
+        meta_description = EXCLUDED.meta_description,
+        meta_keywords = EXCLUDED.meta_keywords,
+        og_title = EXCLUDED.og_title,
+        og_description = EXCLUDED.og_description,
+        og_image = EXCLUDED.og_image,
+        twitter_title = EXCLUDED.twitter_title,
+        twitter_description = EXCLUDED.twitter_description,
+        twitter_image = EXCLUDED.twitter_image,
+        no_index = EXCLUDED.no_index,
+        no_follow = EXCLUDED.no_follow,
         updated_at = CURRENT_TIMESTAMP
     `;
 

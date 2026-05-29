@@ -13,18 +13,16 @@ export async function GET(request: NextRequest) {
 
     let sql = `
       SELECT o.*,
-             (SELECT JSON_ARRAYAGG(
-               JSON_OBJECT(
-                 'id', oi.id,
-                 'product_id', oi.product_id,
-                 'product_name', oi.product_name,
-                 'product_slug', oi.product_slug,
-                 'product_image_url', oi.product_image_url,
-                 'quantity', oi.quantity,
-                 'unit_price', oi.unit_price,
-                 'total_price', oi.total_price
-               )
-             ) FROM order_items oi WHERE oi.order_id = o.id) as items
+             (SELECT COALESCE(JSON_AGG(JSON_BUILD_OBJECT(
+               'id', oi.id,
+               'product_id', oi.product_id,
+               'product_name', oi.product_name,
+               'product_slug', oi.product_slug,
+               'product_image_url', oi.product_image_url,
+               'quantity', oi.quantity,
+               'unit_price', oi.unit_price,
+               'total_price', oi.total_price
+             )), '[]'::json) FROM order_items oi WHERE oi.order_id = o.id) as items
       FROM orders o
       WHERE 1=1
     `;
@@ -41,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      sql += ' AND (o.order_number LIKE ? OR o.customer_email LIKE ? OR o.customer_first_name LIKE ? OR o.customer_last_name LIKE ?)';
+      sql += ' AND (o.order_number ILIKE ? OR o.customer_email ILIKE ? OR o.customer_first_name ILIKE ? OR o.customer_last_name ILIKE ?)';
       const searchTerm = `%${search}%`;
       params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
@@ -52,7 +50,7 @@ export async function GET(request: NextRequest) {
     const orders = await query(sql, params);
 
     // Get total count
-    let countSql = 'SELECT COUNT(*) as total FROM orders o WHERE 1=1';
+    let countSql = 'SELECT COUNT(*)::int as total FROM orders o WHERE 1=1';
     const countParams: any[] = [];
 
     if (status) {
@@ -66,7 +64,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      countSql += ' AND (o.order_number LIKE ? OR o.customer_email LIKE ? OR o.customer_first_name LIKE ? OR o.customer_last_name LIKE ?)';
+      countSql += ' AND (o.order_number ILIKE ? OR o.customer_email ILIKE ? OR o.customer_first_name ILIKE ? OR o.customer_last_name ILIKE ?)';
       const searchTerm = `%${search}%`;
       countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }

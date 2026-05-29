@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     // If this is set as default, unset other defaults first
     if (is_default) {
       await query(
-        'UPDATE customer_addresses SET is_default = 0 WHERE customer_id = ?',
+        'UPDATE customer_addresses SET is_default = FALSE WHERE customer_id = ?',
         [decoded.customerId]
       );
     }
@@ -213,7 +213,7 @@ export async function PUT(request: NextRequest) {
     // If this is set as default, unset other defaults first
     if (is_default) {
       await query(
-        'UPDATE customer_addresses SET is_default = 0 WHERE customer_id = ? AND id != ?',
+        'UPDATE customer_addresses SET is_default = FALSE WHERE customer_id = ? AND id != ?',
         [decoded.customerId, id]
       );
     }

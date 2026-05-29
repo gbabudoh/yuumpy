@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     // Get unread count
     const unreadResult = await query(
-      `SELECT COUNT(*) as count FROM customer_notifications WHERE customer_id = ? AND is_read = FALSE`,
+      `SELECT COUNT(*)::int as count FROM customer_notifications WHERE customer_id = ? AND is_read = FALSE`,
       [customerId]
     ) as any[];
 

@@ -34,10 +34,10 @@ export async function GET(request: NextRequest) {
     try {
       const summary = await query(`
         SELECT 
-          SUM(CASE WHEN status IN ('open', 'seller_responded') THEN 1 ELSE 0 END) as open_count,
-          SUM(CASE WHEN status = 'under_review' THEN 1 ELSE 0 END) as review_count,
-          SUM(CASE WHEN status IN ('resolved_buyer', 'resolved_seller', 'resolved_split', 'closed') THEN 1 ELSE 0 END) as resolved_count,
-          COUNT(*) as total
+          SUM(CASE WHEN status IN ('open', 'seller_responded')::float THEN 1 ELSE 0 END) as open_count,
+          SUM(CASE WHEN status = 'under_review' THEN 1 ELSE 0 END)::float as review_count,
+          SUM(CASE WHEN status IN ('resolved_buyer', 'resolved_seller', 'resolved_split', 'closed')::float THEN 1 ELSE 0 END) as resolved_count,
+          COUNT(*)::int as total
         FROM disputes
       `) as Record<string, unknown>[];
       if (summary.length > 0) {

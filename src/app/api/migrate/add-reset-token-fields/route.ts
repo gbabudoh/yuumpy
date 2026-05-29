@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const checkColumns = await query(`
       SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers' 
+      WHERE table_schema = current_schema() AND TABLE_NAME = 'customers' 
       AND COLUMN_NAME IN ('reset_token', 'reset_token_expiry')
     `) as any[];
 

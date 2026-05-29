@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const brandColumns = await query(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() 
+      WHERE table_schema = current_schema() 
       AND TABLE_NAME = 'products' 
       AND COLUMN_NAME = 'brand_id'
     `);
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const subcategoryColumns = await query(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() 
+      WHERE table_schema = current_schema() 
       AND TABLE_NAME = 'products' 
       AND COLUMN_NAME = 'subcategory_id'
     `);
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       const foreignKeys = await query(`
         SELECT CONSTRAINT_NAME 
         FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
-        WHERE TABLE_SCHEMA = DATABASE() 
+        WHERE table_schema = current_schema() 
         AND TABLE_NAME = 'products' 
         AND COLUMN_NAME = 'subcategory_id'
         AND REFERENCED_TABLE_NAME = 'subcategories'
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       const correctForeignKeys = await query(`
         SELECT CONSTRAINT_NAME 
         FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
-        WHERE TABLE_SCHEMA = DATABASE() 
+        WHERE table_schema = current_schema() 
         AND TABLE_NAME = 'products' 
         AND COLUMN_NAME = 'subcategory_id'
         AND REFERENCED_TABLE_NAME = 'categories'
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     const affiliateColumns = await query(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() 
+      WHERE table_schema = current_schema() 
       AND TABLE_NAME = 'products' 
       AND COLUMN_NAME = 'affiliate_partner_name'
     `);
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     const bannerAdColumns = await query(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() 
+      WHERE table_schema = current_schema() 
       AND TABLE_NAME = 'products' 
       AND COLUMN_NAME = 'banner_ad_title'
     `);

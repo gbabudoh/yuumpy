@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const checkColumnSql = `
       SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH 
       FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() 
+      WHERE table_schema = current_schema() 
       AND TABLE_NAME = 'categories' 
       AND COLUMN_NAME = 'icon_url'
     `;
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     const checkColumnSql = `
       SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH 
       FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() 
+      WHERE table_schema = current_schema() 
       AND TABLE_NAME = 'categories' 
       AND COLUMN_NAME = 'icon_url'
     `;

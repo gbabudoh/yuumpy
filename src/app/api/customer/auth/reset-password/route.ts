@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (password.length < 8) return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
 
     const users = await query(
-      'SELECT id FROM customers WHERE reset_token = ? AND reset_token_expiry > NOW() AND is_active = 1',
+      'SELECT id FROM customers WHERE reset_token = ? AND reset_token_expiry > NOW() AND is_active = TRUE',
       [token]
     ) as any[];
 

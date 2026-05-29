@@ -67,7 +67,7 @@ export function verifyToken(token: string): { userId: number; role: string } | n
 // Get admin user by username
 export async function getAdminByUsername(username: string): Promise<AdminUser | null> {
   try {
-    const sql = 'SELECT * FROM admin_users WHERE username = ? AND is_active = 1';
+    const sql = 'SELECT * FROM admin_users WHERE username = ? AND is_active = TRUE';
     const result = await query(sql, [username]);
     return Array.isArray(result) && result.length > 0 ? (result[0] as AdminUser) : null;
   } catch (error) {
@@ -79,7 +79,7 @@ export async function getAdminByUsername(username: string): Promise<AdminUser | 
 // Get admin user by ID
 export async function getAdminById(id: number): Promise<AdminUser | null> {
   try {
-    const sql = 'SELECT * FROM admin_users WHERE id = ? AND is_active = 1';
+    const sql = 'SELECT * FROM admin_users WHERE id = ? AND is_active = TRUE';
     const result = await query(sql, [id]);
     return Array.isArray(result) && result.length > 0 ? (result[0] as AdminUser) : null;
   } catch (error) {
@@ -112,7 +112,7 @@ export async function verifyAdminSession(token: string): Promise<AdminUser | nul
     const sql = `
       SELECT au.* FROM admin_users au
       JOIN admin_sessions s ON au.id = s.admin_user_id
-      WHERE s.session_token = ? AND s.expires_at > NOW() AND au.is_active = 1
+      WHERE s.session_token = ? AND s.expires_at > NOW() AND au.is_active = TRUE
     `;
     const result = await query(sql, [token]);
     return Array.isArray(result) && result.length > 0 ? (result[0] as AdminUser) : null;

@@ -1,6 +1,6 @@
--- Analytics Settings Table
+-- Analytics Settings Table (PostgreSQL)
 CREATE TABLE IF NOT EXISTS analytics_settings (
-  id INT PRIMARY KEY AUTO_INCREMENT,
+  id SERIAL PRIMARY KEY,
   google_analytics_enabled BOOLEAN DEFAULT FALSE,
   google_analytics_tracking_id VARCHAR(50),
   google_analytics_property_id VARCHAR(50),
@@ -8,24 +8,15 @@ CREATE TABLE IF NOT EXISTS analytics_settings (
   matomo_enabled BOOLEAN DEFAULT FALSE,
   matomo_url VARCHAR(255),
   matomo_site_id VARCHAR(50),
-  custom_events_config JSON,
-  privacy_settings JSON,
+  custom_events_config JSONB,
+  privacy_settings JSONB,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert default settings
-INSERT IGNORE INTO analytics_settings (id, google_analytics_enabled, matomo_enabled, custom_events_config, privacy_settings) 
-VALUES (1, FALSE, FALSE, 
-  JSON_OBJECT(
-    'productViews', true,
-    'bannerClicks', true,
-    'emailSignups', true,
-    'purchases', true
-  ),
-  JSON_OBJECT(
-    'anonymizeIP', true,
-    'respectDoNotTrack', true,
-    'cookieConsent', true
-  )
-);
+INSERT INTO analytics_settings (id, google_analytics_enabled, matomo_enabled, custom_events_config, privacy_settings)
+VALUES (1, FALSE, FALSE,
+  '{"productViews":true,"bannerClicks":true,"emailSignups":true,"purchases":true}'::jsonb,
+  '{"anonymizeIP":true,"respectDoNotTrack":true,"cookieConsent":true}'::jsonb
+)
+ON CONFLICT (id) DO NOTHING;

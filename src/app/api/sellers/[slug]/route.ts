@@ -62,7 +62,7 @@ export async function GET(
        FROM products p 
        LEFT JOIN categories c ON p.category_id = c.id 
        LEFT JOIN brands b ON p.brand_id = b.id 
-       WHERE p.seller_id = ? AND p.is_active = 1
+       WHERE p.seller_id = ? AND p.is_active = TRUE
        ORDER BY p.created_at DESC`,
       [seller.id]
     );
@@ -71,14 +71,14 @@ export async function GET(
     try {
       // Total Items Sold
       const soldResult = await query(
-        'SELECT SUM(quantity) as total_sold FROM order_items WHERE seller_id = ?',
+        'SELECT SUM(quantity)::float as total_sold FROM order_items WHERE seller_id = ?',
         [seller.id]
       ) as SellerStats[];
       seller.total_orders = Number(soldResult[0]?.total_sold || 0);
 
       // Average Rating & Review Count
       const reviewsResult = await query(
-        'SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM seller_reviews WHERE seller_id = ? AND is_visible = 1',
+        'SELECT AVG(rating)::float as avg_rating, COUNT(*)::int as total_reviews FROM seller_reviews WHERE seller_id = ? AND is_visible = TRUE',
         [seller.id]
       ) as SellerStats[];
       seller.average_rating = Number(reviewsResult[0]?.avg_rating || 0);
@@ -86,7 +86,7 @@ export async function GET(
       
       // Total Sales Revenue
       const salesResult = await query(
-        'SELECT SUM(total_price) as revenue FROM order_items WHERE seller_id = ?',
+        'SELECT SUM(total_price)::float as revenue FROM order_items WHERE seller_id = ?',
         [seller.id]
       ) as SellerStats[];
       seller.total_sales = Number(salesResult[0]?.revenue || 0);

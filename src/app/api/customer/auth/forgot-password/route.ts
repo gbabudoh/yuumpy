@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     if (!email) return NextResponse.json({ error: 'Email is required' }, { status: 400 });
 
     const users = await query(
-      'SELECT id, email, first_name FROM customers WHERE email = ? AND is_active = 1',
+      'SELECT id, email, first_name FROM customers WHERE email = ? AND is_active = TRUE',
       [email]
     ) as any[];
 

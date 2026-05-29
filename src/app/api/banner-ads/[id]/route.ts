@@ -47,7 +47,11 @@ export async function PUT(
       end_date,
       expires_at,
       duration,
-      is_repeating
+      is_repeating,
+      tag,
+      cta_text,
+      product_label,
+      rating
     } = body;
 
     // Validate required fields
@@ -58,24 +62,28 @@ export async function PUT(
       );
     }
 
-    // Simplified update query - only update the basic fields that definitely exist
     const sql = `
       UPDATE banner_ads SET
         title = ?, description = ?, image_url = ?, link_url = ?,
         position = ?, is_active = ?, start_date = ?, end_date = ?,
+        tag = ?, cta_text = ?, product_label = ?, rating = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
 
     const updateParams = [
-      title, 
-      description, 
-      image_url, 
-      link_url || null, 
-      position || 'top', 
-      is_active !== undefined ? is_active : true, 
-      start_date || null, 
+      title,
+      description,
+      image_url,
+      link_url || null,
+      position || 'top',
+      is_active !== undefined ? is_active : true,
+      start_date || null,
       end_date || null,
+      tag || null,
+      cta_text || null,
+      product_label || null,
+      rating ?? 5,
       id
     ];
 

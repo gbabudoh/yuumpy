@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const columns = await query(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() 
+      WHERE table_schema = current_schema() 
       AND TABLE_NAME = 'products' 
       AND COLUMN_NAME IN ('banner_ad_title', 'banner_ad_description', 'banner_ad_image_url', 'banner_ad_link_url', 'banner_ad_duration', 'banner_ad_is_repeating', 'banner_ad_start_date', 'banner_ad_end_date', 'banner_ad_is_active')
     `);

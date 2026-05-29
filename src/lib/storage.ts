@@ -10,35 +10,35 @@ const minioClient = new Minio.Client({
 
 const bucketName = process.env.MINIO_BUCKET || 'yuumpy';
 
-// Ensure bucket exists on startup
+const publicPolicy = (name: string) => JSON.stringify({
+  Version: '2012-10-17',
+  Statement: [
+    {
+      Effect: 'Allow',
+      Principal: { AWS: ['*'] },
+      Action: ['s3:GetBucketLocation', 's3:ListBucket'],
+      Resource: [`arn:aws:s3:::${name}`],
+    },
+    {
+      Effect: 'Allow',
+      Principal: { AWS: ['*'] },
+      Action: ['s3:GetObject'],
+      Resource: [`arn:aws:s3:::${name}/*`],
+    },
+  ],
+});
+
+// Ensure bucket exists and always has public read policy
 const ensureBucketExists = async () => {
   try {
     const exists = await minioClient.bucketExists(bucketName);
     if (!exists) {
       await minioClient.makeBucket(bucketName);
-      console.log(`✅ Bucket "${bucketName}" created successfully.`);
-      
-      // Set bucket policy to allow public read
-      const policy = {
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Effect: "Allow",
-            Principal: { AWS: ["*"] },
-            Action: ["s3:GetBucketLocation", "s3:ListBucket"],
-            Resource: [`arn:aws:s3:::${bucketName}`],
-          },
-          {
-            Effect: "Allow",
-            Principal: { AWS: ["*"] },
-            Action: ["s3:GetObject"],
-            Resource: [`arn:aws:s3:::${bucketName}/*`],
-          },
-        ],
-      };
-      await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
-      console.log(`✅ Public read policy set for bucket "${bucketName}".`);
+      console.log(`✅ Bucket "${bucketName}" created.`);
     }
+    // Always apply public read policy (idempotent)
+    await minioClient.setBucketPolicy(bucketName, publicPolicy(bucketName));
+    console.log(`✅ Public read policy applied to bucket "${bucketName}".`);
   } catch (error) {
     console.error('❌ Error ensuring MinIO bucket exists:', error);
   }

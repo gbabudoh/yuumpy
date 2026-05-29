@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ResultSetHeader } from 'mysql2';
 import { query } from '@/lib/database';
 import { hashPassword, getRolePermissions } from '@/lib/admin-auth';
 
@@ -95,7 +94,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Admin user created successfully',
-      userId: (result as ResultSetHeader).insertId
+      userId: (result as any).insertId
     });
 
   } catch (error) {

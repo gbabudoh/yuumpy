@@ -9,37 +9,38 @@ export async function GET(request: NextRequest) {
     const parentId = searchParams.get('parent_id');
 
     let sql = `
-      SELECT c.*, 
-             COALESCE(COUNT(DISTINCT p1.id), 0) + COALESCE(COUNT(DISTINCT p2.id), 0) as product_count,
-             parent.name as parent_name
+      SELECT c.*,
+             COALESCE(COUNT(DISTINCT p.id)::int, 0) as product_count,
+             (SELECT name FROM categories WHERE id = c.parent_id) as parent_name
       FROM categories c
-      LEFT JOIN products p1 ON c.id = p1.category_id AND p1.is_active = 1
-      LEFT JOIN products p2 ON c.id = p2.secondary_category_id AND p2.is_active = 1
-      LEFT JOIN categories parent ON c.parent_id = parent.id
-      WHERE c.is_active = 1
+      LEFT JOIN products p ON c.id = p.category_id AND p.is_active = TRUE
+      WHERE c.is_active = TRUE
     `;
     
     const params = [];
 
-    // Handle different query types
+    const megaMenu = searchParams.get('mega_menu');
+
     if (parentId) {
-      // Fetch subcategories by parent_id
       sql += ' AND c.parent_id = ?';
       params.push(parentId);
+    } else if (megaMenu === 'true') {
+      // Mega menu: only root categories with show_in_menu = TRUE, ordered by menu_order
+      sql += ' AND c.parent_id IS NULL AND c.show_in_menu = TRUE';
     } else if (parentOnly === 'true') {
-      // Fetch only main categories (parent_id IS NULL)
       sql += ' AND c.parent_id IS NULL';
     } else if (slug) {
-      // When searching by slug, don't filter by parent_id - allow any category
-      // This allows finding subcategories by slug
       sql += ' AND c.slug = ?';
       params.push(slug);
     } else {
-      // Default: fetch main categories
       sql += ' AND c.parent_id IS NULL';
     }
 
-    sql += ' GROUP BY c.id ORDER BY c.sort_order ASC, c.name ASC';
+    if (megaMenu === 'true') {
+      sql += ' GROUP BY c.id ORDER BY c.menu_order ASC, c.name ASC';
+    } else {
+      sql += ' GROUP BY c.id ORDER BY c.sort_order ASC, c.name ASC';
+    }
 
     console.log('Categories API Query:', sql, params);
     const categories = await query(sql, params);

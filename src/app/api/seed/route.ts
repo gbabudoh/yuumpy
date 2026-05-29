@@ -4,7 +4,7 @@ import { query } from '@/lib/database';
 export async function POST(request: NextRequest) {
   try {
     // First, let's check if we have any products
-    const existingProducts = await query('SELECT COUNT(*) as count FROM products');
+    const existingProducts = await query('SELECT COUNT(*)::int as count FROM products');
     
     if (existingProducts[0].count > 0) {
       return NextResponse.json({ 

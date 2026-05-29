@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       `SELECT p.id, p.name, p.slug, p.price, p.image_url, p.purchase_type, 
               p.stock_quantity, p.seller_id
        FROM products p
-       WHERE p.id IN (${placeholders}) AND p.is_active = 1`,
+       WHERE p.id IN (${placeholders}) AND p.is_active = TRUE`,
       productIds
     ) as DBProduct[];
 

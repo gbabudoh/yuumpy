@@ -36,12 +36,12 @@ export async function GET(request: NextRequest) {
     try {
       const summary = await query(`
         SELECT 
-          SUM(CASE WHEN status = 'held' THEN 1 ELSE 0 END) as held,
-          SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END) as released,
-          SUM(CASE WHEN status = 'refunded' OR status = 'partially_refunded' THEN 1 ELSE 0 END) as refunded,
-          SUM(CASE WHEN status = 'disputed' THEN 1 ELSE 0 END) as disputed,
-          COALESCE(SUM(CASE WHEN status = 'held' THEN seller_payout_amount ELSE 0 END), 0) as total_held_amount,
-          COALESCE(SUM(CASE WHEN status = 'released' THEN seller_payout_amount ELSE 0 END), 0) as total_released_amount
+          SUM(CASE WHEN status = 'held' THEN 1 ELSE 0 END)::float as held,
+          SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END)::float as released,
+          SUM(CASE WHEN status = 'refunded' OR status = 'partially_refunded' THEN 1 ELSE 0 END)::float as refunded,
+          SUM(CASE WHEN status = 'disputed' THEN 1 ELSE 0 END)::float as disputed,
+          COALESCE(SUM(CASE WHEN status = 'held' THEN seller_payout_amount ELSE 0 END)::float, 0) as total_held_amount,
+          COALESCE(SUM(CASE WHEN status = 'released' THEN seller_payout_amount ELSE 0 END)::float, 0) as total_released_amount
         FROM escrow_transactions
       `) as Record<string, unknown>[];
       if (summary.length > 0) {
@@ -176,8 +176,8 @@ export async function POST(request: NextRequest) {
       const holdDays = Number(hold_days) || 7;
       await query(
         `UPDATE escrow_transactions 
-         SET status = 'held', hold_until = DATE_ADD(NOW(), INTERVAL ? DAY),
-             admin_notes = CONCAT(COALESCE(admin_notes, ''), ?)
+         SET status = 'held', hold_until = NOW() + (? * INTERVAL '1 day'),
+             admin_notes = COALESCE(admin_notes, '') || ?
          WHERE id = ?`,
         [holdDays, `\n[Hold extended] ${notes || `Extended hold by ${holdDays} days`}`, escrow_id]
       );

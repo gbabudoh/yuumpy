@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     if (!token) return NextResponse.json({ error: 'Token is required' }, { status: 400 });
 
     const users = await query(
-      'SELECT id FROM customers WHERE reset_token = ? AND reset_token_expiry > NOW() AND is_active = 1',
+      'SELECT id FROM customers WHERE reset_token = ? AND reset_token_expiry > NOW() AND is_active = TRUE',
       [token]
     ) as any[];
 

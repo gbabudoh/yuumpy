@@ -80,7 +80,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
     );
 
     if (paymentIntent.metadata.banner_ad_id) {
-      await query('UPDATE banner_ads SET is_active = 1 WHERE id = ?', [paymentIntent.metadata.banner_ad_id]);
+      await query('UPDATE banner_ads SET is_active = TRUE WHERE id = ?', [paymentIntent.metadata.banner_ad_id]);
     }
 
     console.log('Payment succeeded:', paymentIntent.id);
@@ -156,16 +156,14 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
       // Create escrow transaction for seller orders
       const orderResult = await query(
-        `SELECT o.*, 
-                JSON_ARRAYAGG(
-                  JSON_OBJECT(
-                    'product_name', oi.product_name,
-                    'quantity', oi.quantity,
-                    'unit_price', oi.unit_price,
-                    'total_price', oi.total_price,
-                    'product_image_url', oi.product_image_url
-                  )
-                ) as items
+        `SELECT o.*,
+                COALESCE(JSON_AGG(JSON_BUILD_OBJECT(
+                  'product_name', oi.product_name,
+                  'quantity', oi.quantity,
+                  'unit_price', oi.unit_price,
+                  'total_price', oi.total_price,
+                  'product_image_url', oi.product_image_url
+                )) FILTER (WHERE oi.id IS NOT NULL), '[]'::json) as items
          FROM orders o
          LEFT JOIN order_items oi ON o.id = oi.order_id
          WHERE o.id = ?
@@ -182,7 +180,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           await query(
             `INSERT INTO escrow_transactions 
              (order_id, seller_id, total_amount, commission_amount, seller_payout_amount, status, hold_until)
-             VALUES (?, ?, ?, ?, ?, 'held', DATE_ADD(NOW(), INTERVAL 7 DAY))`,
+             VALUES (?, ?, ?, ?, ?, 'held', NOW() + INTERVAL '7 days')`,
             [orderId, order.seller_id, order.total_amount, order.commission_amount, order.seller_payout_amount]
           );
           console.log(`Escrow created for order ${orderId}, seller ${order.seller_id}`);

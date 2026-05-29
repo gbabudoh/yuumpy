@@ -18,6 +18,10 @@ interface BannerAd {
   expires_at?: string;
   duration?: '1_week' | '2_weeks' | '3_weeks' | '4_weeks' | '6_months';
   is_repeating?: boolean;
+  tag?: string;
+  cta_text?: string;
+  product_label?: string;
+  rating?: number;
   created_at: string;
 }
 
@@ -36,7 +40,11 @@ export default function BannerAdsPage() {
     start_date: '',
     end_date: '',
     duration: '1_week' as '1_week' | '2_weeks' | '3_weeks' | '4_weeks' | '6_months',
-    is_repeating: false
+    is_repeating: false,
+    tag: '',
+    cta_text: '',
+    product_label: '',
+    rating: 5
   });
   const [submitting, setSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -302,7 +310,11 @@ export default function BannerAdsPage() {
       start_date: '',
       end_date: '',
       duration: '1_week',
-      is_repeating: false
+      is_repeating: false,
+      tag: '',
+      cta_text: '',
+      product_label: '',
+      rating: 5
     });
     setSelectedImage(null);
     setImagePreview(null);
@@ -329,7 +341,11 @@ export default function BannerAdsPage() {
         start_date: ad.start_date || '',
         end_date: ad.end_date || '',
         duration: (ad.duration as '1_week' | '2_weeks' | '3_weeks' | '4_weeks' | '6_months') || '1_week',
-        is_repeating: ad.is_repeating || false
+        is_repeating: ad.is_repeating || false,
+        tag: ad.tag || '',
+        cta_text: ad.cta_text || '',
+        product_label: ad.product_label || '',
+        rating: ad.rating ?? 5
       });
       setImagePreview(ad.image_url || null);
       setSelectedImage(null);
@@ -733,6 +749,73 @@ export default function BannerAdsPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="https://example.com"
                   />
+                </div>
+
+                {/* Slide Content Options */}
+                <div className="border border-gray-200 rounded-lg p-4 space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-700">Slide Display Options</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Badge Text
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.tag}
+                        onChange={(e) => setFormData({...formData, tag: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Marketplace Choice"
+                        maxLength={100}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Small badge shown above the title</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        CTA Button Text
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.cta_text}
+                        onChange={(e) => setFormData({...formData, cta_text: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Shop Now"
+                        maxLength={100}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Text on the primary action button</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Product Label
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.product_label}
+                        onChange={(e) => setFormData({...formData, product_label: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Verified Premium Item"
+                        maxLength={200}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Label shown on the product image overlay</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Star Rating (1–5)
+                      </label>
+                      <select
+                        value={formData.rating}
+                        onChange={(e) => setFormData({...formData, rating: Number(e.target.value)})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <option key={n} value={n}>{n} star{n > 1 ? 's' : ''}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">Stars shown on the product image overlay</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

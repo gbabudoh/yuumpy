@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
     // Get product count
     const products = await query(
-      'SELECT COUNT(*) as count FROM products WHERE seller_id = ? AND is_active = 1',
+      'SELECT COUNT(*)::int as count FROM products WHERE seller_id = ? AND is_active = TRUE',
       [seller.id]
     ) as { count: number }[];
 
@@ -22,10 +22,10 @@ export async function GET(request: Request) {
     try {
       const orderStats = await query(
         `SELECT 
-          COUNT(*) as total_orders,
-          SUM(CASE WHEN order_status IN ('pending', 'confirmed', 'processing') THEN 1 ELSE 0 END) as pending_orders,
-          COALESCE(SUM(seller_payout_amount), 0) as total_sales,
-          COALESCE(SUM(commission_amount), 0) as commission_paid
+          COUNT(*)::int as total_orders,
+          SUM(CASE WHEN order_status IN ('pending', 'confirmed', 'processing')::float THEN 1 ELSE 0 END) as pending_orders,
+          COALESCE(SUM(seller_payout_amount)::float, 0) as total_sales,
+          COALESCE(SUM(commission_amount)::float, 0) as commission_paid
         FROM orders WHERE seller_id = ?`,
         [seller.id]
       ) as { total_orders: number; pending_orders: number; total_sales: string | number; commission_paid: string | number }[];
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     let escrowBalance = 0;
     try {
       const escrow = await query(
-        'SELECT COALESCE(SUM(seller_payout_amount), 0) as balance FROM escrow_transactions WHERE seller_id = ? AND status = ?',
+        'SELECT COALESCE(SUM(seller_payout_amount)::float, 0) as balance FROM escrow_transactions WHERE seller_id = ? AND status = ?',
         [seller.id, 'held']
       ) as { balance: string | number }[];
       if (escrow.length > 0) {
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     let averageRating = 0;
     try {
       const reviews = await query(
-        'SELECT COUNT(*) as count, COALESCE(AVG(rating), 0) as avg_rating FROM seller_reviews WHERE seller_id = ?',
+        'SELECT COUNT(*)::int as count, COALESCE(AVG(rating)::float, 0) as avg_rating FROM seller_reviews WHERE seller_id = ?',
         [seller.id]
       ) as { count: number; avg_rating: string | number }[];
       if (reviews.length > 0) {
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     let pendingInquiries = 0;
     try {
       const inquiries = await query(
-        'SELECT COUNT(*) as count FROM custom_requests WHERE seller_id = ? AND status = ?',
+        'SELECT COUNT(*)::int as count FROM custom_requests WHERE seller_id = ? AND status = ?',
         [seller.id, 'pending']
       ) as { count: number }[];
       pendingInquiries = inquiries[0]?.count || 0;

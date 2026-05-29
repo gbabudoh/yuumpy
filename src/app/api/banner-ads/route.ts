@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (active === 'true') {
-      sql += ' AND is_active = 1';
+      sql += ' AND is_active = TRUE';
     }
 
     sql += ' ORDER BY created_at DESC';
@@ -52,32 +52,36 @@ export async function POST(request: NextRequest) {
       end_date,
       expires_at,
       duration,
-      is_repeating
+      is_repeating,
+      tag,
+      cta_text,
+      product_label,
+      rating
     } = body;
 
     // First, check if the banner_ads table has the new columns, if not add them
     try {
-      await query(`
-        ALTER TABLE banner_ads 
-        ADD COLUMN IF NOT EXISTS expires_at DATETIME,
-        ADD COLUMN IF NOT EXISTS duration VARCHAR(20),
-        ADD COLUMN IF NOT EXISTS is_repeating BOOLEAN DEFAULT FALSE
-      `);
+      await query(`ALTER TABLE banner_ads ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP`);
+      await query(`ALTER TABLE banner_ads ADD COLUMN IF NOT EXISTS duration VARCHAR(20)`);
+      await query(`ALTER TABLE banner_ads ADD COLUMN IF NOT EXISTS is_repeating BOOLEAN DEFAULT FALSE`);
+      await query(`ALTER TABLE banner_ads ADD COLUMN IF NOT EXISTS tag VARCHAR(100)`);
+      await query(`ALTER TABLE banner_ads ADD COLUMN IF NOT EXISTS cta_text VARCHAR(100)`);
+      await query(`ALTER TABLE banner_ads ADD COLUMN IF NOT EXISTS product_label VARCHAR(200)`);
+      await query(`ALTER TABLE banner_ads ADD COLUMN IF NOT EXISTS rating INTEGER DEFAULT 5`);
     } catch (alterError) {
-      // Columns might already exist, continue
       console.log('Columns might already exist:', alterError.message);
     }
 
     const sql = `
       INSERT INTO banner_ads (
-        title, description, image_url, link_url, position, is_active, 
-        start_date, end_date
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        title, description, image_url, link_url, position, is_active,
+        start_date, end_date, tag, cta_text, product_label, rating
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const result = await query(sql, [
-      title, description, image_url, link_url, position, is_active, 
-      start_date, end_date
+      title, description, image_url, link_url, position, is_active,
+      start_date, end_date, tag || null, cta_text || null, product_label || null, rating ?? 5
     ]);
 
     console.log('🔍 Create result:', result);
@@ -93,6 +97,10 @@ export async function POST(request: NextRequest) {
       is_active,
       start_date,
       end_date,
+      tag: tag || null,
+      cta_text: cta_text || null,
+      product_label: product_label || null,
+      rating: rating ?? 5,
       created_at: new Date().toISOString()
     };
 

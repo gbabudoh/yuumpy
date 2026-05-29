@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       const decoded = verifySellerToken(token);
       if (decoded?.sellerId) {
         // Mark as offline in DB
-        await query('UPDATE sellers SET is_online = 0, last_seen_at = NOW() WHERE id = ?', [decoded.sellerId]);
+        await query('UPDATE sellers SET is_online = FALSE, last_seen_at = NOW() WHERE id = ?', [decoded.sellerId]);
         // Also remove the session
         await query('DELETE FROM seller_sessions WHERE token = ?', [token]);
       }

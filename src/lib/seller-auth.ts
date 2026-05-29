@@ -224,7 +224,7 @@ export async function loginSeller(email: string, password: string): Promise<{
     );
 
     // Update last login and status
-    await query('UPDATE sellers SET last_login = NOW(), is_online = 1, last_seen_at = NOW() WHERE id = ?', [seller.id]);
+    await query('UPDATE sellers SET last_login = NOW(), is_online = TRUE, last_seen_at = NOW() WHERE id = ?', [seller.id]);
 
     const safeData = { ...seller } as Partial<Seller>;
     delete safeData.password_hash;

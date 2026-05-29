@@ -38,17 +38,15 @@ export async function GET(
               o.created_at, o.updated_at,
               o.shipping_address_line1, o.shipping_address_line2,
               o.shipping_city, o.shipping_county, o.shipping_postcode, o.shipping_country,
-              (SELECT JSON_ARRAYAGG(
-                JSON_OBJECT(
-                  'id', oi.id,
-                  'product_name', oi.product_name,
-                  'product_slug', oi.product_slug,
-                  'product_image_url', oi.product_image_url,
-                  'quantity', oi.quantity,
-                  'unit_price', oi.unit_price,
-                  'total_price', oi.total_price
-                )
-              ) FROM order_items oi WHERE oi.order_id = o.id) as items
+              (SELECT COALESCE(JSON_AGG(JSON_BUILD_OBJECT(
+                'id', oi.id,
+                'product_name', oi.product_name,
+                'product_slug', oi.product_slug,
+                'product_image_url', oi.product_image_url,
+                'quantity', oi.quantity,
+                'unit_price', oi.unit_price,
+                'total_price', oi.total_price
+              )), '[]'::json) FROM order_items oi WHERE oi.order_id = o.id) as items
        FROM orders o
        WHERE o.order_number = ? AND o.customer_id = ?`,
       [orderNumber, decoded.customerId]

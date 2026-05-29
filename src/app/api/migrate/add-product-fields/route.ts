@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const checkColumns = await query(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() 
+      WHERE table_schema = current_schema() 
       AND TABLE_NAME = 'products' 
       AND COLUMN_NAME IN ('long_description', 'product_review')
     `) as any[];

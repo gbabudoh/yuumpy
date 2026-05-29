@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     try {
       const addrResult = await query(
         `SELECT address_line1, address_line2, city, county, postcode, country 
-         FROM customer_addresses WHERE customer_id = ? AND is_default = 1 LIMIT 1`,
+         FROM customer_addresses WHERE customer_id = ? AND is_default = TRUE LIMIT 1`,
         [customerId]
       ) as Array<Record<string, string>>;
       if (addrResult.length > 0) {

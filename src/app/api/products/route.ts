@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // Only filter by is_active for non-admin requests
     if (!admin) {
-      whereConditions.push('p.is_active = 1');
+      whereConditions.push('p.is_active = TRUE');
     }
 
     // Handle category filtering
@@ -81,11 +81,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (featured === 'true') {
-      whereConditions.push('p.is_featured = 1');
+      whereConditions.push('p.is_featured = TRUE');
     }
 
     if (bestseller === 'true') {
-      whereConditions.push('p.is_bestseller = 1');
+      whereConditions.push('p.is_bestseller = TRUE');
     }
 
     if (search) {
@@ -256,7 +256,7 @@ export async function GET(request: NextRequest) {
 
     // Get total count for pagination
     let countSql = `
-      SELECT COUNT(*) as total
+      SELECT COUNT(*)::int as total
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN brands b ON p.brand_id = b.id
@@ -267,7 +267,7 @@ export async function GET(request: NextRequest) {
 
     // Only filter by is_active for non-admin requests
     if (!admin) {
-      countWhereConditions.push('p.is_active = 1');
+      countWhereConditions.push('p.is_active = TRUE');
     }
 
     // Apply the same filtering logic for count query
@@ -288,11 +288,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (featured === 'true') {
-      countWhereConditions.push('p.is_featured = 1');
+      countWhereConditions.push('p.is_featured = TRUE');
     }
 
     if (bestseller === 'true') {
-      countWhereConditions.push('p.is_bestseller = 1');
+      countWhereConditions.push('p.is_bestseller = TRUE');
     }
 
     if (search) {

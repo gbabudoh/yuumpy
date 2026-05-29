@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const params = [];
 
     if (slug) {
-      sql += ' AND slug = ? AND is_active = 1';
+      sql += ' AND slug = ? AND is_active = TRUE';
       params.push(slug);
     }
 

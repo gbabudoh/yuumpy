@@ -8,12 +8,15 @@
     "start": "next start",
     "lint": "eslint",
     "fix-images": "node scripts/fix-images.js",
-    "generate-icons": "node scripts/generate-pwa-icons.js"
+    "generate-icons": "node scripts/generate-pwa-icons.js",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@heroicons/react": "^2.0.18",
     "@livekit/components-react": "^2.9.20",
     "@livekit/components-styles": "^1.2.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^7.0.4",
@@ -30,6 +33,7 @@
     "mysql2": "^3.6.0",
     "next": "15.5.4",
     "nodemailer": "^7.0.11",
+    "pg": "^8.21.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
@@ -44,6 +48,7 @@
     "@types/react-dom": "^18",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
+    "prisma": "^7.8.0",
     "sharp": "^0.33.5",
     "tailwindcss": "^4",
     "typescript": "^5"

@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
 
     // First check if brands table exists
     const tableCheck = await query(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE() 
+      SELECT COUNT(*)::int as count
+      FROM information_schema.tables
+      WHERE table_schema = current_schema()
       AND table_name = 'brands'
     `);
 
@@ -22,9 +22,9 @@ export async function GET(request: NextRequest) {
 
     let sql = `
       SELECT b.id, b.name, b.slug, b.description, b.is_active, b.created_at, b.updated_at,
-             COALESCE(COUNT(p.id), 0) as product_count
+             COALESCE(COUNT(p.id)::int, 0) as product_count
       FROM brands b
-      LEFT JOIN products p ON b.id = p.brand_id AND p.is_active = 1
+      LEFT JOIN products p ON b.id = p.brand_id AND p.is_active = TRUE
     `;
     
     const conditions = [];
@@ -43,10 +43,10 @@ export async function GET(request: NextRequest) {
 
     if (isActive !== null) {
       conditions.push('b.is_active = ?');
-      params.push(isActive === 'true' ? 1 : 0);
+      params.push(isActive === 'true');
     } else {
       // Default to active brands only
-      conditions.push('b.is_active = 1');
+      conditions.push('b.is_active = TRUE');
     }
 
     if (conditions.length > 0) {

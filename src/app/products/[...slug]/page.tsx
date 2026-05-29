@@ -19,7 +19,7 @@ async function getProduct(slug: string): Promise<Product | null> {
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN brands b ON p.brand_id = b.id
-      WHERE p.slug = ? AND p.is_active = 1
+      WHERE p.slug = ? AND p.is_active = TRUE
     `;
     const result = await query(sql, [slug]);
     if (!Array.isArray(result) || result.length === 0) return null;
@@ -43,7 +43,7 @@ async function getSellerProduct(storeSlug: string, productSlug: string): Promise
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN brands b ON p.brand_id = b.id
       INNER JOIN sellers s ON p.seller_id = s.id
-      WHERE p.slug = ? AND s.store_slug = ? AND p.is_active = 1
+      WHERE p.slug = ? AND s.store_slug = ? AND p.is_active = TRUE
     `;
     const result = await query(sql, [productSlug, storeSlug]);
     if (!Array.isArray(result) || result.length === 0) return null;
@@ -98,7 +98,7 @@ async function attachSellerInfo(product: Product) {
 
         // 2. Average Rating & Review Count
         const reviewsResult = await query(
-          'SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM seller_reviews WHERE seller_id = ? AND is_visible = 1',
+          'SELECT AVG(rating)::float as avg_rating, COUNT(*)::int as total_reviews FROM seller_reviews WHERE seller_id = ? AND is_visible = TRUE',
           [sellerId]
         ) as SellerStats[];
         product.seller_average_rating = Number(reviewsResult[0]?.avg_rating || 0);
@@ -154,7 +154,7 @@ async function attachVariations(product: Product) {
 
 async function getCategory(slug: string) {
   try {
-    const result = await query('SELECT * FROM categories WHERE slug = ? AND is_active = 1', [slug]);
+    const result = await query('SELECT * FROM categories WHERE slug = ? AND is_active = TRUE', [slug]);
     return Array.isArray(result) && result.length > 0 ? result[0] : null;
   } catch { return null; }
 }

@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
     const orders = await query(
       `SELECT o.*, 
-        (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id AND oi.seller_id = ?) as item_count
+        (SELECT COUNT(*)::int FROM order_items oi WHERE oi.order_id = o.id AND oi.seller_id = ?) as item_count
        FROM orders o 
        WHERE o.seller_id = ?
        ORDER BY o.created_at DESC`,

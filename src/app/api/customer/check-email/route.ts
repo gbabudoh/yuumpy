@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Check if customer exists with this email
     const customerResult = await query(
-      'SELECT id, first_name, last_name, phone FROM customers WHERE email = ? AND is_active = 1',
+      'SELECT id, first_name, last_name, phone FROM customers WHERE email = ? AND is_active = TRUE',
       [email]
     );
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const addressResult = await query(
       `SELECT address_line1, address_line2, city, county, postcode, country 
        FROM customer_addresses 
-       WHERE customer_id = ? AND is_default = 1 
+       WHERE customer_id = ? AND is_default = TRUE 
        LIMIT 1`,
       [customer.id]
     );

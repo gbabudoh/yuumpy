@@ -143,7 +143,7 @@ export async function GET(
         LEFT JOIN categories c ON p.category_id = c.id
         LEFT JOIN categories s ON p.subcategory_id = s.id
         LEFT JOIN sellers sel ON p.seller_id = sel.id
-        WHERE p.slug = ? AND p.is_active = 1
+        WHERE p.slug = ? AND p.is_active = TRUE
       `;
 
       const products = await query(sql, [productSlug]);
@@ -318,7 +318,7 @@ export async function PUT(
     // 1. Validate that category_id is a main category (parent_id IS NULL)
     if (category_id) {
       const categoryCheck = await query(
-        'SELECT id, name, slug, parent_id FROM categories WHERE id = ? AND is_active = 1',
+        'SELECT id, name, slug, parent_id FROM categories WHERE id = ? AND is_active = TRUE',
         [category_id]
       );
       
@@ -347,14 +347,14 @@ export async function PUT(
     if (subcategory_id && category_id) {
       // First try the categories table (for subcategories stored there)
       let subcategoryCheck = await query(
-        'SELECT id, name, slug, parent_id as category_id FROM categories WHERE id = ? AND is_active = 1 AND parent_id IS NOT NULL',
+        'SELECT id, name, slug, parent_id as category_id FROM categories WHERE id = ? AND is_active = TRUE AND parent_id IS NOT NULL',
         [subcategory_id]
       );
       
       // If not found in categories, try the subcategories table
       if (!Array.isArray(subcategoryCheck) || subcategoryCheck.length === 0) {
         subcategoryCheck = await query(
-          'SELECT id, name, slug, category_id FROM subcategories WHERE id = ? AND is_active = 1',
+          'SELECT id, name, slug, category_id FROM subcategories WHERE id = ? AND is_active = TRUE',
           [subcategory_id]
         );
       }
@@ -383,7 +383,7 @@ export async function PUT(
     // 3. Validate brand_id if provided
     if (brand_id) {
       const brandCheck = await query(
-        'SELECT id, name FROM brands WHERE id = ? AND is_active = 1',
+        'SELECT id, name FROM brands WHERE id = ? AND is_active = TRUE',
         [brand_id]
       );
       

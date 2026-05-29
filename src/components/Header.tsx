@@ -35,6 +35,9 @@ interface SearchSuggestion {
   slug: string;
   type: 'product' | 'category' | 'brand';
   url: string;
+  price?: number | null;
+  image?: string | null;
+  category?: string | null;
 }
 
 interface Customer {
@@ -92,13 +95,18 @@ export default function Header() {
 
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categories?parent_only=true');
+        const response = await fetch('/api/categories?mega_menu=true');
         if (response.ok) {
           const data = await response.json();
-          setCategories(data || []);
+          const cats = Array.isArray(data) ? data : [];
+          console.log('[Header] categories loaded:', cats.length);
+          setCategories(cats);
+        } else {
+          const text = await response.text();
+          console.error('[Header] categories API error', response.status, text.slice(0, 200));
         }
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('[Header] categories fetch failed:', error);
       }
     };
 
@@ -410,11 +418,11 @@ export default function Header() {
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none group-focus-within:text-indigo-500 transition-colors" />
                   <input
                     type="text"
-                    placeholder="Search the marketplace..."
+                    placeholder="Search the marketplace."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
-                    className="w-72 pl-11 pr-24 py-2.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm transition-all outline-none"
+                    className="w-80 pl-11 pr-24 py-2.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm transition-all outline-none"
                   />
                   <div className="absolute right-1.5 top-1/2 transform -translate-y-1/2">
                     <button
@@ -428,59 +436,120 @@ export default function Header() {
 
                 {/* Search Suggestions Dropdown */}
                 {showSuggestions && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                  <div className="absolute top-full left-0 mt-2 w-[420px] bg-white rounded-2xl shadow-2xl shadow-indigo-100/50 border border-gray-100 z-50 overflow-hidden">
+
                     {isLoadingSuggestions ? (
-                      <div className="p-3 text-center text-gray-500">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mx-auto"></div>
-                        <span className="text-xs mt-1">Searching...</span>
+                      <div className="p-6 text-center">
+                        <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                        <p className="text-xs text-gray-400 font-medium">Searching marketplace…</p>
                       </div>
                     ) : suggestions.length > 0 ? (
-                      <div className="py-1">
-                        {suggestions
-                          .sort((a, b) => {
-                            // Prioritize products first, then categories, then brands
-                            const typeOrder = { product: 0, category: 1, brand: 2 };
-                            return typeOrder[a.type] - typeOrder[b.type];
-                          })
-                          .map((suggestion, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleSuggestionClick(suggestion)}
-                            className={`w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 text-sm transition-colors ${
-                              suggestion.type === 'product' ? 'bg-purple-50 hover:bg-purple-100' : ''
-                            }`}
-                          >
-                            <div className={`${suggestion.type === 'product' ? 'text-purple-600' : 'text-gray-400'}`}>
-                              {getSuggestionIcon(suggestion.type)}
+                      <div>
+                        {/* Products section */}
+                        {suggestions.filter(s => s.type === 'product').length > 0 && (
+                          <div>
+                            <div className="px-4 pt-3 pb-1">
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Products</p>
                             </div>
-                            <div className="flex-1">
-                              <div className={`font-medium ${suggestion.type === 'product' ? 'text-purple-900' : 'text-gray-900'}`}>
-                                {suggestion.text}
-                              </div>
-                              <div className={`text-xs capitalize ${suggestion.type === 'product' ? 'text-purple-600' : 'text-gray-500'}`}>
-                                {suggestion.type === 'product' ? 'Product' : suggestion.type}
-                              </div>
+                            <div className="px-2">
+                              {suggestions.filter(s => s.type === 'product').map((s, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => handleSuggestionClick(s)}
+                                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-indigo-50 transition-colors group text-left"
+                                >
+                                  {/* Product image */}
+                                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
+                                    {s.image ? (
+                                      <img
+                                        src={s.image}
+                                        alt={s.text}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <ShoppingBag className="w-5 h-5 text-gray-300" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* Product info */}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900 group-hover:text-indigo-700 truncate transition-colors">
+                                      {s.text}
+                                    </p>
+                                    <p className="text-xs text-gray-400 truncate">{s.category || 'Product'}</p>
+                                  </div>
+                                  {/* Price */}
+                                  {s.price != null && (
+                                    <span className="text-sm font-bold text-indigo-600 shrink-0">
+                                      £{Number(s.price).toFixed(2)}
+                                    </span>
+                                  )}
+                                </button>
+                              ))}
                             </div>
-                          </button>
-                        ))}
-                        <div className="border-t border-gray-100 mt-1 pt-1">
+                          </div>
+                        )}
+
+                        {/* Categories section */}
+                        {suggestions.filter(s => s.type === 'category').length > 0 && (
+                          <div className="border-t border-gray-50 mt-1">
+                            <div className="px-4 pt-3 pb-1">
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Categories</p>
+                            </div>
+                            <div className="px-2 pb-1">
+                              {suggestions.filter(s => s.type === 'category').map((s, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => handleSuggestionClick(s)}
+                                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-purple-50 transition-colors group text-left"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+                                    <Tag className="w-4 h-4 text-purple-500" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-800 group-hover:text-purple-700 truncate transition-colors">{s.text}</p>
+                                    <p className="text-xs text-gray-400">Browse category</p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* "Search for X" footer */}
+                        <div className="border-t border-gray-100 px-2 py-2">
                           <button
                             onClick={handleSearch}
-                            className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 text-sm text-gray-600"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors group text-left"
                           >
-                            <Search className="w-4 h-4" />
-                            <span>Search for &quot;{searchQuery}&quot;</span>
+                            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+                              <Search className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-800 group-hover:text-indigo-700 transition-colors">
+                                Search for &ldquo;<span className="text-indigo-600">{searchQuery}</span>&rdquo;
+                              </p>
+                              <p className="text-xs text-gray-400">See all matching products</p>
+                            </div>
                           </button>
                         </div>
                       </div>
                     ) : searchQuery.length >= 2 ? (
-                      <div className="p-3 text-center text-gray-500">
-                        <span className="text-sm">No suggestions found</span>
+                      <div className="p-6 text-center">
+                        <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                          <Search className="w-5 h-5 text-gray-300" />
+                        </div>
+                        <p className="text-sm font-semibold text-gray-600 mb-1">No results found</p>
+                        <p className="text-xs text-gray-400 mb-3">Try a different search term</p>
                         <button
                           onClick={handleSearch}
-                          className="block w-full mt-2 px-3 py-1 text-sm text-purple-600 hover:text-purple-700"
+                          className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-colors"
                         >
-                          Search for &quot;{searchQuery}&quot;
+                          Search anyway
                         </button>
                       </div>
                     ) : null}

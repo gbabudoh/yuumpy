@@ -6,9 +6,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const sql = `
       SELECT b.*, 
-             COUNT(p.id) as product_count
+             COUNT(p.id)::int as product_count
       FROM brands b
-      LEFT JOIN products p ON b.id = p.brand_id AND p.is_active = 1
+      LEFT JOIN products p ON b.id = p.brand_id AND p.is_active = TRUE
       WHERE b.id = ?
       GROUP BY b.id
     `;

@@ -46,12 +46,12 @@ export async function PUT(request: NextRequest) {
 
     // Update or insert setting
     const result = await query(
-      `INSERT INTO settings (key_name, value, description) 
-       VALUES (?, ?, ?) 
-       ON DUPLICATE KEY UPDATE 
-       value = VALUES(value), 
-       description = VALUES(description),
-       updated_at = CURRENT_TIMESTAMP`,
+      `INSERT INTO settings (key_name, value, description)
+       VALUES (?, ?, ?)
+       ON CONFLICT (key_name) DO UPDATE SET
+         value = EXCLUDED.value,
+         description = EXCLUDED.description,
+         updated_at = CURRENT_TIMESTAMP`,
       [key_name, value, description || null]
     );
 

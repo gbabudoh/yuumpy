@@ -18,10 +18,10 @@ export async function GET(
 
     const sql = `
       SELECT c.*, 
-             COUNT(p.id) as product_count,
+             COUNT(p.id)::int as product_count,
              parent.name as parent_name
       FROM categories c
-      LEFT JOIN products p ON c.id = p.category_id AND p.is_active = 1
+      LEFT JOIN products p ON c.id = p.category_id AND p.is_active = TRUE
       LEFT JOIN categories parent ON c.parent_id = parent.id
       WHERE c.id = ?
       GROUP BY c.id
@@ -149,7 +149,7 @@ export async function DELETE(
 
     // Check if category has products
     const productCheck = await query(
-      'SELECT COUNT(*) as count FROM products WHERE category_id = ? AND is_active = 1',
+      'SELECT COUNT(*)::int as count FROM products WHERE category_id = ? AND is_active = TRUE',
       [id]
     );
 
@@ -162,7 +162,7 @@ export async function DELETE(
 
     // Check if category has subcategories
     const subcategoryCheck = await query(
-      'SELECT COUNT(*) as count FROM categories WHERE parent_id = ? AND is_active = 1',
+      'SELECT COUNT(*)::int as count FROM categories WHERE parent_id = ? AND is_active = TRUE',
       [id]
     );
 
@@ -175,7 +175,7 @@ export async function DELETE(
 
     // Soft delete the category
     const result = await query(
-      'UPDATE categories SET is_active = 0, updated_at = NOW() WHERE id = ?',
+      'UPDATE categories SET is_active = FALSE, updated_at = NOW() WHERE id = ?',
       [id]
     );
 

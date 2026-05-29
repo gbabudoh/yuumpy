@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     let sql = `
       SELECT 
         event_type,
-        COUNT(*) as count,
+        COUNT(*)::int as count,
         DATE(created_at) as date
       FROM analytics
       WHERE 1=1

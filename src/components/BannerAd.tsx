@@ -25,6 +25,8 @@ interface BannerAd {
   link_url?: string;
   cta_text?: string;
   tag?: string;
+  product_label?: string;
+  rating?: number;
 }
 
 export default function BannerAd() {
@@ -138,9 +140,11 @@ export default function BannerAd() {
                           className="object-cover"
                         />
                         <div className="absolute bottom-4 left-4 right-4 glass-morphism p-4 rounded-xl border border-white/10">
-                          <p className="text-white font-bold text-sm">Verified Premium Item</p>
+                          <p className="text-white font-bold text-sm">{ad.product_label || 'Verified Premium Item'}</p>
                           <div className="flex items-center gap-1 mt-1">
-                            {[1, 2, 3, 4, 5].map(s => <span key={s} className="text-yellow-400 text-xs text-shadow-sm">★</span>)}
+                            {Array.from({ length: ad.rating ?? 5 }, (_, i) => (
+                              <span key={i} className="text-yellow-400 text-xs text-shadow-sm">★</span>
+                            ))}
                           </div>
                         </div>
                       </div>

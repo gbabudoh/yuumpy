@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
              c.parent_id as category_id,
              c.sort_order, c.is_active, c.created_at, c.updated_at,
              p.name as parent_category_name, p.slug as parent_category_slug,
-             COUNT(pr.id) as product_count
+             COUNT(pr.id)::int as product_count
       FROM categories c
       LEFT JOIN categories p ON c.parent_id = p.id
-      LEFT JOIN products pr ON c.id = pr.subcategory_id AND pr.is_active = 1
-      WHERE c.is_active = 1 AND c.parent_id IS NOT NULL
+      LEFT JOIN products pr ON c.id = pr.subcategory_id AND pr.is_active = TRUE
+      WHERE c.is_active = TRUE AND c.parent_id IS NOT NULL
     `;
     
     const params: any[] = [];

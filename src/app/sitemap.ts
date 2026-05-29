@@ -54,7 +54,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const productsSql = `
       SELECT slug, updated_at 
       FROM products 
-      WHERE is_active = 1 
+      WHERE is_active = TRUE 
       ORDER BY updated_at DESC
     `;
     const products = await query(productsSql);
@@ -69,7 +69,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const categoriesSql = `
       SELECT slug, updated_at 
       FROM categories 
-      WHERE is_active = 1 
+      WHERE is_active = TRUE 
       ORDER BY updated_at DESC
     `;
     const categories = await query(categoriesSql);
@@ -84,7 +84,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const pagesSql = `
       SELECT slug, updated_at 
       FROM pages 
-      WHERE is_active = 1 
+      WHERE is_active = TRUE 
       ORDER BY updated_at DESC
     `;
     const pages = await query(pagesSql);

@@ -109,7 +109,7 @@ export async function DELETE(
 
     // Soft delete the page
     const result = await query(
-      'UPDATE pages SET is_active = 0, updated_at = NOW() WHERE id = ?',
+      'UPDATE pages SET is_active = FALSE, updated_at = NOW() WHERE id = ?',
       [id]
     );
 

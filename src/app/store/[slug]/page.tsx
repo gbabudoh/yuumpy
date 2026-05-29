@@ -84,7 +84,7 @@ export default async function StorefrontPage({ params }: PageProps) {
   const products = await query(
     `SELECT p.*, c.name as category_name FROM products p 
      LEFT JOIN categories c ON p.category_id = c.id 
-     WHERE p.seller_id = ? AND p.is_active = 1 AND p.seller_approved = 1 
+     WHERE p.seller_id = ? AND p.is_active = TRUE AND p.seller_approved = TRUE
      ORDER BY p.created_at DESC`,
     [seller.id]
   ) as ProductRow[];
@@ -93,7 +93,7 @@ export default async function StorefrontPage({ params }: PageProps) {
   const reviews = await query(
     `SELECT sr.*, c.first_name, c.last_name FROM seller_reviews sr 
      JOIN customers c ON sr.customer_id = c.id 
-     WHERE sr.seller_id = ? AND sr.is_visible = 1 
+     WHERE sr.seller_id = ? AND sr.is_visible = TRUE
      ORDER BY sr.created_at DESC LIMIT 10`,
     [seller.id]
   ) as ReviewRow[];

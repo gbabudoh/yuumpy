@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     // Create pages table
     await query(`
       CREATE TABLE IF NOT EXISTS pages (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         slug VARCHAR(255) NOT NULL UNIQUE,
         content TEXT NOT NULL,
@@ -14,11 +14,11 @@ export async function POST(request: NextRequest) {
         meta_description TEXT,
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_slug (slug),
-        INDEX idx_active (is_active)
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_pages_slug ON pages(slug)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_pages_active ON pages(is_active)`);
 
     // Insert default pages with current content
     const defaultPages = [

@@ -48,7 +48,7 @@ export async function DELETE(
 
     // Check if subcategory has products
     const productsResult = await query(
-      'SELECT COUNT(*) as count FROM products WHERE subcategory_id = ?',
+      'SELECT COUNT(*)::int as count FROM products WHERE subcategory_id = ?',
       [id]
     );
 

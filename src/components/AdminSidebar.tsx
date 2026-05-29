@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  BarChart3, 
-  Package, 
-  Users, 
+import {
+  BarChart3,
+  Package,
+  Users,
   ShoppingBag,
   CreditCard,
   Settings,
@@ -17,7 +17,9 @@ import {
   Mail,
   Search,
   UserCog,
-  ShoppingCart
+  ShoppingCart,
+  LayoutGrid,
+  Film
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -64,6 +66,13 @@ const navigation: NavigationItem[] = [
     name: 'Categories',
     href: '/admin/categories',
     icon: ShoppingBag,
+    current: false,
+    permission: 'can_manage_categories'
+  },
+  {
+    name: 'Mega Menu',
+    href: '/admin/mega-menu',
+    icon: LayoutGrid,
     current: false,
     permission: 'can_manage_categories'
   },
@@ -143,6 +152,13 @@ const navigation: NavigationItem[] = [
     icon: UserCog,
     current: false,
     permission: 'can_manage_users'
+  },
+  {
+    name: 'Hero Video',
+    href: '/admin/hero-video',
+    icon: Film,
+    current: false,
+    permission: 'can_manage_settings'
   },
   {
     name: 'Settings',
