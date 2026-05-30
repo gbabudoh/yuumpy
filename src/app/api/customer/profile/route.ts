@@ -3,7 +3,7 @@ import { query } from '@/lib/database';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET ?? (() => { throw new Error('JWT_SECRET environment variable is not set'); })();
 
 // Helper function to get customer ID from token
 function getCustomerId(request: NextRequest): number | null {

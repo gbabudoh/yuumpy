@@ -26,7 +26,8 @@ import {
   Gift,
   Camera,
   Music,
-  Heart
+  Heart,
+  ShieldCheck
 } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 
@@ -402,6 +403,10 @@ export default function Header() {
                 <Info className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 <span>About</span>
               </Link>
+              <Link href="/safe-trading" className="group flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-amber-500 hover:text-amber-700 transition-all">
+                <ShieldCheck className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span>Safe Trading</span>
+              </Link>
               <Link href="/seller/register" className="group flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-purple-700 hover:shadow-[0_10px_30px_-5px_rgba(147,51,234,0.3)] transition-all active:scale-95">
                 <Store className="w-3.5 h-3.5" />
                 <span>Start Selling</span>
@@ -706,15 +711,23 @@ export default function Header() {
               >
                 Categories
               </Link>
-              <Link 
-                href="/about-yuumpy" 
+              <Link
+                href="/about-yuumpy"
                 className="text-gray-700 hover:text-blue-600 font-medium py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 About
               </Link>
-              <Link 
-                href="/seller/register" 
+              <Link
+                href="/safe-trading"
+                className="flex items-center gap-2 text-amber-600 hover:text-amber-700 font-bold py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Safe Trading
+              </Link>
+              <Link
+                href="/seller/register"
                 className="inline-block text-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors mt-2"
                 onClick={() => setIsMenuOpen(false)}
               >

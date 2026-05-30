@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { uploadFile, isMinioConfigured, getMinioStatus } from '@/lib/storage';
 
 // GET handler to check Storage configuration status
@@ -26,7 +26,7 @@ export async function GET() {
       { 
         success: false, 
         error: 'Failed to check storage status',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        ...(process.env.NODE_ENV !== 'production' && { details: error instanceof Error ? error.message : 'Unknown error' })
       },
       { status: 500 }
     );
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Failed to upload image', 
-        details: error instanceof Error ? error.message : 'Unknown error'
+        ...(process.env.NODE_ENV !== 'production' && { details: error instanceof Error ? error.message : 'Unknown error' })
       },
       { status: 500 }
     );

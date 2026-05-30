@@ -18,7 +18,8 @@ import {
   CreditCard,
   ShieldCheck,
   Users,
-  MessageSquare
+  MessageSquare,
+  ScanFace
 } from 'lucide-react';
 import SellerPresenceHeartbeat from '@/components/SellerPresenceHeartbeat';
 import SellerIncomingComms from '@/components/SellerIncomingComms';
@@ -66,6 +67,7 @@ const navItems = [
   { href: '/seller/inquiries', label: 'Inquiries', icon: MessageSquare },
   { href: '/seller/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/seller/settings', label: 'Settings', icon: Settings },
+  { href: '/seller/verify-identity', label: 'Verify Identity', icon: ScanFace },
 ];
 
 function SellerSidebar({ seller }: { seller: Seller | null }) {

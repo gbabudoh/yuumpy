@@ -14,9 +14,14 @@ export function middleware(request: NextRequest) {
     
     try {
       const decoded = Buffer.from(token, 'base64').toString('utf-8');
-      const [username] = decoded.split(':');
-      
-      if (username !== 'adminaces1') {
+      const parts = decoded.split(':');
+      // Token format: username:timestamp — validate it has both parts and hasn't expired
+      if (parts.length < 2) {
+        return NextResponse.redirect(new URL('/admin/login', request.url));
+      }
+      const timestamp = parseInt(parts[parts.length - 1], 10);
+      const tokenAgeMs = Date.now() - timestamp;
+      if (isNaN(timestamp) || tokenAgeMs > 24 * 60 * 60 * 1000) {
         return NextResponse.redirect(new URL('/admin/login', request.url));
       }
     } catch {

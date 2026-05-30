@@ -189,6 +189,23 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         }
       }
 
+      // Fetch seller info for the email
+      let sellerInfo: { storeName: string; storeSlug: string; city?: string; country?: string } | undefined;
+      if (order.seller_id) {
+        const sellerRows = await query(
+          'SELECT store_name, store_slug, city, country FROM sellers WHERE id = ?',
+          [order.seller_id]
+        ) as any[];
+        if (sellerRows.length > 0) {
+          sellerInfo = {
+            storeName: sellerRows[0].store_name,
+            storeSlug: sellerRows[0].store_slug,
+            city: sellerRows[0].city || undefined,
+            country: sellerRows[0].country || undefined,
+          };
+        }
+      }
+
       // Send emails
       const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
       const emailData = {
@@ -207,6 +224,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           postcode: order.shipping_postcode,
           country: order.shipping_country || 'United Kingdom',
         },
+        seller: sellerInfo,
       };
 
       sendOrderConfirmationEmail(emailData).catch(err =>

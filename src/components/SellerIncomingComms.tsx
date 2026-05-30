@@ -333,6 +333,16 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
     setIsCameraOff(!isCameraOff);
   }, [isCameraOff]);
 
+  // Suppress harmless LiveKit DataChannel noise from listener rooms connecting to empty rooms
+  useEffect(() => {
+    const origError = console.error.bind(console);
+    console.error = (...args: unknown[]) => {
+      if (typeof args[0] === 'string' && args[0].startsWith('Unknown DataChannel error')) return;
+      origError(...args);
+    };
+    return () => { console.error = origError; };
+  }, []);
+
   const totalIncoming = incomingRequests.length;
 
   // Active session UI

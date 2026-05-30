@@ -152,6 +152,8 @@ export default function Footer() {
             <Link href="/privacy" className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Privacy</Link>
             <Link href="/terms" className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Terms</Link>
             <Link href="/cookies" className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Cookies</Link>
+            <Link href="/safe-trading" className="text-xs font-black uppercase tracking-widest text-amber-500 hover:text-amber-700 transition-colors cursor-pointer">Safe Trading</Link>
+            <Link href="/customs-advisory" className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Customs & Tax</Link>
           </div>
         </div>
       </div>

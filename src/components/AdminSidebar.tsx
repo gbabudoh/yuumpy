@@ -19,7 +19,9 @@ import {
   UserCog,
   ShoppingCart,
   LayoutGrid,
-  Film
+  Film,
+  Users2,
+  ScanFace
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -159,6 +161,20 @@ const navigation: NavigationItem[] = [
     icon: Film,
     current: false,
     permission: 'can_manage_settings'
+  },
+  {
+    name: 'Makers Section',
+    href: '/admin/makers-section',
+    icon: Users2,
+    current: false,
+    permission: 'can_manage_settings'
+  },
+  {
+    name: 'Identity Verifications',
+    href: '/admin/identity-verifications',
+    icon: ScanFace,
+    current: false,
+    permission: 'can_manage_users'
   },
   {
     name: 'Settings',

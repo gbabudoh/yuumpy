@@ -3,21 +3,23 @@
 import { useSellerContext } from '../layout';
 import { useState, useEffect } from 'react';
 
-import { 
-  ShoppingBag, 
-  Package, 
-  Clock, 
-  CheckCircle2, 
-  Truck, 
-  XCircle, 
-  User, 
-  Calendar, 
-  DollarSign, 
+import {
+  ShoppingBag,
+  Package,
+  Clock,
+  CheckCircle2,
+  Truck,
+  XCircle,
+  User,
+  Calendar,
+  DollarSign,
   ArrowRight,
   ShieldCheck,
   Search,
   Filter,
-  ExternalLink
+  ExternalLink,
+  X,
+  Send
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -48,11 +50,34 @@ const statusConfig: Record<string, { color: string; bg: string; border: string; 
   cancelled: { color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', icon: XCircle },
 };
 
+const CARRIERS: { label: string; trackingUrl: (n: string) => string }[] = [
+  { label: 'Royal Mail',  trackingUrl: n => `https://www.royalmail.com/track-your-item#/tracking-results/${n}` },
+  { label: 'DHL',         trackingUrl: n => `https://www.dhl.com/gb-en/home/tracking/tracking-parcel.html?submit=1&tracking-id=${n}` },
+  { label: 'FedEx',       trackingUrl: n => `https://www.fedex.com/fedextrack/?trknbr=${n}` },
+  { label: 'UPS',         trackingUrl: n => `https://www.ups.com/track?tracknum=${n}` },
+  { label: 'Evri',        trackingUrl: n => `https://www.evri.com/track-a-parcel#/tracking/${n}` },
+  { label: 'DPD',         trackingUrl: n => `https://www.dpd.co.uk/service/dynamic/index.jsp?barcode=${n}` },
+  { label: 'ParcelForce', trackingUrl: n => `https://www.parcelforce.com/track-trace?trackNumber=${n}` },
+  { label: 'Other / Manual', trackingUrl: () => '' },
+];
+
+interface ShipModal {
+  orderId: number;
+  orderNumber: string;
+}
+
 export default function SellerOrdersPage() {
   useSellerContext();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+
+  // Ship order modal state
+  const [shipModal, setShipModal] = useState<ShipModal | null>(null);
+  const [carrier, setCarrier] = useState(CARRIERS[0].label);
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [trackingUrl, setTrackingUrl] = useState('');
+  const [shipping, setShipping] = useState(false);
 
   useEffect(() => { fetchOrders(); }, []);
 
@@ -74,6 +99,44 @@ export default function SellerOrdersPage() {
       });
       await fetchOrders();
     } catch { } finally { setUpdatingId(null); }
+  };
+
+  const openShipModal = (order: Order) => {
+    setShipModal({ orderId: order.id, orderNumber: order.order_number });
+    setCarrier(CARRIERS[0].label);
+    setTrackingNumber('');
+    setTrackingUrl('');
+  };
+
+  const onCarrierChange = (label: string, num: string) => {
+    setCarrier(label);
+    const c = CARRIERS.find(c => c.label === label);
+    setTrackingUrl(num && c ? c.trackingUrl(num) : '');
+  };
+
+  const onTrackingNumberChange = (num: string) => {
+    setTrackingNumber(num);
+    const c = CARRIERS.find(c => c.label === carrier);
+    if (c) setTrackingUrl(c.trackingUrl(num));
+  };
+
+  const submitShipment = async () => {
+    if (!shipModal || !trackingNumber.trim()) return;
+    setShipping(true);
+    try {
+      await fetch('/api/seller/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: shipModal.orderId,
+          orderStatus: 'shipped',
+          trackingNumber: trackingNumber.trim(),
+          trackingUrl: trackingUrl.trim() || undefined,
+        }),
+      });
+      setShipModal(null);
+      await fetchOrders();
+    } catch { } finally { setShipping(false); }
   };
 
   return (
@@ -220,13 +283,10 @@ export default function SellerOrdersPage() {
                       {order.order_status === 'processing' && (
                         <button
                           disabled={updatingId === order.id}
-                          onClick={() => {
-                            const tracking = prompt('Enter tracking number:');
-                            if (tracking) updateOrder(order.id, { orderStatus: 'shipped', trackingNumber: tracking });
-                          }}
+                          onClick={() => openShipModal(order)}
                           className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all active:scale-95 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
                         >
-                          Ship Item <ArrowRight className="w-4 h-4" />
+                          <Truck className="w-4 h-4" /> Mark as Shipped
                         </button>
                       )}
 
@@ -239,6 +299,83 @@ export default function SellerOrdersPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── Ship Order Modal ── */}
+      {shipModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-7">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg font-black text-slate-900">Mark as Shipped</h2>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">Order #{shipModal.orderNumber}</p>
+              </div>
+              <button onClick={() => setShipModal(null)} className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                <X className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Carrier */}
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1.5">Shipping Carrier</label>
+                <select
+                  value={carrier}
+                  onChange={e => onCarrierChange(e.target.value, trackingNumber)}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 outline-none bg-white"
+                >
+                  {CARRIERS.map(c => (
+                    <option key={c.label} value={c.label}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tracking Number */}
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1.5">Tracking Number <span className="text-red-400">*</span></label>
+                <input
+                  type="text"
+                  value={trackingNumber}
+                  onChange={e => onTrackingNumberChange(e.target.value)}
+                  placeholder="e.g. AB123456789GB"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 outline-none font-mono"
+                />
+              </div>
+
+              {/* Tracking URL */}
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1.5">Tracking URL <span className="text-slate-400">(auto-filled, editable)</span></label>
+                <input
+                  type="url"
+                  value={trackingUrl}
+                  onChange={e => setTrackingUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 outline-none"
+                />
+              </div>
+
+              <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100 text-xs text-indigo-700 font-medium">
+                The buyer will receive a shipping confirmation email with the tracking details as soon as you confirm.
+              </div>
+
+              <button
+                onClick={submitShipment}
+                disabled={shipping || !trackingNumber.trim()}
+                className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
+                  shipping || !trackingNumber.trim()
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-slate-900 shadow-lg shadow-indigo-600/20 active:scale-95'
+                }`}
+              >
+                {shipping ? (
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Confirming…</>
+                ) : (
+                  <><Send className="w-4 h-4" /> Confirm Shipment</>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -2,10 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET ?? (() => { throw new Error('JWT_SECRET environment variable is not set'); })();
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const { allowed, retryAfterMs } = rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Too many registration attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+    );
+  }
+
   try {
     const body = await request.json();
     const { email, password, firstName, lastName, phone } = body;

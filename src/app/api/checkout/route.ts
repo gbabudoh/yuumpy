@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { query } from '@/lib/database';
 import bcrypt from 'bcryptjs';
@@ -314,7 +314,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Checkout error:', error);
     return NextResponse.json(
-      { error: 'Failed to process checkout', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to process checkout', ...(process.env.NODE_ENV !== 'production' && { details: error instanceof Error ? error.message : 'Unknown error' }) },
       { status: 500 }
     );
   }

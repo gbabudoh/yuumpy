@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
-// Admin credentials
+if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+  throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required');
+}
 const ADMIN_CREDENTIALS = {
-  username: 'adminaces1',
-  password: 'GetMeInToAdmin'
+  username: process.env.ADMIN_USERNAME,
+  password: process.env.ADMIN_PASSWORD,
 };
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const { allowed, retryAfterMs } = rateLimit(`admin-login:${ip}`, 5, 15 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { success: false, message: 'Too many login attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
+    );
+  }
+
   try {
     const { username, password } = await request.json();
 

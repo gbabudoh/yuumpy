@@ -44,6 +44,12 @@ interface OrderEmailData {
     postcode: string;
     country: string;
   };
+  seller?: {
+    storeName: string;
+    storeSlug: string;
+    city?: string;
+    country?: string;
+  };
 }
 
 export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<boolean> {
@@ -125,8 +131,22 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
             <p style="margin: 0; color: #065f46;">📦 We'll send you another email when your order ships!</p>
           </div>
           
+          ${data.seller ? `
+          <h3 style="border-bottom: 2px solid #16a34a; padding-bottom: 10px; color: #111827; margin-top: 30px;">Your Artisan</h3>
+          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: 900; flex-shrink: 0;">
+              ${data.seller.storeName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p style="margin: 0; font-weight: 700; font-size: 16px; color: #111827;">${data.seller.storeName}</p>
+              ${data.seller.city ? `<p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">📍 ${data.seller.city}${data.seller.country ? ', ' + data.seller.country : ''}</p>` : ''}
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://yuumpy.com'}/store/${data.seller.storeSlug}" style="display: inline-block; margin-top: 8px; font-size: 13px; color: #6366f1; font-weight: 600; text-decoration: none;">Visit Store →</a>
+            </div>
+          </div>
+          ` : ''}
+
           <div style="margin-top: 30px; text-align: center;">
-            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com'}/account/orders" 
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com'}/account/orders"
                style="display: inline-block; background: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600;">
               Track Your Order
             </a>
@@ -663,6 +683,76 @@ export async function sendContactFormConfirmationEmail(
     return true;
   } catch (error) {
     console.error('Error sending contact form confirmation email:', error);
+    return false;
+  }
+}
+
+export async function sendPasswordResetEmail(
+  customerEmail: string,
+  customerName: string,
+  resetUrl: string
+): Promise<boolean> {
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reset Your Yuumpy Password</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Reset Your Password</h1>
+          <p style="color: rgba(255,255,255,0.85); margin: 10px 0 0 0;">We received a request to reset your Yuumpy password</p>
+        </div>
+
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="font-size: 16px;">Hi <strong>${customerName}</strong>,</p>
+          <p>Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
+
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${resetUrl}"
+               style="display: inline-block; background: #4f46e5; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; letter-spacing: 0.3px;">
+              Reset My Password
+            </a>
+          </div>
+
+          <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #e5e7eb;">
+            <p style="margin: 0; font-size: 13px; color: #6b7280;">
+              If the button doesn't work, copy and paste this link into your browser:
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #4f46e5; word-break: break-all;">${resetUrl}</p>
+          </div>
+
+          <div style="background: #fef3c7; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <p style="margin: 0; font-size: 13px; color: #92400e;">
+              <strong>Didn't request this?</strong> If you didn't ask to reset your password, you can safely ignore this email. Your password will not change.
+            </p>
+          </div>
+        </div>
+
+        <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="margin: 0; color: #6b7280; font-size: 13px;">
+            Questions? Contact us at <a href="mailto:support@yuumpy.com" style="color: #4f46e5;">support@yuumpy.com</a>
+          </p>
+          <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px;">© ${new Date().getFullYear()} Yuumpy. All rights reserved.</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"Yuumpy" <${process.env.SMTP_FROM || 'orders@yuumpy.com'}>`,
+      to: customerEmail,
+      subject: 'Reset your Yuumpy password',
+      html,
+    });
+
+    console.log(`Password reset email sent to ${customerEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
     return false;
   }
 }

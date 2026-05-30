@@ -63,6 +63,16 @@ export async function uploadFile(file: Buffer | Uint8Array, fileName: string, co
   }
 }
 
+export async function getFileBuffer(objectKey: string): Promise<Buffer> {
+  const stream = await minioClient.getObject(bucketName, objectKey);
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('error', reject);
+  });
+}
+
 export async function deleteFile(objectName: string) {
   try {
     // Extract object name from URL if full URL is provided

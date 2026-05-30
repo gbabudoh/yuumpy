@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedSeller } from '@/lib/seller-session';
 import { query } from '@/lib/database';
+import { sendOrderShippedEmail } from '@/lib/email';
 
 export async function GET(request: Request) {
   try {
@@ -61,6 +62,28 @@ export async function PUT(request: Request) {
         `UPDATE orders SET ${updates.join(', ')} WHERE id = ? AND seller_id = ?`,
         params
       );
+    }
+
+    // Send shipping email to buyer when seller marks as shipped
+    if (orderStatus === 'shipped') {
+      const orderRows = await query(
+        `SELECT customer_email, customer_first_name, customer_last_name, order_number,
+                tracking_number, tracking_url
+         FROM orders WHERE id = ? AND seller_id = ?`,
+        [orderId, seller.id]
+      ) as any[];
+
+      if (orderRows.length > 0) {
+        const o = orderRows[0];
+        const customerName = `${o.customer_first_name} ${o.customer_last_name}`;
+        sendOrderShippedEmail(
+          o.customer_email,
+          customerName,
+          o.order_number,
+          trackingNumber || o.tracking_number || 'Pending',
+          trackingUrl || o.tracking_url || undefined
+        ).catch(err => console.error('Failed to send shipped email:', err));
+      }
     }
 
     return NextResponse.json({ success: true, message: 'Order updated' });

@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import { Product as CoreProduct } from '@/types/product';
 import BannerAd from '@/components/BannerAd';
+import { imgproxy } from '@/lib/imgproxy';
 import { 
   ShieldCheck, 
   BadgeCheck,
@@ -74,9 +75,20 @@ interface HeroVideo {
   hero_episode_quote: string;
 }
 
+interface MakersSection {
+  makers_image_url: string;
+  makers_quote: string;
+  makers_label: string;
+}
+
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [makersSection, setMakersSection] = useState<MakersSection>({
+    makers_image_url: '',
+    makers_quote: '"The beauty is in the imperfections."',
+    makers_label: 'Provenance',
+  });
   const [heroVideo, setHeroVideo] = useState<HeroVideo>({
     hero_video_url: '',
     hero_video_poster: '',
@@ -88,15 +100,21 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch hero video settings and products in parallel
-        const [heroRes, productsResponse] = await Promise.all([
+        // Fetch hero video settings, makers section, and products in parallel
+        const [heroRes, makersRes, productsResponse] = await Promise.all([
           fetch('/api/admin/hero-video'),
+          fetch('/api/admin/makers-section'),
           fetch('/api/products?featured=true'),
         ]);
 
         if (heroRes.ok) {
           const heroData = await heroRes.json();
           if (heroData) setHeroVideo(heroData);
+        }
+
+        if (makersRes.ok) {
+          const makersData = await makersRes.json();
+          if (makersData) setMakersSection(makersData);
         }
 
         // (productsResponse used below)
@@ -339,26 +357,41 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div className="relative group">
               <div className="aspect-[4/5] rounded-[3rem] bg-neutral-950 overflow-hidden relative">
-                {/* Gradient mesh background */}
+                {/* Gradient mesh background — always shown as underlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-neutral-900 to-purple-900/30" />
                 <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-indigo-600/25 rounded-full blur-[80px]" />
                 <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-purple-600/20 rounded-full blur-[60px]" />
-                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '36px 36px' }} />
 
-                {/* Floating accent cards */}
-                <div className="absolute top-10 right-10 w-20 h-20 rounded-2xl border border-white/10 backdrop-blur-sm bg-white/5 flex items-center justify-center">
-                  <PenTool className="w-8 h-8 text-indigo-400/70" />
-                </div>
-                <div className="absolute top-1/2 left-8 -translate-y-1/2 w-14 h-14 rounded-full border border-white/10 bg-white/5 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-purple-400/70" />
-                </div>
-                <div className="absolute top-1/3 right-1/3 w-10 h-10 rounded-full bg-indigo-500/20 border border-indigo-400/20" />
+                {makersSection.makers_image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={imgproxy(makersSection.makers_image_url, 800, 1000)}
+                    alt={makersSection.makers_label || 'Makers section'}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <>
+                    {/* Decorative placeholder when no image set */}
+                    <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '36px 36px' }} />
+                    <div className="absolute top-10 right-10 w-20 h-20 rounded-2xl border border-white/10 backdrop-blur-sm bg-white/5 flex items-center justify-center">
+                      <PenTool className="w-8 h-8 text-indigo-400/70" />
+                    </div>
+                    <div className="absolute top-1/2 left-8 -translate-y-1/2 w-14 h-14 rounded-full border border-white/10 bg-white/5 flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-purple-400/70" />
+                    </div>
+                    <div className="absolute top-1/3 right-1/3 w-10 h-10 rounded-full bg-indigo-500/20 border border-indigo-400/20" />
+                  </>
+                )}
 
                 {/* Quote overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
                 <div className="absolute bottom-8 left-8 right-8">
-                  <p className="text-xs font-black uppercase tracking-[0.3em] text-indigo-400 mb-3">Provenance</p>
-                  <p className="text-2xl font-bold italic tracking-tight leading-tight text-white">&quot;The beauty is in the <br /> imperfections.&quot;</p>
+                  <p className="text-xs font-black uppercase tracking-[0.3em] text-indigo-400 mb-3">
+                    {makersSection.makers_label || 'Provenance'}
+                  </p>
+                  <p className="text-2xl font-bold italic tracking-tight leading-tight text-white">
+                    {makersSection.makers_quote || '"The beauty is in the imperfections."'}
+                  </p>
                 </div>
               </div>
             </div>

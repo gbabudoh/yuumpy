@@ -5,7 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   ExternalLink, Shield, MapPin, Package, Star, Store,
-  ChevronRight, MessageCircle, ShieldCheck, Truck, RotateCcw, BadgeCheck, Sparkles, Globe, PenTool, Users
+  ChevronRight, MessageCircle, ShieldCheck, Truck, RotateCcw, BadgeCheck, Sparkles, Globe, PenTool, Users,
+  AlertTriangle
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -390,6 +391,26 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
                 </>
               )}
             </div>
+
+            {/* Safe-trading advisory badge */}
+            <Link
+              href="/safe-trading"
+              className="group flex items-start gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors"
+            >
+              <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 group-hover:bg-amber-200 transition-colors">
+                <ShieldCheck className="w-4 h-4 text-amber-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-black text-amber-800 uppercase tracking-wide mb-0.5">
+                  Yuumpy Protected Transaction
+                </p>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  For your protection, always keep payments and communication on Yuumpy.
+                  Never pay outside the platform.
+                </p>
+              </div>
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            </Link>
 
             {/* Banner Ad */}
             {product.banner_ad_title && (
