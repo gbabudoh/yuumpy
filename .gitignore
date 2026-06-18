@@ -87,3 +87,9 @@ temp/
 # Uploads
 public/uploads/*
 !public/uploads/.gitkeep
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Local scratch/debug scripts
+scratch/
