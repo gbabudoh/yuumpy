@@ -74,7 +74,7 @@ export default function BannerAd() {
           bulletActiveClass: 'dot-active',
         }}
         onSlideChange={(swiper) => setActiveId(bannerAds[swiper.realIndex]?.id)}
-        className="h-[500px] md:h-[600px] lg:h-[700px]"
+        className="h-[660px] sm:h-[680px] md:h-[700px] lg:h-[700px]"
       >
         {bannerAds.map((ad) => (
           <SwiperSlide key={ad.id}>
@@ -89,16 +89,16 @@ export default function BannerAd() {
               </div>
 
               {/* Content Container */}
-              <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 items-center pt-4 pb-12 lg:py-0">
                 <div className={`transition-all duration-1000 ${activeId === ad.id ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}>
                   {/* Badge */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-morphism mb-6 border border-white/10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-morphism mb-4 sm:mb-6 border border-white/10">
                     <Sparkles className="w-4 h-4 text-indigo-400" />
                     <span className="text-xs font-bold tracking-widest text-white uppercase">{ad.tag || 'Marketplace Choice'}</span>
                   </div>
 
                   {/* Title */}
-                  <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 leading-[1.1] tracking-tight">
+                  <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black text-white mb-4 sm:mb-6 leading-[1.1] tracking-tight">
                     {ad.title.split(' ').map((word, i, arr) => (
                       <span key={i} className={i === arr.length - 1 ? 'text-gradient' : ''}>
                         {word}{' '}
@@ -107,7 +107,7 @@ export default function BannerAd() {
                   </h1>
 
                   {/* Description */}
-                  <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-xl leading-relaxed">
+                  <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-6 sm:mb-10 max-w-xl leading-relaxed">
                     {ad.description}
                   </p>
 
@@ -116,22 +116,22 @@ export default function BannerAd() {
                     {ad.link_url && (
                       <a
                         href={ad.link_url}
-                        className="group/btn relative px-8 py-4 rounded-2xl bg-white text-[#020617] font-black text-lg flex items-center gap-3 overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                        className="group/btn relative px-6 py-3 sm:px-8 sm:py-4 rounded-2xl bg-white text-[#020617] font-black text-base sm:text-lg flex items-center gap-3 overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                       >
                         <span>{ad.cta_text || 'Shop Now'}</span>
                         <ArrowUpRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />
                       </a>
                     )}
-                    <button className="px-8 py-4 rounded-2xl glass-morphism text-white font-bold text-lg hover:bg-white/10 transition-all active:scale-95">
+                    <button className="px-6 py-3 sm:px-8 sm:py-4 rounded-2xl glass-morphism text-white font-bold text-base sm:text-lg hover:bg-white/10 transition-all active:scale-95">
                       Learn More
                     </button>
                   </div>
                 </div>
 
                 {/* Optional Right Side Asset / Floating Element */}
-                <div className={`hidden lg:block transition-all duration-1000 delay-300 ${activeId === ad.id ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
-                  <div className="relative aspect-square max-w-lg ml-auto">
-                    <div className="absolute inset-0 rounded-3xl glass shadow-2xl animate-float border border-white/20 p-4">
+                <div className={`transition-all duration-1000 delay-300 ${activeId === ad.id ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'} block mt-4 lg:mt-0`}>
+                  <div className="relative aspect-square max-w-[240px] sm:max-w-xs md:max-w-sm lg:max-w-lg mx-auto lg:ml-auto">
+                    <div className="absolute inset-0 rounded-3xl glass shadow-2xl animate-float border border-white/20 p-3 sm:p-4">
                       <div className="w-full h-full rounded-2xl overflow-hidden relative">
                         <Image
                           src={ad.image_url}

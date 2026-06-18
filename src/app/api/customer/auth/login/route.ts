@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET ?? (() => { throw new Error('JWT_SECRE
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  const { allowed, retryAfterMs } = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
+  const { allowed, retryAfterMs } = await rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
       { error: 'Too many login attempts. Please try again later.' },

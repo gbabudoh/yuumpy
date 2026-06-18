@@ -11,7 +11,7 @@ const ADMIN_CREDENTIALS = {
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  const { allowed, retryAfterMs } = rateLimit(`admin-login:${ip}`, 5, 15 * 60 * 1000);
+  const { allowed, retryAfterMs } = await rateLimit(`admin-login:${ip}`, 5, 15 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
       { success: false, message: 'Too many login attempts. Please try again later.' },

@@ -46,7 +46,10 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <head>
+      <head />
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         {organizationSchema && (
           <script
             type="application/ld+json"
@@ -54,10 +57,6 @@ export default function RootLayout({
               __html: JSON.stringify(organizationSchema) }}
           />
         )}
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
         <CartProvider>
           <Analytics />
           {children}

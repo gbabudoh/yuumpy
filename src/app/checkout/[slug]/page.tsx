@@ -16,6 +16,7 @@ interface Product {
   short_description: string;
   purchase_type: string;
   stock_quantity?: number;
+  seller_store_slug?: string;
 }
 
 interface CheckoutForm {

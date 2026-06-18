@@ -51,7 +51,7 @@ export async function uploadFile(file: Buffer | Uint8Array, fileName: string, co
     const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
     const objectName = `${folder}/${Date.now()}_${cleanFileName}`;
     
-    await minioClient.putObject(bucketName, objectName, file, file.length, {
+    await minioClient.putObject(bucketName, objectName, Buffer.from(file), file.length, {
       'Content-Type': contentType,
     });
 

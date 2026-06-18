@@ -8,7 +8,7 @@ const SILENT_SUCCESS = { success: true, message: 'If an account exists, we have 
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  const { allowed, retryAfterMs } = rateLimit(`forgot-password:${ip}`, 5, 15 * 60 * 1000);
+  const { allowed, retryAfterMs } = await rateLimit(`forgot-password:${ip}`, 5, 15 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
       { error: 'Too many requests. Please try again later.' },

@@ -3,6 +3,15 @@ const MINIO_PUBLIC_URL = process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || '';
 
 type ResizeType = 'fill' | 'fit' | 'auto';
 
+// Our MinIO/imgproxy servers only speak http://. Firefox's HTTPS-Only Mode
+// tries to upgrade those to https://, the upgrade fails, and the media is
+// dropped — even on localhost. Routing through our own same-origin API
+// avoids the upgrade attempt entirely.
+export function proxiedMediaUrl(url: string): string {
+  if (!url || !url.startsWith('http://')) return url;
+  return `/api/external-media?u=${encodeURIComponent(url)}`;
+}
+
 /**
  * Converts a MinIO URL to an imgproxy URL.
  * imgproxy fetches directly from S3/MinIO via its S3 integration.
@@ -25,5 +34,5 @@ export function imgproxy(
     ? minioUrl.replace(`${MINIO_PUBLIC_URL}/`, 's3://')
     : minioUrl;
 
-  return `${IMGPROXY_URL}/insecure/rs:${resize}:${width}:${height}:0/plain/${s3Url}`;
+  return proxiedMediaUrl(`${IMGPROXY_URL}/insecure/rs:${resize}:${width}:${height}:0/plain/${s3Url}`);
 }

@@ -4,10 +4,11 @@ import { join } from 'path';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
-    const imagePath = params.path.join('/');
+    const { path } = await params;
+    const imagePath = path.join('/');
     const fullPath = join(process.cwd(), 'public', 'uploads', imagePath);
     
     // Read the image file
@@ -33,7 +34,7 @@ export async function GET(
         break;
     }
     
-    return new NextResponse(imageBuffer, {
+    return new NextResponse(new Uint8Array(imageBuffer), {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=31536000, immutable',

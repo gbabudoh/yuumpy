@@ -3,6 +3,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.cache = false;
+    }
+    return config;
+  },
   images: {
     unoptimized: process.env.NODE_ENV === 'development',
     remotePatterns: [

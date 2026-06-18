@@ -7,7 +7,7 @@ import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import { Product as CoreProduct } from '@/types/product';
 import BannerAd from '@/components/BannerAd';
-import { imgproxy } from '@/lib/imgproxy';
+import { imgproxy, proxiedMediaUrl } from '@/lib/imgproxy';
 import { 
   ShieldCheck, 
   BadgeCheck,
@@ -230,24 +230,82 @@ export default function Home() {
       </section>
 
       {/* 4. THE MANIFESTO - SPLIT STORYTELLING */}
-      <section className="relative py-24 md:py-40 overflow-hidden border-b border-neutral-100 bg-white">
+      <section className="relative py-10 sm:py-20 md:py-32 overflow-hidden border-b border-neutral-100 bg-white">
         <div className="absolute top-0 left-0 w-full h-full opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #000 1px, transparent 0)', backgroundSize: '60px 60px' }} />
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 md:gap-24 items-center">
+        <div className="container mx-auto px-4 sm:px-6 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-14 md:gap-20 items-center">
+
+            {/* Right: Hero Video — shown FIRST on mobile via order */}
+            <div className="relative group order-first lg:order-last">
+              {/* Outer glow ring for visual depth */}
+              <div className="absolute -inset-1 rounded-[2rem] sm:rounded-[2.5rem] md:rounded-[4rem] bg-gradient-to-br from-indigo-500/30 via-purple-500/20 to-pink-500/10 blur-xl opacity-70" />
+              <div className="relative rounded-[1.5rem] sm:rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-2xl" style={{ aspectRatio: '4/5' }}>
+                {/* Layer 0: Background gradient — only visible while video loads */}
+                <div className="absolute inset-0 z-0 bg-gradient-to-br from-indigo-900 via-slate-800 to-purple-900">
+                  <div className="absolute inset-0 opacity-50" style={{ backgroundImage: 'radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.5) 0%, transparent 55%), radial-gradient(ellipse at 75% 75%, rgba(168,85,247,0.35) 0%, transparent 55%)' }} />
+                </div>
+
+                {/* Layer 1: Video (or poster image) */}
+                {heroVideo.hero_video_url ? (
+                  <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="auto"
+                    poster={proxiedMediaUrl(heroVideo.hero_video_poster) || undefined}
+                    className="absolute inset-0 z-10 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                    onError={(e) => {
+                      (e.target as HTMLVideoElement).style.display = 'none';
+                    }}
+                  >
+                    <source src={proxiedMediaUrl(heroVideo.hero_video_url)} type="video/mp4" />
+                  </video>
+                ) : heroVideo.hero_video_poster ? (
+                  <img
+                    src={proxiedMediaUrl(heroVideo.hero_video_poster)}
+                    alt="Artisan at work"
+                    className="absolute inset-0 z-10 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                  />
+                ) : null}
+
+                {/* Light bottom gradient — keeps episode card text readable */}
+                <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+
+                {/* Layer 3: Episode info card */}
+                <div className="absolute z-30 bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 md:bottom-10 md:left-10 md:right-10">
+                  <div className="p-4 sm:p-5 md:p-7 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl md:rounded-3xl">
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-1.5 sm:mb-2">
+                      {heroVideo.hero_episode_number}
+                    </p>
+                    <h3 className="text-base sm:text-lg md:text-2xl font-bold text-white mb-1.5 leading-tight">
+                      {heroVideo.hero_episode_title}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs md:text-sm text-neutral-300 font-medium leading-relaxed italic line-clamp-3">
+                      {heroVideo.hero_episode_quote}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* Decorative blobs */}
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-indigo-600/20 rounded-full blur-2xl" />
+              <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-purple-600/10 rounded-full blur-3xl" />
+            </div>
+
             {/* Left: Content */}
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] mb-10">
+            <div className="max-w-xl order-last lg:order-first">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] mb-5 sm:mb-8">
                 <Sparkles className="w-3 h-3" /> The Human Touch
               </div>
-              <h1 className="text-6xl md:text-8xl font-black text-neutral-900 mb-10 leading-[0.95] tracking-tighter">
+              <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-neutral-900 mb-5 sm:mb-8 leading-[0.95] tracking-tighter">
                 Crafted by Humans.<br />
                 <span className="italic font-light text-neutral-400">For Humans.</span>
               </h1>
-              <p className="text-xl md:text-2xl text-neutral-500 mb-12 leading-relaxed font-medium">
+              <p className="text-base sm:text-xl text-neutral-500 mb-8 sm:mb-10 leading-relaxed font-medium">
                 Yuumpy is a curated sanctuary for master artisans. We believe that every object should possess soul, character, and a traceable journey.
               </p>
-              <div className="flex flex-col sm:flex-row items-center gap-8">
-                <Link href="/products" className="group px-10 py-5 rounded-2xl bg-neutral-900 text-white font-bold text-sm uppercase tracking-widest hover:bg-indigo-600 transition-all duration-500 flex items-center gap-3 active:scale-95 shadow-xl shadow-neutral-200">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
+                <Link href="/products" className="group px-8 py-4 sm:px-10 sm:py-5 rounded-2xl bg-neutral-900 text-white font-bold text-sm uppercase tracking-widest hover:bg-indigo-600 transition-all duration-500 flex items-center gap-3 active:scale-95 shadow-xl shadow-neutral-200">
                   Explore The Fair
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
@@ -257,56 +315,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Hero Video */}
-            <div className="relative group">
-              <div className="aspect-[3/4] rounded-[4rem] overflow-hidden bg-neutral-900 shadow-2xl relative">
-                {heroVideo.hero_video_url ? (
-                  <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    poster={heroVideo.hero_video_poster || undefined}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                  >
-                    <source src={heroVideo.hero_video_url} type="video/mp4" />
-                  </video>
-                ) : heroVideo.hero_video_poster ? (
-                  <img
-                    src={heroVideo.hero_video_poster}
-                    alt="Artisan at work"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                  />
-                ) : (
-                  /* Placeholder until a video is uploaded */
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-neutral-900 to-purple-900/30 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3">
-                        <svg className="w-8 h-8 text-white/30 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                      </div>
-                      <p className="text-white/30 text-xs font-medium">Upload a video in Admin → Hero Video</p>
-                    </div>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/80 via-transparent to-transparent opacity-60" />
-                <div className="absolute bottom-12 left-12 right-12">
-                  <div className="p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-3">
-                      {heroVideo.hero_episode_number}
-                    </p>
-                    <h3 className="text-2xl font-bold text-white mb-2 leading-tight">
-                      {heroVideo.hero_episode_title}
-                    </h3>
-                    <p className="text-sm text-neutral-300 font-medium leading-relaxed italic">
-                      {heroVideo.hero_episode_quote}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {/* Decorative elements */}
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-indigo-600/10 rounded-full blur-2xl" />
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-600/5 rounded-full blur-3xl" />
-            </div>
           </div>
         </div>
       </section>

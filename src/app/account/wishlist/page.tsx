@@ -16,6 +16,7 @@ interface WishlistItem {
   original_price?: number; image_url: string; affiliate_url: string;
   purchase_type: string; product_condition: string; stock_quantity?: number;
   brand_name?: string; category_name?: string; created_at: string;
+  seller_store_slug?: string;
 }
 
 export default function WishlistPage() {
