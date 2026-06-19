@@ -1,14 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function CustomerLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <CustomerLoginForm />
+    </Suspense>
+  );
+}
+
+function CustomerLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
@@ -34,6 +43,24 @@ export default function CustomerLoginPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally { setLoading(false); }
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/customer/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Google sign-in failed');
+      router.push(redirectUrl || '/account');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+      setLoading(false);
+    }
   };
 
   return (
@@ -105,6 +132,8 @@ export default function CustomerLoginPage() {
                 )}
               </button>
             </form>
+
+            <GoogleSignInButton onCredential={handleGoogleCredential} />
           </div>
 
           <p className="text-center text-[13px] text-gray-500 mt-6">

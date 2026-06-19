@@ -102,6 +102,8 @@ model categories {
   is_active        Boolean?      @default(true)
   created_at       DateTime?     @default(now()) @db.Timestamp(6)
   updated_at       DateTime?     @default(now()) @db.Timestamp(6)
+  show_in_menu     Boolean?      @default(true)
+  menu_order       Int?          @default(0)
   analytics        analytics[]
   categories       categories?   @relation("categoriesTocategories", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   other_categories categories[]  @relation("categoriesTocategories")
@@ -206,12 +208,13 @@ model customer_sessions {
 model customers {
   id                     Int                      @id @default(autoincrement())
   email                  String                   @unique @db.VarChar(255)
-  password_hash          String                   @db.VarChar(255)
+  password_hash          String?                  @db.VarChar(255)
   first_name             String                   @db.VarChar(100)
   last_name              String                   @db.VarChar(100)
   phone                  String?                  @db.VarChar(20)
   is_active              Boolean?                 @default(true)
   email_verified         Boolean?                 @default(false)
+  google_id              String?                  @unique @db.VarChar(255)
   created_at             DateTime?                @default(now()) @db.Timestamp(6)
   updated_at             DateTime?                @default(now()) @db.Timestamp(6)
   customer_addresses     customer_addresses[]
@@ -427,45 +430,57 @@ model product_seo {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model products {
-  id                     Int           @id @default(autoincrement())
-  name                   String        @db.VarChar(255)
-  slug                   String        @unique @db.VarChar(255)
+  id                     Int                  @id @default(autoincrement())
+  name                   String               @db.VarChar(255)
+  slug                   String               @unique @db.VarChar(255)
   description            String?
-  short_description      String?       @db.VarChar(500)
-  price                  Decimal       @db.Decimal(10, 2)
-  original_price         Decimal?      @db.Decimal(10, 2)
-  affiliate_url          String        @db.VarChar(1000)
-  purchase_type          String?       @default("affiliate") @db.VarChar(20)
-  product_condition      String?       @default("Handcrafted") @db.VarChar(100)
+  short_description      String?              @db.VarChar(500)
+  price                  Decimal              @db.Decimal(10, 2)
+  original_price         Decimal?             @db.Decimal(10, 2)
+  affiliate_url          String               @db.VarChar(1000)
+  purchase_type          String?              @default("affiliate") @db.VarChar(20)
+  product_condition      String?              @default("Handcrafted") @db.VarChar(100)
   stock_quantity         Int?
   image_url              String?
   gallery                Json?
   category_id            Int?
   brand_id               Int?
-  is_featured            Boolean?      @default(false)
-  is_bestseller          Boolean?      @default(false)
-  is_active              Boolean?      @default(true)
-  meta_title             String?       @db.VarChar(255)
+  is_featured            Boolean?             @default(false)
+  is_bestseller          Boolean?             @default(false)
+  is_active              Boolean?             @default(true)
+  meta_title             String?              @db.VarChar(255)
   meta_description       String?
-  banner_ad_title        String?       @db.VarChar(255)
+  banner_ad_title        String?              @db.VarChar(255)
   banner_ad_description  String?
-  banner_ad_image_url    String?       @db.VarChar(1000)
-  banner_ad_link_url     String?       @db.VarChar(1000)
-  banner_ad_duration     String?       @default("1_week") @db.VarChar(20)
-  banner_ad_is_repeating Boolean?      @default(false)
-  banner_ad_start_date   DateTime?     @db.Timestamp(6)
-  banner_ad_end_date     DateTime?     @db.Timestamp(6)
-  banner_ad_is_active    Boolean?      @default(false)
+  banner_ad_image_url    String?              @db.VarChar(1000)
+  banner_ad_link_url     String?              @db.VarChar(1000)
+  banner_ad_duration     String?              @default("1_week") @db.VarChar(20)
+  banner_ad_is_repeating Boolean?             @default(false)
+  banner_ad_start_date   DateTime?            @db.Timestamp(6)
+  banner_ad_end_date     DateTime?            @db.Timestamp(6)
+  banner_ad_is_active    Boolean?             @default(false)
   colors                 Json?
-  created_at             DateTime?     @default(now()) @db.Timestamp(6)
-  updated_at             DateTime?     @default(now()) @db.Timestamp(6)
+  created_at             DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at             DateTime?            @default(now()) @db.Timestamp(6)
   seller_id              Int?
-  seller_approved        Boolean?      @default(false)
+  seller_approved        Boolean?             @default(false)
+  subcategory_id         Int?
+  secondary_category_id  Int?
+  long_description       String?
+  product_review         String?
+  currency               String?              @db.VarChar(10)
+  regions                Json?
+  colour_variants        Json?
+  clothing_sizes         Json?
+  shoe_sizes             Json?
+  affiliate_partner_name String?              @db.VarChar(255)
+  external_purchase_info String?
   analytics              analytics[]
   order_items            order_items[]
   product_seo            product_seo?
-  brands                 brands?       @relation(fields: [brand_id], references: [id], onUpdate: NoAction)
-  categories             categories?   @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  product_variations     product_variations[]
+  brands                 brands?              @relation(fields: [brand_id], references: [id], onUpdate: NoAction)
+  categories             categories?          @relation(fields: [category_id], references: [id], onUpdate: NoAction)
   wishlist               wishlist[]
 
   @@index([purchase_type], map: "idx_products_purchase_type")
@@ -577,6 +592,14 @@ model sellers {
   last_login                 DateTime?             @db.Timestamp(6)
   created_at                 DateTime?             @default(now()) @db.Timestamp(6)
   updated_at                 DateTime?             @default(now()) @db.Timestamp(6)
+  customer_id                Int?
+  is_online                  Boolean?              @default(false)
+  last_seen_at               DateTime?             @db.Timestamp(6)
+  artisan_story              String?
+  studio_images              Json?
+  specialties                Json?
+  social_links               Json?
+  profile_video_url          String?               @db.VarChar(500)
   disputes                   disputes[]
   escrow_transactions        escrow_transactions[]
   seller_reviews             seller_reviews[]
@@ -617,4 +640,76 @@ model wishlist {
   @@unique([customer_id, product_id])
   @@index([customer_id], map: "idx_wishlist_customer_id")
   @@index([product_id], map: "idx_wishlist_product_id")
+}
+
+model contact_submissions {
+  id         Int       @id @default(autoincrement())
+  name       String?   @db.VarChar(255)
+  email      String?   @db.VarChar(255)
+  subject    String?   @db.VarChar(500)
+  message    String?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model custom_requests {
+  id              Int       @id @default(autoincrement())
+  customer_id     Int?
+  seller_id       Int?
+  product_id      Int?
+  description     String?
+  attachment_urls Json?
+  status          String?   @default("pending") @db.VarChar(20)
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+  updated_at      DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model identity_verifications {
+  id            Int       @id @default(autoincrement())
+  seller_id     Int
+  document_type String    @db.VarChar(20)
+  object_key    String    @db.VarChar(500)
+  status        String?   @default("pending") @db.VarChar(10)
+  admin_notes   String?
+  reviewed_by   Int?
+  reviewed_at   DateTime? @db.Timestamp(6)
+  submitted_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at    DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model product_banner_ads {
+  id           Int       @id @default(autoincrement())
+  title        String    @db.VarChar(255)
+  description  String?
+  image_url    String?   @db.VarChar(500)
+  link_url     String?   @db.VarChar(500)
+  is_active    Boolean?  @default(true)
+  start_date   DateTime? @db.Date
+  end_date     DateTime? @db.Date
+  expires_at   DateTime? @db.Timestamp(6)
+  duration     String?   @db.VarChar(20)
+  is_repeating Boolean?  @default(false)
+  created_at   DateTime? @default(now()) @db.Timestamp(6)
+  updated_at   DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model product_variations {
+  id             Int       @id @default(autoincrement())
+  product_id     Int
+  colour_name    String    @db.VarChar(100)
+  colour_hex     String?   @db.VarChar(7)
+  main_image_url String?
+  gallery_images Json?
+  sort_order     Int?      @default(0)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+  products       products  @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model settings {
+  id          Int       @id @default(autoincrement())
+  key_name    String    @unique @db.VarChar(100)
+  value       String?
+  description String?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
 }

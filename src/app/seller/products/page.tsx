@@ -1,7 +1,7 @@
 'use client';
 
 import { useSellerContext } from '../layout';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { 
@@ -80,6 +80,14 @@ interface Product {
 }
 
 export default function SellerProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SellerProductsPageInner />
+    </Suspense>
+  );
+}
+
+function SellerProductsPageInner() {
   const { seller } = useSellerContext();
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);

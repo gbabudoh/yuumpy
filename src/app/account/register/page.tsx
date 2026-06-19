@@ -7,6 +7,7 @@ import { Mail, Lock, User, Phone, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function CustomerRegisterPage() {
   const router = useRouter();
@@ -17,6 +18,24 @@ export default function CustomerRegisterPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/customer/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Google sign-in failed');
+      router.push('/account');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,6 +144,8 @@ export default function CustomerRegisterPage() {
                 )}
               </button>
             </form>
+
+            <GoogleSignInButton onCredential={handleGoogleCredential} />
           </div>
 
           <p className="text-center text-[13px] text-gray-500 mt-6">

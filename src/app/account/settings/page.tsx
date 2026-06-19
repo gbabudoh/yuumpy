@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -14,6 +14,14 @@ interface Customer { id: number; email: string; firstName: string; lastName: str
 interface Address { id: number; address_type: string; first_name: string; last_name: string; address_line1: string; address_line2?: string; city: string; county?: string; postcode: string; country: string; phone?: string; is_default: number; }
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsPageInner />
+    </Suspense>
+  );
+}
+
+function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [customer, setCustomer] = useState<Customer | null>(null);

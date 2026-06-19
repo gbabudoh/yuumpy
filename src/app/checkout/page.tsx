@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -72,13 +72,19 @@ export default function CheckoutPage() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loggingIn, setLoggingIn] = useState(false);
 
+  const completingOrderRef = useRef(false);
+
+  // Auth check runs once on page load — not on every cart change.
   useEffect(() => {
-    // Check if cart is empty, redirect back to products if so
-    if (cart.length === 0) {
-      router.push('/products');
-      return;
-    }
     checkIfLoggedIn();
+  }, []);
+
+  useEffect(() => {
+    // Don't hijack the post-purchase redirect to Stripe — clearCart() on a
+    // successful order also makes cart.length hit 0.
+    if (cart.length === 0 && !completingOrderRef.current) {
+      router.push('/products');
+    }
   }, [cart, router]);
 
   const checkIfLoggedIn = async () => {
@@ -218,7 +224,18 @@ export default function CheckoutPage() {
     }
   };
 
-  if (cart.length === 0) return null;
+  if (cart.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 text-center">
+        <ShoppingBag className="w-12 h-12 text-gray-300 mb-4" />
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Your cart is empty</h1>
+        <p className="text-gray-500 mb-6">You removed everything from your cart.</p>
+        <Link href="/products" className="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-purple-700 transition-colors">
+          Continue Shopping
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  ...(process.env.BUILD_VERIFY ? { distDir: '.next-verify' } : {}),
   eslint: {
     ignoreDuringBuilds: true,
   },
