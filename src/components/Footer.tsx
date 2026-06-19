@@ -80,7 +80,7 @@ export default function Footer() {
                 { name: 'X', url: settings.social_twitter },
                 { name: 'LinkedIn', url: settings.social_linkedin }
               ].map((social) => (
-                <a key={social.name} href={social.url} className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center hover:bg-gray-900 hover:text-white transition-all duration-500 border border-gray-200 cursor-pointer">
+                <a key={social.name} href={social.url} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center hover:bg-gray-900 hover:text-white transition-all duration-500 border border-gray-200 cursor-pointer">
                   <span className="sr-only">{social.name}</span>
                   <div className="w-5 h-5 flex items-center justify-center font-black text-xs">
                     {social.name[0]}

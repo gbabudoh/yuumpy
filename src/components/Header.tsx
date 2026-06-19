@@ -407,7 +407,7 @@ export default function Header() {
                 <ShieldCheck className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 <span>Safe Trading</span>
               </Link>
-              <Link href="/seller/register" className="group flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-purple-700 hover:shadow-[0_10px_30px_-5px_rgba(147,51,234,0.3)] transition-all active:scale-95">
+              <Link href="/sell-on-yuumpy" className="group flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-purple-700 hover:shadow-[0_10px_30px_-5px_rgba(147,51,234,0.3)] transition-all active:scale-95">
                 <Store className="w-3.5 h-3.5" />
                 <span>Start Selling</span>
               </Link>
@@ -727,7 +727,7 @@ export default function Header() {
                 Safe Trading
               </Link>
               <Link
-                href="/seller/register"
+                href="/sell-on-yuumpy"
                 className="inline-block text-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors mt-2"
                 onClick={() => setIsMenuOpen(false)}
               >
