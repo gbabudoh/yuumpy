@@ -4,17 +4,18 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { 
-  Search, 
-  ShoppingBag, 
-  Menu, 
-  X, 
-  Tag, 
-  Building2, 
-  User, 
-  LayoutGrid, 
-  Info, 
+import {
+  Search,
+  ShoppingBag,
+  Menu,
+  X,
+  Tag,
+  Building2,
+  User,
+  LayoutGrid,
+  Info,
   Store,
+  ChevronDown,
   Flower2,
   Smartphone,
   Cpu,
@@ -70,6 +71,7 @@ export default function Header() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
   
   const searchRef = useRef<HTMLDivElement>(null);
   const megaMenuRef = useRef<HTMLDivElement>(null);
@@ -704,13 +706,50 @@ export default function Header() {
             </div>
 
             <nav className="flex flex-col space-y-4">
-              <Link 
-                href="/products/categories" 
-                className="text-gray-700 hover:text-blue-600 font-medium py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Categories
-              </Link>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
+                  className="w-full flex items-center justify-between text-gray-700 hover:text-blue-600 font-medium py-2"
+                >
+                  <span className="flex items-center gap-2">
+                    <LayoutGrid className="w-4 h-4" />
+                    Categories
+                  </span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isMobileCategoriesOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isMobileCategoriesOpen && (
+                  <div className="mt-1 mb-2 grid grid-cols-2 gap-2 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+                    {categories.map((cat) => (
+                      <Link
+                        key={cat.id}
+                        href={`/categories/${cat.slug}`}
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsMobileCategoriesOpen(false);
+                        }}
+                        className="flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-50 hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 transition-all"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
+                          {getCategoryIcon(cat.name)}
+                        </div>
+                        <span className="text-xs font-bold text-slate-700 truncate">{cat.name}</span>
+                      </Link>
+                    ))}
+                    <Link
+                      href="/categories"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsMobileCategoriesOpen(false);
+                      }}
+                      className="col-span-2 flex items-center justify-center gap-2 p-2.5 rounded-xl bg-indigo-50 text-indigo-600 text-xs font-black uppercase tracking-wide"
+                    >
+                      View All Categories
+                    </Link>
+                  </div>
+                )}
+              </div>
               <Link
                 href="/about-yuumpy"
                 className="text-gray-700 hover:text-blue-600 font-medium py-2"
