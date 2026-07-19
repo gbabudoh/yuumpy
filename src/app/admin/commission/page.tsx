@@ -64,8 +64,12 @@ export default function CommissionPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update_global', rate }),
       });
-      if (res.ok) { showMessage('success', 'Global rate updated'); fetchData(); }
-      else showMessage('error', 'Failed to update');
+      if (res.ok) {
+        const data = await res.json();
+        const synced = data.sellersUpdated || 0;
+        showMessage('success', `Global rate updated${synced > 0 ? ` — synced to ${synced} seller${synced === 1 ? '' : 's'} still on the previous default` : ''}`);
+        fetchData();
+      } else showMessage('error', 'Failed to update');
     } catch { showMessage('error', 'Failed to update'); }
     finally { setSaving(false); }
   };

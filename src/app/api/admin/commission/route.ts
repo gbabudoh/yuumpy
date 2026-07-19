@@ -31,14 +31,37 @@ export async function POST(request: NextRequest) {
 
     if (action === 'update_global') {
       const { rate } = body;
-      if (!rate || rate < 0 || rate > 100) {
+      if (rate === undefined || rate === null || isNaN(Number(rate)) || rate < 0 || rate > 100) {
         return NextResponse.json({ error: 'Invalid rate (0-100)' }, { status: 400 });
       }
+
+      const existing = await query(
+        "SELECT rate FROM commission_config WHERE type = 'global' LIMIT 1"
+      ) as Array<{ rate: string | number }>;
+      const previousRate = existing.length > 0
+        ? (typeof existing[0].rate === 'string' ? parseFloat(existing[0].rate) : existing[0].rate)
+        : null;
+
       await query(
         "UPDATE commission_config SET rate = ?, updated_at = NOW() WHERE type = 'global'",
         [rate]
       );
-      return NextResponse.json({ success: true });
+
+      // Every seller is stamped with the then-current global rate at signup
+      // (there's no separate "uses default" flag), so a seller still sitting
+      // at exactly the previous global rate is presumed never to have been
+      // given a custom rate — carry them forward. Sellers whose rate has been
+      // explicitly overridden away from that value are left untouched.
+      let sellersUpdated = 0;
+      if (previousRate !== null) {
+        const result = await query(
+          'UPDATE sellers SET commission_rate = ? WHERE commission_rate = ?',
+          [rate, previousRate]
+        );
+        sellersUpdated = (result as unknown as { affectedRows: number }).affectedRows || 0;
+      }
+
+      return NextResponse.json({ success: true, sellersUpdated });
     }
 
     if (action === 'update_seller') {

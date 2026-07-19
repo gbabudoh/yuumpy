@@ -148,6 +148,21 @@ export async function POST(request: NextRequest) {
       sellerGroups.get(sid)!.push(item);
     }
 
+    // Live platform default — used only as a fallback if a seller record is
+    // somehow missing from the map below; every real seller already carries
+    // its own commission_rate.
+    let globalCommissionRate = 12;
+    try {
+      const globalConfig = await query(
+        "SELECT rate FROM commission_config WHERE type = 'global' AND is_active = TRUE ORDER BY updated_at DESC LIMIT 1"
+      ) as Array<{ rate: string | number }>;
+      if (globalConfig.length > 0) {
+        globalCommissionRate = typeof globalConfig[0].rate === 'string'
+          ? parseFloat(globalConfig[0].rate)
+          : globalConfig[0].rate;
+      }
+    } catch { /* commission_config may not exist yet — keep hardcoded fallback */ }
+
     // Fetch seller info for all sellers in this order
     const sellerIds = [...sellerGroups.keys()].filter((id): id is number => id !== null);
     const sellers = new Map<number, DBSeller>();
@@ -212,7 +227,7 @@ export async function POST(request: NextRequest) {
 
       if (sellerId !== null) {
         const seller = sellers.get(sellerId);
-        commissionRate = seller ? (typeof seller.commission_rate === 'string' ? parseFloat(seller.commission_rate) : seller.commission_rate) : 12;
+        commissionRate = seller ? (typeof seller.commission_rate === 'string' ? parseFloat(seller.commission_rate) : seller.commission_rate) : globalCommissionRate;
         commissionAmount = Math.round(totalAmount * commissionRate) / 100;
         sellerPayoutAmount = totalAmount - commissionAmount;
       }
