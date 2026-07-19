@@ -89,6 +89,23 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Resolved in the seller's favor (or closed with no refund) — hand the
+      // escrow back to 'held' so it's no longer excluded from the auto-release
+      // cron, which only ever picks up rows still marked 'held'.
+      if ((status === 'resolved_seller' || status === 'closed') && !refund_amount) {
+        const dispute = await query('SELECT escrow_id FROM disputes WHERE id = ?', [dispute_id]) as { escrow_id: number }[];
+        if (dispute.length > 0 && dispute[0].escrow_id) {
+          await query(
+            "UPDATE escrow_transactions SET status = 'held', admin_notes = CONCAT(COALESCE(admin_notes, ''), ?) WHERE id = ? AND status = 'disputed'",
+            [`\n[Dispute #${dispute_id} resolved in seller's favor — hold resumed]`, dispute[0].escrow_id]
+          );
+          await query(
+            "UPDATE orders SET escrow_status = 'held' WHERE id = (SELECT order_id FROM escrow_transactions WHERE id = ?) AND escrow_status = 'disputed'",
+            [dispute[0].escrow_id]
+          );
+        }
+      }
+
       await query(
         `UPDATE disputes SET status = ?, resolution_notes = ?, refund_amount = ?,
          ${isResolved ? 'resolved_at = NOW(),' : ''} updated_at = NOW() WHERE id = ?`,

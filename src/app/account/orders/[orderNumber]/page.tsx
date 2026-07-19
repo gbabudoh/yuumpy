@@ -7,7 +7,8 @@ import Image from 'next/image';
 import {
   Package, Truck, CheckCircle, Clock, XCircle,
   ArrowLeft, MapPin, CreditCard, Calendar,
-  Box, ShoppingBag, ExternalLink, Copy, Check, Sparkles, ChevronRight, HelpCircle
+  Box, ShoppingBag, ExternalLink, Copy, Check, Sparkles, ChevronRight, HelpCircle,
+  AlertTriangle, X, Loader2
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -31,6 +32,17 @@ const statusCfg: Record<string, { icon: any; color: string; bg: string; dot: str
 };
 const steps = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
 
+const disputeReasons: Record<string, string> = {
+  item_not_received: 'Item not received',
+  item_not_as_described: 'Item not as described',
+  defective_item: 'Item arrived defective or damaged',
+  wrong_item: 'Received the wrong item',
+  seller_unresponsive: 'Seller is unresponsive',
+  other: 'Other',
+};
+
+interface Dispute { id: number; status: string; reason: string; description: string; created_at: string; }
+
 export default function OrderDetailsPage() {
   const router = useRouter();
   const params = useParams();
@@ -38,6 +50,12 @@ export default function OrderDetailsPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [dispute, setDispute] = useState<Dispute | null>(null);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputeReason, setDisputeReason] = useState('item_not_received');
+  const [disputeDescription, setDisputeDescription] = useState('');
+  const [submittingDispute, setSubmittingDispute] = useState(false);
+  const [disputeError, setDisputeError] = useState('');
 
   useEffect(() => { checkAuth(); }, []);
 
@@ -46,7 +64,46 @@ export default function OrderDetailsPage() {
       const res = await fetch('/api/customer/auth/me');
       if (!res.ok) { router.push('/account/login'); return; }
       fetchOrder();
+      fetchDispute();
     } catch { router.push('/account/login'); }
+  };
+
+  const fetchDispute = async () => {
+    try {
+      const res = await fetch(`/api/customer/disputes?orderNumber=${orderNumber}`);
+      if (res.ok) {
+        const d = await res.json();
+        setDispute(d.dispute);
+      }
+    } catch { /* non-critical */ }
+  };
+
+  const submitDispute = async () => {
+    if (!disputeDescription.trim()) { setDisputeError('Please describe what happened'); return; }
+    setSubmittingDispute(true);
+    setDisputeError('');
+    try {
+      const res = await fetch('/api/customer/disputes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNumber, reason: disputeReason, description: disputeDescription }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setDisputeError(data.error || 'Failed to submit dispute'); return; }
+      setDispute({
+        id: data.disputeId,
+        status: 'open',
+        reason: disputeReason,
+        description: disputeDescription,
+        created_at: new Date().toISOString(),
+      });
+      setShowDisputeModal(false);
+      setDisputeDescription('');
+    } catch {
+      setDisputeError('Failed to submit dispute, please try again');
+    } finally {
+      setSubmittingDispute(false);
+    }
   };
 
   const fetchOrder = async () => {
@@ -271,21 +328,98 @@ export default function OrderDetailsPage() {
         </div>
 
         {/* Help */}
-        <div className="flex items-center justify-between p-5 bg-white rounded-2xl border border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center"><HelpCircle className="w-5 h-5 text-gray-400" /></div>
-            <div>
-              <p className="text-sm font-medium text-gray-900">Need help with this order?</p>
-              <p className="text-[12px] text-gray-400">Our support team is here for you</p>
+        <div className="p-5 bg-white rounded-2xl border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center"><HelpCircle className="w-5 h-5 text-gray-400" /></div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Need help with this order?</p>
+                <p className="text-[12px] text-gray-400">Our support team is here for you</p>
+              </div>
             </div>
+            <Link href="/contact" className="flex items-center gap-1 text-[13px] font-medium text-gray-500 hover:text-gray-900 transition-colors">
+              Contact <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-          <Link href="/contact" className="flex items-center gap-1 text-[13px] font-medium text-gray-500 hover:text-gray-900 transition-colors">
-            Contact <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
+
+          {order.payment_status === 'paid' && (
+            <div className="mt-4 pt-4 border-t border-gray-50">
+              {dispute ? (
+                <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-amber-800 capitalize">Dispute {dispute.status.replace(/_/g, ' ')}</p>
+                    <p className="text-[11px] text-amber-600">Filed {fmtDate(dispute.created_at)} &middot; {disputeReasons[dispute.reason] || dispute.reason}</p>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowDisputeModal(true)}
+                  className="flex items-center gap-2 text-[13px] font-medium text-red-600 hover:text-red-700 transition-colors"
+                >
+                  <AlertTriangle className="w-4 h-4" /> Report a Problem
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
       </main>
       <Footer />
+
+      {showDisputeModal && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+          onClick={() => !submittingDispute && setShowDisputeModal(false)}
+        >
+          <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold text-gray-900">Report a Problem</h3>
+              <button onClick={() => setShowDisputeModal(false)} className="p-1 rounded-lg hover:bg-gray-50" aria-label="Close">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <label className="block text-[12px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">What went wrong?</label>
+            <select
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+              className="w-full mb-4 px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-gray-400"
+            >
+              {Object.entries(disputeReasons).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+
+            <label className="block text-[12px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Details</label>
+            <textarea
+              value={disputeDescription}
+              onChange={(e) => setDisputeDescription(e.target.value)}
+              rows={4}
+              placeholder="Tell us what happened..."
+              className="w-full mb-2 px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-gray-400 resize-none"
+            />
+            {disputeError && <p className="text-[12px] text-red-600 mb-3">{disputeError}</p>}
+
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setShowDisputeModal(false)}
+                disabled={submittingDispute}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitDispute}
+                disabled={submittingDispute}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {submittingDispute ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Dispute'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
