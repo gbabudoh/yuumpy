@@ -106,6 +106,8 @@ CREATE TABLE IF NOT EXISTS escrow_transactions (
   FOREIGN KEY (seller_id) REFERENCES sellers(id) ON DELETE CASCADE
 );
 
+ALTER TABLE escrow_transactions ADD COLUMN IF NOT EXISTS stripe_refund_id VARCHAR(255);
+
 -- Disputes
 CREATE TABLE IF NOT EXISTS disputes (
   id SERIAL PRIMARY KEY,

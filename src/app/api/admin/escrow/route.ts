@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { query } from '@/lib/database';
+import { refundEscrowTransaction } from '@/lib/escrow';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
@@ -143,32 +144,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'refund') {
-      // If there's an existing transfer, reverse it
-      const escrowResult = await query(
-        'SELECT stripe_transfer_id, order_id FROM escrow_transactions WHERE id = ?',
-        [escrow_id]
-      ) as Array<{ stripe_transfer_id: string | null; order_id: number }>;
-
-      if (escrowResult.length > 0 && escrowResult[0].stripe_transfer_id) {
-        try {
-          await stripe.transfers.createReversal(escrowResult[0].stripe_transfer_id);
-        } catch (err) {
-          console.error('Transfer reversal failed:', err);
-        }
+      const result = await refundEscrowTransaction(escrow_id, notes || 'Refunded by admin');
+      if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
       }
-
-      await query(
-        `UPDATE escrow_transactions 
-         SET status = 'refunded', refunded_at = NOW(), admin_notes = CONCAT(COALESCE(admin_notes, ''), ?)
-         WHERE id = ?`,
-        [`\n[Refunded] ${notes || 'Refunded by admin'}`, escrow_id]
-      );
-
-      if (escrowResult.length > 0) {
-        await query("UPDATE orders SET escrow_status = 'refunded' WHERE id = ?", [escrowResult[0].order_id]);
-      }
-
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, stripe_refund_id: result.stripeRefundId });
     }
 
     if (action === 'hold') {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
+import { refundEscrowTransaction } from '@/lib/escrow';
 
 export async function GET(request: NextRequest) {
   const status = request.nextUrl.searchParams.get('status') || '';
@@ -73,24 +74,26 @@ export async function POST(request: NextRequest) {
 
       const isResolved = ['resolved_buyer', 'resolved_seller', 'resolved_split', 'closed'].includes(status);
 
+      // Refund before marking resolved — if the Stripe refund fails, the dispute
+      // should stay open rather than silently reporting as resolved.
+      if (status === 'resolved_buyer' && refund_amount) {
+        const dispute = await query('SELECT escrow_id FROM disputes WHERE id = ?', [dispute_id]) as { escrow_id: number }[];
+        if (dispute.length > 0 && dispute[0].escrow_id) {
+          const result = await refundEscrowTransaction(
+            dispute[0].escrow_id,
+            `Dispute #${dispute_id} resolved in buyer's favor — refund £${refund_amount}`
+          );
+          if (!result.success) {
+            return NextResponse.json({ error: `Refund failed: ${result.error}` }, { status: 400 });
+          }
+        }
+      }
+
       await query(
-        `UPDATE disputes SET status = ?, resolution_notes = ?, refund_amount = ?, 
+        `UPDATE disputes SET status = ?, resolution_notes = ?, refund_amount = ?,
          ${isResolved ? 'resolved_at = NOW(),' : ''} updated_at = NOW() WHERE id = ?`,
         [status, resolution_notes || null, refund_amount || null, dispute_id]
       );
-
-      // If resolved in buyer's favor, refund the escrow
-      if (status === 'resolved_buyer' && refund_amount) {
-        try {
-          const dispute = await query('SELECT escrow_id FROM disputes WHERE id = ?', [dispute_id]) as { escrow_id: number }[];
-          if (dispute.length > 0 && dispute[0].escrow_id) {
-            await query(
-              "UPDATE escrow_transactions SET status = 'refunded', refunded_at = NOW(), admin_notes = CONCAT(COALESCE(admin_notes, ''), ?) WHERE id = ?",
-              [`\n[Dispute resolved - buyer refund £${refund_amount}]`, dispute[0].escrow_id]
-            );
-          }
-        } catch { /* escrow update optional */ }
-      }
 
       return NextResponse.json({ success: true });
     }
