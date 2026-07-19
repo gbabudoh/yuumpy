@@ -28,34 +28,33 @@ export async function GET(request: NextRequest) {
 
     sql += ' ORDER BY e.created_at DESC';
 
-    let transactions: unknown[] = [];
-    try {
-      transactions = await query(sql, params) as unknown[];
-    } catch { transactions = []; }
+    // query() already returns [] transparently when the table doesn't exist
+    // yet (pre-migration) without throwing — anything that reaches here is a
+    // genuine error, so let it bubble to the outer catch instead of quietly
+    // reporting an empty escrow ledger to the admin.
+    const transactions = await query(sql, params) as unknown[];
 
     let stats = { held: 0, released: 0, refunded: 0, disputed: 0, total_held_amount: 0, total_released_amount: 0 };
-    try {
-      const summary = await query(`
-        SELECT 
-          SUM(CASE WHEN status = 'held' THEN 1 ELSE 0 END)::float as held,
-          SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END)::float as released,
-          SUM(CASE WHEN status = 'refunded' OR status = 'partially_refunded' THEN 1 ELSE 0 END)::float as refunded,
-          SUM(CASE WHEN status = 'disputed' THEN 1 ELSE 0 END)::float as disputed,
-          COALESCE(SUM(CASE WHEN status = 'held' THEN seller_payout_amount ELSE 0 END)::float, 0) as total_held_amount,
-          COALESCE(SUM(CASE WHEN status = 'released' THEN seller_payout_amount ELSE 0 END)::float, 0) as total_released_amount
-        FROM escrow_transactions
-      `) as Record<string, unknown>[];
-      if (summary.length > 0) {
-        stats = {
-          held: Number(summary[0].held) || 0,
-          released: Number(summary[0].released) || 0,
-          refunded: Number(summary[0].refunded) || 0,
-          disputed: Number(summary[0].disputed) || 0,
-          total_held_amount: Number(summary[0].total_held_amount) || 0,
-          total_released_amount: Number(summary[0].total_released_amount) || 0,
-        };
-      }
-    } catch { /* table may not exist */ }
+    const summary = await query(`
+      SELECT
+        SUM(CASE WHEN status = 'held' THEN 1 ELSE 0 END)::float as held,
+        SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END)::float as released,
+        SUM(CASE WHEN status = 'refunded' OR status = 'partially_refunded' THEN 1 ELSE 0 END)::float as refunded,
+        SUM(CASE WHEN status = 'disputed' THEN 1 ELSE 0 END)::float as disputed,
+        COALESCE(SUM(CASE WHEN status = 'held' THEN seller_payout_amount ELSE 0 END)::float, 0) as total_held_amount,
+        COALESCE(SUM(CASE WHEN status = 'released' THEN seller_payout_amount ELSE 0 END)::float, 0) as total_released_amount
+      FROM escrow_transactions
+    `) as Record<string, unknown>[];
+    if (summary.length > 0) {
+      stats = {
+        held: Number(summary[0].held) || 0,
+        released: Number(summary[0].released) || 0,
+        refunded: Number(summary[0].refunded) || 0,
+        disputed: Number(summary[0].disputed) || 0,
+        total_held_amount: Number(summary[0].total_held_amount) || 0,
+        total_released_amount: Number(summary[0].total_released_amount) || 0,
+      };
+    }
 
     return NextResponse.json({ transactions, stats });
   } catch (error) {

@@ -25,31 +25,29 @@ export async function GET(request: NextRequest) {
 
     sql += ' ORDER BY d.created_at DESC';
 
-    let disputes: unknown[] = [];
-    try {
-      disputes = await query(sql, params) as unknown[];
-    } catch { disputes = []; }
+    // query() already returns [] transparently when the table doesn't exist
+    // yet (pre-migration) without throwing — anything that reaches here is a
+    // genuine error, so let it bubble to the outer catch instead of quietly
+    // reporting zero disputes to the admin.
+    const disputes = await query(sql, params) as unknown[];
 
-    // Stats
     let stats = { open: 0, under_review: 0, resolved: 0, total: 0 };
-    try {
-      const summary = await query(`
-        SELECT 
-          SUM(CASE WHEN status IN ('open', 'seller_responded')::float THEN 1 ELSE 0 END) as open_count,
-          SUM(CASE WHEN status = 'under_review' THEN 1 ELSE 0 END)::float as review_count,
-          SUM(CASE WHEN status IN ('resolved_buyer', 'resolved_seller', 'resolved_split', 'closed')::float THEN 1 ELSE 0 END) as resolved_count,
-          COUNT(*)::int as total
-        FROM disputes
-      `) as Record<string, unknown>[];
-      if (summary.length > 0) {
-        stats = {
-          open: Number(summary[0].open_count) || 0,
-          under_review: Number(summary[0].review_count) || 0,
-          resolved: Number(summary[0].resolved_count) || 0,
-          total: Number(summary[0].total) || 0,
-        };
-      }
-    } catch { /* table may not exist */ }
+    const summary = await query(`
+      SELECT
+        SUM(CASE WHEN status IN ('open', 'seller_responded') THEN 1 ELSE 0 END)::float as open_count,
+        SUM(CASE WHEN status = 'under_review' THEN 1 ELSE 0 END)::float as review_count,
+        SUM(CASE WHEN status IN ('resolved_buyer', 'resolved_seller', 'resolved_split', 'closed') THEN 1 ELSE 0 END)::float as resolved_count,
+        COUNT(*)::int as total
+      FROM disputes
+    `) as Record<string, unknown>[];
+    if (summary.length > 0) {
+      stats = {
+        open: Number(summary[0].open_count) || 0,
+        under_review: Number(summary[0].review_count) || 0,
+        resolved: Number(summary[0].resolved_count) || 0,
+        total: Number(summary[0].total) || 0,
+      };
+    }
 
     return NextResponse.json({ disputes, stats });
   } catch (error) {
@@ -127,13 +125,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'get_messages') {
-      let messages: unknown[] = [];
-      try {
-        messages = await query(
-          'SELECT * FROM dispute_messages WHERE dispute_id = ? ORDER BY created_at ASC',
-          [dispute_id]
-        ) as unknown[];
-      } catch { messages = []; }
+      const messages = await query(
+        'SELECT * FROM dispute_messages WHERE dispute_id = ? ORDER BY created_at ASC',
+        [dispute_id]
+      ) as unknown[];
       return NextResponse.json({ messages });
     }
 

@@ -3,19 +3,14 @@ import { query } from '@/lib/database';
 
 export async function GET() {
   try {
-    // Get commission configs
-    let configs: unknown[] = [];
-    try {
-      configs = await query('SELECT * FROM commission_config ORDER BY type, created_at DESC') as unknown[];
-    } catch { configs = []; }
-
-    // Get seller-specific rates
-    let sellers: unknown[] = [];
-    try {
-      sellers = await query(
-        'SELECT id, store_name, store_slug, commission_rate, status, is_verified, total_sales, total_orders FROM sellers ORDER BY store_name'
-      ) as unknown[];
-    } catch { sellers = []; }
+    // query() already returns [] transparently when a table doesn't exist yet
+    // (pre-migration) without throwing — anything that reaches here is a
+    // genuine error, so let it bubble to the outer catch instead of quietly
+    // reporting empty commission data to the admin.
+    const configs = await query('SELECT * FROM commission_config ORDER BY type, created_at DESC') as unknown[];
+    const sellers = await query(
+      'SELECT id, store_name, store_slug, commission_rate, status, is_verified, total_sales, total_orders FROM sellers ORDER BY store_name'
+    ) as unknown[];
 
     return NextResponse.json({ configs, sellers });
   } catch (error) {
