@@ -209,13 +209,13 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
         {/* Actions */}
         <div className="flex flex-col gap-3">
             {isDirectSale ? (
-              <button
-                onClick={handleAddToCart}
+              <Link
+                href={productUrl}
                 className="w-full bg-purple-600 text-white py-4 rounded-2xl font-black transition-all duration-300 flex items-center justify-center space-x-2 text-xs hover:scale-105 active:scale-95 shadow-xl cursor-pointer"
               >
-                <ShoppingCart className="w-4 h-4" />
-                <span>SECURE CHECKOUT</span>
-              </button>
+                <Eye className="w-4 h-4" />
+                <span>VIEW DETAILS</span>
+              </Link>
             ) : (
               <a
                 href={product.affiliate_url}
