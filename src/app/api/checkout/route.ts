@@ -176,6 +176,21 @@ export async function POST(request: NextRequest) {
       for (const s of sellerResults) sellers.set(s.id, s);
     }
 
+    // Block checkout for any seller who hasn't finished Stripe Connect
+    // onboarding — otherwise the buyer pays in full but the seller's payout
+    // has nowhere to go and silently stalls in escrow indefinitely.
+    for (const [sellerId, groupItems] of sellerGroups) {
+      if (sellerId === null) continue;
+      const seller = sellers.get(sellerId);
+      if (!seller || !seller.stripe_connect_id || !seller.stripe_onboarding_complete) {
+        const storeName = seller?.store_name || 'This seller';
+        return NextResponse.json(
+          { error: `${storeName} isn't set up to receive payments yet. Please remove "${groupItems[0].name}" from your cart and try again later.` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Handle customer account
     let customerId: number | null = getCustomerIdFromToken(request);
     if (!customerId && createAccount && password) {

@@ -34,6 +34,11 @@ export default function SellerSettingsPage() {
     city: '', stateProvince: '', postalCode: '', country: 'United States',
   });
 
+  interface StripeStatus { connected: boolean; charges_enabled?: boolean; payouts_enabled?: boolean; onboarding_complete: boolean }
+  const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
+  const [stripeLoading, setStripeLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+
   const [settings, setSettings] = useState({
     shippingPolicy: '', freeShippingThreshold: '', flatRateShipping: '5.99', processingTime: '1-3 business days',
     returnPolicy: '', returnWindowDays: '30', acceptsReturns: true,
@@ -72,7 +77,39 @@ export default function SellerSettingsPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetchStripeStatus();
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('stripe')) setActiveTab('payments');
   }, []);
+
+  const fetchStripeStatus = async () => {
+    setStripeLoading(true);
+    try {
+      const res = await fetch('/api/seller/stripe-connect');
+      if (res.ok) setStripeStatus(await res.json());
+    } catch { /* ignore */ }
+    finally { setStripeLoading(false); }
+  };
+
+  const connectStripe = async () => {
+    setConnecting(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/seller/stripe-connect', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setMessage(data.error || 'Failed to start Stripe onboarding');
+        setConnecting(false);
+      }
+    } catch {
+      setMessage('Failed to start Stripe onboarding');
+      setConnecting(false);
+    }
+  };
 
   const handleSave = async (type: string) => {
     setSaving(true);
@@ -90,6 +127,7 @@ export default function SellerSettingsPage() {
 
   const tabs = [
     { id: 'profile', label: 'Store Profile', icon: Store },
+    { id: 'payments', label: 'Payments', icon: CreditCard },
     { id: 'shipping', label: 'Shipping & Returns', icon: Truck },
     { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
@@ -162,10 +200,6 @@ export default function SellerSettingsPage() {
               <button className="w-full flex items-center gap-4 px-5 py-3 text-slate-400 hover:text-rose-600 transition-all text-xs font-bold">
                 <Lock className="w-4 h-4" />
                 Security & Privacy
-              </button>
-              <button className="w-full flex items-center gap-4 px-5 py-3 text-slate-400 hover:text-indigo-600 transition-all text-xs font-bold">
-                <CreditCard className="w-4 h-4" />
-                Payment Methods
               </button>
             </div>
           </div>
@@ -299,6 +333,65 @@ export default function SellerSettingsPage() {
                     {saving ? 'Syncing...' : 'Confirm Profile'}
                   </button>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'payments' && (
+              <div className="space-y-10 animate-in slide-in-from-right-4 duration-500">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900">Payments</h3>
+                    <p className="text-slate-500 text-sm font-medium">Connect Stripe to receive payouts from your sales</p>
+                  </div>
+                </div>
+
+                {stripeLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-slate-300" />
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className={`p-8 rounded-[2rem] border ${
+                      stripeStatus?.onboarding_complete ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'
+                    }`}>
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stripeStatus?.onboarding_complete ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                          {stripeStatus?.onboarding_complete
+                            ? <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                            : <Info className="w-5 h-5 text-amber-600" />}
+                        </div>
+                        <p className={`text-sm font-black uppercase tracking-widest ${stripeStatus?.onboarding_complete ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {stripeStatus?.onboarding_complete ? 'Payouts Active' : stripeStatus?.connected ? 'Onboarding Incomplete' : 'Not Connected'}
+                        </p>
+                      </div>
+                      <p className="text-xs font-medium text-slate-600 leading-relaxed">
+                        {stripeStatus?.onboarding_complete
+                          ? 'Your Stripe account is fully set up. Orders will be paid out to you automatically after the hold period.'
+                          : stripeStatus?.connected
+                          ? "You've started Stripe onboarding but haven't finished — until this is complete, your payouts will be held and customers won't be able to check out with your products."
+                          : "Connect a Stripe account so buyers can check out and you can get paid. Until this is done, your products won't be purchasable."}
+                      </p>
+                    </div>
+
+                    {message && (
+                      <div className="flex items-center gap-2 text-rose-600 font-black text-[10px] uppercase tracking-widest bg-rose-50 px-5 py-3 rounded-2xl border border-rose-100">
+                        {message}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={connectStripe}
+                      disabled={connecting || !!stripeStatus?.onboarding_complete}
+                      className="flex items-center gap-4 px-12 py-5 rounded-[2rem] bg-slate-900 text-white font-black text-xs uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-slate-900/30 disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                      {connecting ? <Loader2 className="w-4 h-4 animate-spin text-white/50" /> : <CreditCard className="w-4 h-4" />}
+                      {connecting ? 'Redirecting...' : stripeStatus?.connected ? 'Continue Onboarding' : 'Connect with Stripe'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
