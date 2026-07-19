@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Analytics from "@/components/Analytics";
 import CookieBanner from "@/components/CookieBanner";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { CartProvider } from "@/hooks/useCart";
 import { generateMetadata as generateSEOMetadata, generateStructuredData } from "@/lib/seo";
 
@@ -33,10 +34,20 @@ export const metadata: Metadata = {
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ] },
-  manifest: '/site.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Yuumpy' },
   other: {
     'msapplication-TileColor': '#2563eb',
     'msapplication-config': '/browserconfig.xml' } };
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: '#2563eb' };
 
 export default function RootLayout({
   children }: Readonly<{
@@ -59,6 +70,7 @@ export default function RootLayout({
         )}
         <CartProvider>
           <Analytics />
+          <ServiceWorkerRegister />
           {children}
           <CookieBanner />
         </CartProvider>
