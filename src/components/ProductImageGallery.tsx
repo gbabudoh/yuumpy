@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { ZoomIn } from 'lucide-react';
+import ImageLightbox from '@/components/ImageLightbox';
 
 interface ProductImageGalleryProps {
   images: string[];
@@ -10,6 +12,17 @@ interface ProductImageGalleryProps {
 
 export default function ProductImageGallery({ images, productName }: ProductImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isZooming, setIsZooming] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    setZoomPosition({
+      x: ((e.clientX - left) / width) * 100,
+      y: ((e.clientY - top) / height) * 100,
+    });
+  };
 
   // Ensure we have at least one image
   const displayImages = images.length > 0 ? images : ['https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600'];
@@ -52,15 +65,25 @@ export default function ProductImageGallery({ images, productName }: ProductImag
       {/* Main Image and Mobile Thumbnails */}
       <div className="flex-1 space-y-4 order-2">
         {/* Main Image */}
-        <div className="aspect-square bg-white rounded-xl shadow-lg overflow-hidden">
+        <div
+          className="relative aspect-square bg-white rounded-xl shadow-lg overflow-hidden cursor-zoom-in group/zoom"
+          onMouseEnter={() => setIsZooming(true)}
+          onMouseLeave={() => setIsZooming(false)}
+          onMouseMove={handleMouseMove}
+          onClick={() => setLightboxOpen(true)}
+        >
           <Image
             src={displayImages[currentImageIndex]}
             alt={productName}
             width={600}
             height={600}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-200 ease-out"
+            style={isZooming ? { transform: 'scale(2)', transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%` } : undefined}
             priority
           />
+          <div className="absolute bottom-3 right-3 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover/zoom:opacity-100 transition-opacity pointer-events-none">
+            <ZoomIn className="w-4 h-4" />
+          </div>
         </div>
 
         {/* Thumbnail Gallery - Horizontal on Mobile Only */}
@@ -88,6 +111,15 @@ export default function ProductImageGallery({ images, productName }: ProductImag
           </div>
         )}
       </div>
+
+      {lightboxOpen && (
+        <ImageLightbox
+          images={displayImages}
+          initialIndex={currentImageIndex}
+          productName={productName}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }
