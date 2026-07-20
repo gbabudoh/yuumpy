@@ -36,10 +36,12 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
   const [isListening, setIsListening] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [callError, setCallError] = useState<string | null>(null);
+  const [activeBuyerName, setActiveBuyerName] = useState('');
 
   const roomRef = useRef<Room | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoTrackRef = useRef<RemoteTrack | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const listenerRoomsRef = useRef<Room[]>([]);
@@ -130,6 +132,32 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
     }
   }, [isConnected, activeMode]);
 
+  // Attach remote video once connected and the element is rendered — the
+  // track can arrive (TrackSubscribed) before this element even exists in
+  // the DOM (it's gated behind isConnected), so the initial attach attempt
+  // in the event handler silently no-ops with nothing to retry it. Storing
+  // the track and retrying here the same way the local preview already does
+  // fixes that.
+  useEffect(() => {
+    if (!isConnected || activeMode !== 'video') return;
+
+    const attachRemote = () => {
+      if (remoteVideoTrackRef.current && remoteVideoRef.current) {
+        remoteVideoTrackRef.current.attach(remoteVideoRef.current);
+        return true;
+      }
+      return false;
+    };
+
+    if (!attachRemote()) {
+      let attempts = 0;
+      const iv = setInterval(() => {
+        if (attachRemote() || ++attempts > 20) clearInterval(iv);
+      }, 200);
+      return () => clearInterval(iv);
+    }
+  }, [isConnected, activeMode]);
+
   // Listen for incoming connections on all 3 room types
   useEffect(() => {
     if (!storeSlug || !sellerId) return;
@@ -212,6 +240,7 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
   const acceptRequest = useCallback(async (request: IncomingRequest) => {
     setIsConnecting(true);
     setActiveMode(request.mode);
+    setActiveBuyerName(request.buyerName);
     setCallError(null);
 
     try {
@@ -256,11 +285,17 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
       });
 
       room.on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => {
-        if (track.kind === Track.Kind.Video && remoteVideoRef.current) track.attach(remoteVideoRef.current);
+        if (track.kind === Track.Kind.Video) {
+          remoteVideoTrackRef.current = track;
+          if (remoteVideoRef.current) track.attach(remoteVideoRef.current);
+        }
         if (track.kind === Track.Kind.Audio && remoteAudioRef.current) track.attach(remoteAudioRef.current);
       });
 
-      room.on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => { track.detach(); });
+      room.on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => {
+        track.detach();
+        if (track === remoteVideoTrackRef.current) remoteVideoTrackRef.current = null;
+      });
 
       room.on(RoomEvent.ParticipantDisconnected, () => {
         // Buyer left
@@ -360,6 +395,7 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
     if (roomRef.current) { roomRef.current.disconnect(); roomRef.current = null; }
     setIsConnected(false);
     setActiveMode(null);
+    setActiveBuyerName('');
     setMessages([]);
     setIsMuted(false);
     setIsCameraOff(false);
@@ -420,6 +456,7 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
             {activeMode === 'video' && <Video className="w-4 h-4 text-white" />}
             <span className="text-sm font-bold text-white">
               {activeMode === 'chat' ? 'Chat' : activeMode === 'voice' ? 'Voice Call' : 'Video Call'}
+              {activeBuyerName && ` — ${activeBuyerName}`}
             </span>
           </div>
           <button onClick={disconnect} className="p-1 hover:bg-white/20 rounded transition-colors cursor-pointer">
@@ -506,8 +543,16 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
           <div>
             <div className="relative bg-black aspect-video">
               <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-              <video ref={localVideoRef} autoPlay playsInline muted
-                className="absolute bottom-2 right-2 w-24 h-18 rounded-lg object-cover border-2 border-white/30" />
+              <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/50 text-white text-[11px] font-semibold">
+                {activeBuyerName || 'Buyer'}
+              </span>
+              <div className="absolute bottom-2 right-2 w-24 h-18">
+                <video ref={localVideoRef} autoPlay playsInline muted
+                  className="w-full h-full rounded-lg object-cover border-2 border-white/30" />
+                <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-white text-[9px] font-semibold">
+                  You
+                </span>
+              </div>
               <audio ref={remoteAudioRef} autoPlay />
             </div>
             <div className="flex items-center justify-center gap-3 p-3" style={{ background: 'rgba(0,0,0,0.5)' }}>
