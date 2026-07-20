@@ -1,6 +1,6 @@
 'use client';
 
-import { useSellerContext } from '../layout';
+import { useSellerContext } from '@/hooks/useSellerContext';
 import { useState, useEffect } from 'react';
 
 import {

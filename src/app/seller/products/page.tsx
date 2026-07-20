@@ -1,6 +1,6 @@
 'use client';
 
-import { useSellerContext } from '../layout';
+import { useSellerContext } from '@/hooks/useSellerContext';
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';

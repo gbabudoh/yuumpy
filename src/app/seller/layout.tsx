@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -24,41 +24,7 @@ import {
 } from 'lucide-react';
 import SellerPresenceHeartbeat from '@/components/SellerPresenceHeartbeat';
 import SellerIncomingComms from '@/components/SellerIncomingComms';
-
-interface Seller {
-  id: number;
-  store_name: string;
-  store_slug: string;
-  email: string;
-  status: string;
-  logo_url: string;
-  banner_url: string;
-  description: string;
-  total_sales: number;
-  total_orders: number;
-  average_rating: number;
-  commission_rate: number;
-  phone: string;
-  website: string;
-  city: string;
-  state_province: string;
-  postal_code: string;
-  country: string;
-  artisan_story?: string;
-  studio_images?: string;
-  specialties?: string;
-  social_links?: string;
-  profile_video_url?: string;
-}
-
-const SellerContext = createContext<{ seller: Seller | null; loading: boolean }>({
-  seller: null,
-  loading: true,
-});
-
-export function useSellerContext() {
-  return useContext(SellerContext);
-}
+import { SellerContext, type Seller } from '@/hooks/useSellerContext';
 
 const navItems = [
   { href: '/seller/dashboard', label: 'Dashboard', icon: LayoutDashboard },
