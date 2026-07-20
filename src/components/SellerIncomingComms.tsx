@@ -517,8 +517,9 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
         style={{
           background: totalIncoming > 0
             ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-            : 'rgba(255,255,255,0.1)',
+            : 'rgba(15,23,42,0.95)',
           border: '1px solid rgba(255,255,255,0.15)',
+          backdropFilter: 'blur(12px)',
         }}
       >
         <Bell className={`w-6 h-6 ${totalIncoming > 0 ? 'text-white animate-bounce' : 'text-gray-400'}`} />
