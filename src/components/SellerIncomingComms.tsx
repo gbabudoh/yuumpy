@@ -265,6 +265,21 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
         setMessages(prev => [...prev, { sender: 'system', text: 'Buyer has disconnected.', timestamp: new Date() }]);
       });
 
+      // Server-initiated disconnect (duplicate identity, room policy, network
+      // drop, etc.) — previously unhandled, so an accepted call could go dead
+      // with no explanation on the seller's side either. disconnect() clears
+      // roomRef.current synchronously before its own 'disconnected' event
+      // fires, so checking the ref distinguishes a hangup from a real drop.
+      room.on(RoomEvent.Disconnected, (reason) => {
+        console.warn('LiveKit room disconnected:', reason);
+        if (roomRef.current === room) {
+          roomRef.current = null;
+          setIsConnected(false);
+          setActiveMode(null);
+          setCallError('The call ended unexpectedly. Please try again.');
+        }
+      });
+
       await room.connect(livekitUrl, token);
       
       // Give the engine a moment to fully stabilize before publishing

@@ -217,6 +217,24 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
 
       room.on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => { track.detach(); });
 
+      // Server-initiated disconnect (duplicate identity, room policy, network
+      // drop, etc.) — previously unhandled, so the call would just go dead
+      // with no explanation. disconnect() clears roomRef.current synchronously
+      // before triggering its own 'disconnected' event, so checking the ref
+      // here distinguishes an intentional hangup from an unexpected drop.
+      room.on(RoomEvent.Disconnected, (reason) => {
+        console.warn('LiveKit room disconnected:', reason);
+        if (roomRef.current === room) {
+          roomRef.current = null;
+          stopRingback();
+          if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
+          setIsConnected(false);
+          setIsRinging(false);
+          setMode(null);
+          setError('The call ended unexpectedly. Please try again.');
+        }
+      });
+
       // Detect when seller actually joins the room (answers the call)
       room.on(RoomEvent.ParticipantConnected, (p) => {
         try {
