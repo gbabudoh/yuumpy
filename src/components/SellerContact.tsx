@@ -292,8 +292,24 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
       }
     } catch (err) {
       console.error('Connection error:', err);
-      setError('Could not connect. Please try again later.');
+
+      // getUserMedia rejects with NotAllowedError when the browser/site has
+      // blocked mic or camera access — no amount of retrying fixes that, so
+      // give the buyer something actionable instead of a generic message.
+      const isPermissionDenied = err instanceof Error && err.name === 'NotAllowedError';
+      setError(
+        isPermissionDenied
+          ? `${mode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. Please allow access in your browser's site settings and try again.`
+          : 'Could not connect. Please try again later.'
+      );
       stopRingback();
+
+      // A room connection may have succeeded even though publishing tracks
+      // failed — disconnect it so it doesn't linger in the background.
+      if (roomRef.current) {
+        roomRef.current.disconnect();
+        roomRef.current = null;
+      }
     } finally {
       setIsConnecting(false);
     }

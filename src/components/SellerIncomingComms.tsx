@@ -35,6 +35,7 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
   const [incomingRequests, setIncomingRequests] = useState<IncomingRequest[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [callError, setCallError] = useState<string | null>(null);
 
   const roomRef = useRef<Room | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -202,9 +203,16 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
     };
   }, [storeSlug, sellerId]);
 
+  useEffect(() => {
+    if (!callError) return;
+    const timeout = setTimeout(() => setCallError(null), 8000);
+    return () => clearTimeout(timeout);
+  }, [callError]);
+
   const acceptRequest = useCallback(async (request: IncomingRequest) => {
     setIsConnecting(true);
     setActiveMode(request.mode);
+    setCallError(null);
 
     try {
       const res = await fetch('/api/livekit/token', {
@@ -293,6 +301,23 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
       }
     } catch (err) {
       console.error('Failed to accept:', err);
+
+      // getUserMedia rejects with NotAllowedError when the browser/site has
+      // blocked mic or camera access — no amount of retrying fixes that, so
+      // give the seller something actionable instead of a silent failure.
+      const isPermissionDenied = err instanceof Error && err.name === 'NotAllowedError';
+      setCallError(
+        isPermissionDenied
+          ? `${request.mode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. Please allow access in your browser's site settings and try again.`
+          : 'Could not connect the call. Please try again.'
+      );
+
+      // A room connection may have succeeded even though publishing tracks
+      // failed — disconnect it so it doesn't linger in the background.
+      if (roomRef.current) {
+        roomRef.current.disconnect();
+        roomRef.current = null;
+      }
       setActiveMode(null);
     } finally {
       setIsConnecting(false);
@@ -467,6 +492,17 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
   // Floating notification panel
   return (
     <div className="fixed bottom-4 right-4 z-50">
+      {callError && (
+        <div className="mb-3 w-72 rounded-2xl overflow-hidden shadow-2xl bg-white border border-rose-100 p-4">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm text-rose-600 font-medium leading-snug">{callError}</p>
+            <button onClick={() => setCallError(null)} className="p-1 -m-1 text-gray-400 hover:text-gray-600 shrink-0 cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Expanded panel with incoming requests */}
       {expanded && totalIncoming > 0 && (
         <div className="mb-3 w-80 rounded-2xl overflow-hidden shadow-2xl" style={{
