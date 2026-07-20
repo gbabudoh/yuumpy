@@ -323,10 +323,14 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
             // seller has even answered, so it must not read as a fatal
             // failure or clash with the "still ringing" UI.
             console.error('Failed to publish audio/video after retry:', retryErr);
-            const isPermissionDenied = retryErr instanceof Error && retryErr.name === 'NotAllowedError';
+            const errName = retryErr instanceof Error ? retryErr.name : '';
+            const isDeviceBusy = errName === 'NotReadableError' || errName === 'TrackStartError';
+            const isPermissionDenied = errName === 'NotAllowedError';
             setMediaWarning(
-              isPermissionDenied
-                ? `${contactMode === 'video' ? 'Camera and microphone' : 'Microphone'} access is blocked — the seller won't hear/see you until you allow access and try again.`
+              isDeviceBusy
+                ? `Your ${contactMode === 'video' ? 'camera or microphone' : 'microphone'} appears to be in use by another tab or app — the seller won't hear/see you until it's free. Close it and try again.`
+                : isPermissionDenied
+                ? `${contactMode === 'video' ? 'Camera and microphone' : 'Microphone'} access is blocked — this can happen if access was denied, or if another tab or app is already using the camera. Allow access (or close the other app) and try again.`
                 : "Couldn't enable your microphone/camera — the seller may not hear/see you."
             );
           }
@@ -367,10 +371,14 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
       // getUserMedia rejects with NotAllowedError when the browser/site has
       // blocked mic or camera access — no amount of retrying fixes that, so
       // give the buyer something actionable instead of a generic message.
-      const isPermissionDenied = err instanceof Error && err.name === 'NotAllowedError';
+      const errName = err instanceof Error ? err.name : '';
+      const isDeviceBusy = errName === 'NotReadableError' || errName === 'TrackStartError';
+      const isPermissionDenied = errName === 'NotAllowedError';
       setError(
-        isPermissionDenied
-          ? `${mode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. Please allow access in your browser's site settings and try again.`
+        isDeviceBusy
+          ? `Your ${mode === 'video' ? 'camera or microphone' : 'microphone'} appears to be in use by another tab or app. Close it and try again.`
+          : isPermissionDenied
+          ? `${mode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. This can happen if access was denied, or if another tab or app is already using the camera. Allow access (or close the other app) and try again.`
           : 'Could not connect. Please try again later.'
       );
       stopRingback();

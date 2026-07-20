@@ -348,10 +348,14 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
             // instead of disconnecting (that was the regression: an outer
             // catch previously killed the whole call for this exact case).
             console.error('Failed to publish audio/video after retry:', retryErr);
-            const isPermissionDenied = retryErr instanceof Error && retryErr.name === 'NotAllowedError';
+            const errName = retryErr instanceof Error ? retryErr.name : '';
+            const isDeviceBusy = errName === 'NotReadableError' || errName === 'TrackStartError';
+            const isPermissionDenied = errName === 'NotAllowedError';
             setCallError(
-              isPermissionDenied
-                ? `${request.mode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. The call is connected, but the buyer may not hear/see you until you allow access.`
+              isDeviceBusy
+                ? `Your ${request.mode === 'video' ? 'camera or microphone' : 'microphone'} appears to be in use by another tab or app. The call is connected, but the buyer won't hear/see you until it's free.`
+                : isPermissionDenied
+                ? `${request.mode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. This can happen if access was denied, or if another tab or app is already using the camera. The call is connected, but the buyer may not hear/see you until you allow access.`
                 : "Couldn't enable your microphone/camera, but the call is still connected."
             );
           }
@@ -372,10 +376,14 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
       // getUserMedia rejects with NotAllowedError when the browser/site has
       // blocked mic or camera access — no amount of retrying fixes that, so
       // give the seller something actionable instead of a silent failure.
-      const isPermissionDenied = err instanceof Error && err.name === 'NotAllowedError';
+      const errName = err instanceof Error ? err.name : '';
+      const isDeviceBusy = errName === 'NotReadableError' || errName === 'TrackStartError';
+      const isPermissionDenied = errName === 'NotAllowedError';
       setCallError(
-        isPermissionDenied
-          ? `${request.mode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. Please allow access in your browser's site settings and try again.`
+        isDeviceBusy
+          ? `Your ${request.mode === 'video' ? 'camera or microphone' : 'microphone'} appears to be in use by another tab or app. Close it and try again.`
+          : isPermissionDenied
+          ? `${request.mode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. This can happen if access was denied, or if another tab or app is already using the camera. Allow access (or close the other app) and try again.`
           : 'Could not connect the call. Please try again.'
       );
 
