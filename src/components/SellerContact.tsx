@@ -28,6 +28,7 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mediaWarning, setMediaWarning] = useState<string | null>(null);
   const [sellerOnline, setSellerOnline] = useState<boolean | null>(null);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -204,6 +205,7 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
     if (!contactMode) return;
     setIsConnecting(true);
     setError(null);
+    setMediaWarning(null);
 
     try {
       const roomName = `seller-${sellerSlug}-${contactMode}`;
@@ -317,12 +319,15 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
             // mic/camera failed twice. Surface it as a non-fatal warning
             // instead of disconnecting (that was the regression: an outer
             // catch previously killed the whole call for this exact case).
+            // Uses separate state from `error`: this can fire before the
+            // seller has even answered, so it must not read as a fatal
+            // failure or clash with the "still ringing" UI.
             console.error('Failed to publish audio/video after retry:', retryErr);
             const isPermissionDenied = retryErr instanceof Error && retryErr.name === 'NotAllowedError';
-            setError(
+            setMediaWarning(
               isPermissionDenied
-                ? `${contactMode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. The call is connected, but the seller may not hear/see you until you allow access.`
-                : "Couldn't enable your microphone/camera, but the call is still connected."
+                ? `${contactMode === 'video' ? 'Camera and microphone' : 'Microphone'} access is blocked — the seller won't hear/see you until you allow access and try again.`
+                : "Couldn't enable your microphone/camera — the seller may not hear/see you."
             );
           }
         }
@@ -391,6 +396,7 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
     setIsMuted(false);
     setIsCameraOff(false);
     setError(null);
+    setMediaWarning(null);
   }, [stopRingback]);
 
   const sendMessage = useCallback(() => {
@@ -542,6 +548,18 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
           <X className="w-4 h-4 text-white" />
         </button>
       </div>
+
+      {/* Non-fatal media warning — can appear at any stage (even while still
+          ringing), so it must not claim the call is in a state it isn't and
+          must not hang up when dismissed. */}
+      {mediaWarning && (
+        <div className="px-3 py-2 flex items-start justify-between gap-2 bg-amber-50 border-b border-amber-100">
+          <p className="text-xs text-amber-700 leading-snug">{mediaWarning}</p>
+          <button onClick={() => setMediaWarning(null)} className="p-0.5 -m-0.5 text-amber-500 hover:text-amber-700 shrink-0 cursor-pointer">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Connecting */}
       {isConnecting && (
