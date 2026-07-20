@@ -9,6 +9,18 @@ interface InsertResult {
   insertId: number;
 }
 
+let videoColumnEnsured = false;
+async function ensureVideoColumn() {
+  if (videoColumnEnsured) return;
+  try {
+    await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS video_url TEXT DEFAULT NULL');
+  } catch (e) {
+    console.warn('video_url column migration failed (may already exist):', e);
+  } finally {
+    videoColumnEnsured = true;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -34,8 +46,8 @@ export async function GET(request: NextRequest) {
              p.price, p.original_price, 
              p.affiliate_url, p.affiliate_partner_name, p.external_purchase_info,
              p.purchase_type, p.product_condition, p.stock_quantity,
-             p.image_url, p.gallery,
-             p.category_id, p.subcategory_id, p.brand_id, p.is_featured, p.is_bestseller, p.is_active, 
+             p.image_url, p.gallery, p.video_url,
+             p.category_id, p.subcategory_id, p.brand_id, p.is_featured, p.is_bestseller, p.is_active,
              p.meta_title, p.meta_description, p.created_at,
              p.banner_ad_title, p.banner_ad_description, p.banner_ad_image_url, p.banner_ad_link_url,
              p.banner_ad_duration, p.banner_ad_is_repeating, p.banner_ad_start_date, p.banner_ad_end_date, p.banner_ad_is_active,
@@ -381,6 +393,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  await ensureVideoColumn();
   try {
     const body = await request.json();
     console.log('POST /api/products - Received body:', body);
@@ -401,6 +414,7 @@ export async function POST(request: NextRequest) {
       stock_quantity,
       image_url,
       gallery,
+      video_url,
       colors,
       category_id,
       subcategory_id,
@@ -460,10 +474,10 @@ export async function POST(request: NextRequest) {
         INSERT INTO products (
           name, slug, description, short_description, long_description, product_review, price, original_price,
           affiliate_url, affiliate_partner_name, external_purchase_info, purchase_type, product_condition, stock_quantity,
-          image_url, gallery, colors, category_id, subcategory_id, brand_id, is_featured, is_bestseller, is_active,
+          image_url, gallery, video_url, colors, category_id, subcategory_id, brand_id, is_featured, is_bestseller, is_active,
           meta_title, meta_description, banner_ad_title, banner_ad_description, banner_ad_image_url, banner_ad_link_url,
           banner_ad_duration, banner_ad_is_repeating, banner_ad_start_date, banner_ad_end_date, banner_ad_is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       result = await query(sql, [
@@ -483,6 +497,7 @@ export async function POST(request: NextRequest) {
         stock_quantity || null,
         image_url || null,
         gallery || null,
+        video_url || null,
         colorsJson,
         category_id || null,
         subcategory_id || null,

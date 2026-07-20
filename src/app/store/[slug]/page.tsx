@@ -1,4 +1,6 @@
+import { Metadata } from 'next';
 import { query } from '@/lib/database';
+import { generateMetadata as generateSEOMetadata, generateStructuredData } from '@/lib/seo';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StoreProductGrid from '@/components/StoreProductGrid';
@@ -10,6 +12,8 @@ import { Star, ShoppingBag, MapPin, Calendar, ShieldCheck, CheckCircle2, Store, 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
+
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com';
 
 interface SellerRow {
   id: number;
@@ -24,7 +28,31 @@ interface SellerRow {
   total_reviews: number;
   city: string;
   state_province: string;
+  country?: string;
   created_at: string;
+}
+
+async function getSeller(slug: string): Promise<SellerRow | null> {
+  const sellers = await query(
+    'SELECT * FROM sellers WHERE store_slug = ? AND status = ?',
+    [slug, 'approved']
+  ) as SellerRow[];
+  return sellers && sellers.length > 0 ? sellers[0] : null;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const seller = await getSeller(slug);
+  if (!seller) return { title: 'Store Not Found' };
+
+  return generateSEOMetadata({
+    title: `${seller.store_name} — Store`,
+    description: seller.description || `Shop ${seller.store_name} on Yuumpy, backed by the Yuumpy Guarantee.`,
+    canonical: `${baseUrl}/store/${seller.store_slug}`,
+    ogTitle: `${seller.store_name} — Yuumpy Store`,
+    ogDescription: seller.description || `Shop ${seller.store_name} on Yuumpy, backed by the Yuumpy Guarantee.`,
+    ogImage: seller.logo_url || undefined,
+  });
 }
 
 interface ProductRow {
@@ -52,12 +80,9 @@ export default async function StorefrontPage({ params }: PageProps) {
   const { slug } = await params;
 
   // Fetch seller info
-  const sellers = await query(
-    'SELECT * FROM sellers WHERE store_slug = ? AND status = ?',
-    [slug, 'approved']
-  ) as SellerRow[];
+  const seller = await getSeller(slug);
 
-  if (!sellers || sellers.length === 0) {
+  if (!seller) {
     return (
       <div className="min-h-screen bg-[#F8FAFC]">
         <Header />
@@ -78,8 +103,6 @@ export default async function StorefrontPage({ params }: PageProps) {
     );
   }
 
-  const seller = sellers[0];
-
   // Fetch seller's products
   const products = await query(
     `SELECT p.*, c.name as category_name FROM products p 
@@ -98,8 +121,23 @@ export default async function StorefrontPage({ params }: PageProps) {
     [seller.id]
   ) as ReviewRow[];
 
+  const localBusinessSchema = generateStructuredData('localBusiness', {
+    name: seller.store_name,
+    description: seller.description,
+    url: `${baseUrl}/store/${seller.store_slug}`,
+    image: seller.logo_url,
+    city: seller.city,
+    region: seller.state_province,
+    country: seller.country,
+    rating: seller.average_rating,
+    reviewCount: seller.total_reviews,
+  });
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
+      {localBusinessSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }} />
+      )}
       <Header />
 
       {/* Hero Section */}

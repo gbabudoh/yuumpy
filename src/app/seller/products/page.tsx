@@ -15,15 +15,60 @@ import {
   Globe,
   Palette,
   Shirt,
-  Footprints
+  Footprints,
+  Video
 } from 'lucide-react';
 
+// All countries of the world, excluding: Afghanistan, Iran, Iraq, Libya,
+// Somalia, Sudan, Syria, Yemen.
 const AVAILABLE_REGIONS = [
   'UK', 'Canada', 'USA',
   'Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Estonia',
   'Finland', 'France', 'Germany', 'Greece', 'Ireland', 'Italy',
   'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands',
-  'Portugal', 'Slovakia', 'Slovenia', 'Spain'
+  'Portugal', 'Slovakia', 'Slovenia', 'Spain',
+  'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda',
+  'Argentina', 'Armenia', 'Australia', 'Azerbaijan',
+  'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belize',
+  'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana',
+  'Brazil', 'Brunei', 'Burkina Faso', 'Burundi',
+  'Cabo Verde', 'Cambodia', 'Cameroon', 'Central African Republic',
+  'Chad', 'Chile', 'China', 'Colombia', 'Comoros',
+  'Congo (Republic of the)', 'Congo (Democratic Republic of the)',
+  'Costa Rica', 'Cuba', 'Czechia',
+  'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic',
+  'East Timor', 'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea',
+  'Eritrea', 'Eswatini', 'Ethiopia',
+  'Fiji',
+  'Gabon', 'Gambia', 'Georgia', 'Ghana', 'Grenada', 'Guatemala',
+  'Guinea', 'Guinea-Bissau', 'Guyana',
+  'Haiti', 'Honduras', 'Hungary',
+  'Iceland', 'India', 'Indonesia', 'Israel', 'Ivory Coast',
+  'Jamaica', 'Japan', 'Jordan',
+  'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan',
+  'Laos', 'Lebanon', 'Lesotho', 'Liberia', 'Liechtenstein',
+  'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali',
+  'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia',
+  'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco',
+  'Mozambique', 'Myanmar',
+  'Namibia', 'Nauru', 'Nepal', 'New Zealand', 'Nicaragua', 'Niger',
+  'Nigeria', 'North Korea', 'North Macedonia', 'Norway',
+  'Oman',
+  'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea',
+  'Paraguay', 'Peru', 'Philippines', 'Poland',
+  'Qatar',
+  'Romania', 'Russia', 'Rwanda',
+  'Saint Kitts and Nevis', 'Saint Lucia',
+  'Saint Vincent and the Grenadines', 'Samoa', 'San Marino',
+  'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia',
+  'Seychelles', 'Sierra Leone', 'Singapore', 'Solomon Islands',
+  'South Africa', 'South Korea', 'South Sudan', 'Sri Lanka',
+  'Suriname', 'Sweden', 'Switzerland',
+  'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Togo', 'Tonga',
+  'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu',
+  'Uganda', 'Ukraine', 'United Arab Emirates', 'Uruguay', 'Uzbekistan',
+  'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam',
+  'Zambia', 'Zimbabwe'
 ];
 
 
@@ -63,6 +108,8 @@ interface Product {
   price: string;
   original_price: string;
   image_url: string;
+  video_url: string;
+  gallery: string[] | string | null;
   category_id: number | null;
   category_name: string;
   brand_id: number | null;
@@ -100,7 +147,7 @@ function SellerProductsPageInner() {
 
   const [form, setForm] = useState({
     name: '', description: '', shortDescription: '', price: '', originalPrice: '',
-    categoryId: '', brandId: '', imageUrl: '', productCondition: 'Handcrafted', stockQuantity: '',
+    categoryId: '', brandId: '', imageUrl: '', videoUrl: '', galleryImages: [] as string[], productCondition: 'Handcrafted', stockQuantity: '',
     currency: 'USD', regions: [] as string[],
     colourVariants: [] as ColourVariant[],
     clothingSizes: [] as string[],
@@ -112,6 +159,8 @@ function SellerProductsPageInner() {
   const [showShoeSizes, setShowShoeSizes] = useState(false);
   const [uploadingVariantIdx, setUploadingVariantIdx] = useState<number | null>(null);
   const [uploadingMainImage, setUploadingMainImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -134,7 +183,7 @@ function SellerProductsPageInner() {
   };
 
   const resetForm = () => {
-    setForm({ name: '', description: '', shortDescription: '', price: '', originalPrice: '', categoryId: '', brandId: '', imageUrl: '', productCondition: 'Handcrafted', stockQuantity: '', currency: 'USD', regions: [], colourVariants: [], clothingSizes: [], shoeSizes: [], shoeSizeSystem: 'UK' });
+    setForm({ name: '', description: '', shortDescription: '', price: '', originalPrice: '', categoryId: '', brandId: '', imageUrl: '', videoUrl: '', galleryImages: [], productCondition: 'Handcrafted', stockQuantity: '', currency: 'USD', regions: [], colourVariants: [], clothingSizes: [], shoeSizes: [], shoeSizeSystem: 'UK' });
     setShowColours(false); setShowClothingSizes(false); setShowShoeSizes(false);
     setUploadingVariantIdx(null);
     setEditingProduct(null);
@@ -151,6 +200,7 @@ function SellerProductsPageInner() {
     const parsedColours = parseJson<ColourVariant[]>(product.colour_variants, []);
     const parsedClothing = parseJson<string[]>(product.clothing_sizes, []);
     const parsedShoeData = parseJson<{ system: string; sizes: string[] }>(product.shoe_sizes, { system: 'UK', sizes: [] });
+    const parsedGallery = parseJson<string[]>(product.gallery, []);
 
     setForm({
       name: product.name,
@@ -161,6 +211,8 @@ function SellerProductsPageInner() {
       categoryId: product.category_id?.toString() || '',
       brandId: product.brand_id?.toString() || '',
       imageUrl: product.image_url || '',
+      videoUrl: product.video_url || '',
+      galleryImages: parsedGallery,
       productCondition: product.product_condition || 'new',
       stockQuantity: product.stock_quantity?.toString() || '',
       currency: product.currency || 'USD',
@@ -187,7 +239,9 @@ function SellerProductsPageInner() {
       price: parseFloat(form.price), originalPrice: form.originalPrice ? parseFloat(form.originalPrice) : null,
       categoryId: form.categoryId ? parseInt(form.categoryId) : null,
       brandId: form.brandId ? parseInt(form.brandId) : null,
-      imageUrl: form.imageUrl, productCondition: form.productCondition,
+      imageUrl: form.imageUrl, videoUrl: form.videoUrl,
+      gallery: form.galleryImages.length > 0 ? JSON.stringify(form.galleryImages) : null,
+      productCondition: form.productCondition,
       stockQuantity: form.stockQuantity ? parseInt(form.stockQuantity) : null,
       currency: form.currency,
       regions: form.regions,
@@ -256,6 +310,40 @@ function SellerProductsPageInner() {
         setForm(f => ({ ...f, imageUrl: data.url }));
       }
     } catch { } finally { setUploadingMainImage(false); }
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    setUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'yuumpy/products/videos');
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.url) {
+        setForm(f => ({ ...f, videoUrl: data.url }));
+      }
+    } catch { } finally { setUploadingVideo(false); }
+  };
+
+  const handleGalleryImagesUpload = async (files: FileList) => {
+    setUploadingGallery(true);
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'yuumpy/products/gallery');
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.url) {
+          setForm(f => ({ ...f, galleryImages: [...f.galleryImages, data.url] }));
+        }
+      }
+    } catch { } finally { setUploadingGallery(false); }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setForm(f => ({ ...f, galleryImages: f.galleryImages.filter((_, i) => i !== index) }));
   };
 
   const getRegions = (product: Product): string[] => {
@@ -330,117 +418,129 @@ function SellerProductsPageInner() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-8">
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Product Name *</label>
+                <input
+                  className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold placeholder:text-slate-300 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
+                  placeholder="e.g. iPhone 15 Pro Max - 256GB - Titanium"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Product Name *</label>
-                  <input 
-                    className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold placeholder:text-slate-300 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
-                    placeholder="e.g. iPhone 15 Pro Max - 256GB - Titanium"
-                    value={form.name} 
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))} 
-                    required 
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Currency</label>
-                    <div className="relative">
-                      <select 
-                        className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer"
-                        value={form.currency} 
-                        onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
-                      >
-                        <option value="USD">USA (USD $)</option>
-                        <option value="GBP">UK (GBP £)</option>
-                        <option value="EUR">Europe (EUR €)</option>
-                        <option value="CAD">Canada (CAD C$)</option>
-                      </select>
-                      <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Price *</label>
-                    <div className="relative group">
-                      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">
-                        <span className="text-sm font-bold">
-                          {form.currency === 'GBP' ? '£' : form.currency === 'EUR' ? '€' : form.currency === 'CAD' ? 'C$' : '$'}
-                        </span>
-                      </div>
-                      <input 
-                        type="number" 
-                        step="0.01" 
-                        className="w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
-                        placeholder="0.00"
-                        value={form.price} 
-                        onChange={e => setForm(f => ({ ...f, price: e.target.value }))} 
-                        required 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Original Price</label>
-                    <div className="relative group">
-                      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
-                        <span className="text-sm font-bold">
-                          {form.currency === 'GBP' ? '£' : form.currency === 'EUR' ? '€' : form.currency === 'CAD' ? 'C$' : '$'}
-                        </span>
-                      </div>
-                      <input 
-                        type="number" 
-                        step="0.01" 
-                        className="w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-400 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
-                        placeholder="0.00"
-                        value={form.originalPrice} 
-                        onChange={e => setForm(f => ({ ...f, originalPrice: e.target.value }))} 
-                      />
-                    </div>
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Currency</label>
+                  <div className="relative">
+                    <select
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer"
+                      value={form.currency}
+                      onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
+                    >
+                      <option value="USD">USA (USD $)</option>
+                      <option value="GBP">UK (GBP £)</option>
+                      <option value="EUR">Europe (EUR €)</option>
+                      <option value="CAD">Canada (CAD C$)</option>
+                    </select>
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Product Category</label>
-                    <div className="relative">
-                      <select 
-                        className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer"
-                        value={form.categoryId} 
-                        onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
-                      >
-                        <option value="">Select Category</option>
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                      <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Price *</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                      <span className="text-sm font-bold">
+                        {form.currency === 'GBP' ? '£' : form.currency === 'EUR' ? '€' : form.currency === 'CAD' ? 'C$' : '$'}
+                      </span>
                     </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
+                      placeholder="0.00"
+                      value={form.price}
+                      onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                      required
+                    />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Brand</label>
-                    <div className="relative">
-                      <select 
-                        className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer"
-                        value={form.brandId} 
-                        onChange={e => setForm(f => ({ ...f, brandId: e.target.value }))}
-                      >
-                        <option value="">Select Brand</option>
-                        {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                      </select>
-                      <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Original Price</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
+                      <span className="text-sm font-bold">
+                        {form.currency === 'GBP' ? '£' : form.currency === 'EUR' ? '€' : form.currency === 'CAD' ? 'C$' : '$'}
+                      </span>
                     </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-400 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
+                      placeholder="0.00"
+                      value={form.originalPrice}
+                      onChange={e => setForm(f => ({ ...f, originalPrice: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Stock Quantity</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
+                      <Box className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="number"
+                      className="w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
+                      placeholder="0"
+                      value={form.stockQuantity}
+                      onChange={e => setForm(f => ({ ...f, stockQuantity: e.target.value }))}
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Product Category</label>
+                  <div className="relative">
+                    <select
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer"
+                      value={form.categoryId}
+                      onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Brand</label>
+                  <div className="relative">
+                    <select
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer"
+                      value={form.brandId}
+                      onChange={e => setForm(f => ({ ...f, brandId: e.target.value }))}
+                    >
+                      <option value="">Select Brand</option>
+                      {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Condition</label>
                   <div className="relative">
-                    <select 
+                    <select
                       className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer"
-                      value={form.productCondition} 
+                      value={form.productCondition}
                       onChange={e => setForm(f => ({ ...f, productCondition: e.target.value }))}
                     >
                       <option value="Handcrafted">Handcrafted (Made entirely from raw materials)</option>
@@ -456,64 +556,117 @@ function SellerProductsPageInner() {
                     <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Stock Quantity</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
-                      <Box className="w-4 h-4" />
-                    </div>
-                    <input 
-                      type="number" 
-                      className="w-full pl-12 pr-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
-                      placeholder="0"
-                      value={form.stockQuantity} 
-                      onChange={e => setForm(f => ({ ...f, stockQuantity: e.target.value }))} 
-                    />
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Product Media</label>
+                <div className="flex flex-wrap gap-4">
+                  {/* Main Image */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[9px] font-bold text-slate-300 uppercase tracking-wider text-center">Main</span>
+                    {form.imageUrl ? (
+                      <div className="relative w-36 h-36 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+                        <Image src={form.imageUrl} alt="Product" width={144} height={144} className="w-full h-full object-cover" />
+                        <div className="absolute bottom-1.5 left-1.5 right-1.5 flex gap-1.5">
+                          <label className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-white/90 backdrop-blur text-slate-700 hover:bg-white cursor-pointer transition-all shadow-sm">
+                            <Edit2 className="w-3 h-3" />
+                            <input type="file" accept="image/*" className="hidden"
+                              onChange={e => { const f = e.target.files?.[0]; if (f) handleMainImageUpload(f); }} />
+                          </label>
+                          <button type="button" onClick={() => setForm(f => ({ ...f, imageUrl: '' }))}
+                            className="flex items-center justify-center px-2 py-1.5 rounded-lg bg-white/90 backdrop-blur text-rose-500 hover:bg-white cursor-pointer transition-all shadow-sm">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-36 h-36 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-300 cursor-pointer overflow-hidden transition-all group">
+                        {uploadingMainImage ? (
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500" />
+                        ) : (
+                          <>
+                            <Plus className="w-6 h-6 mb-1 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                            <span className="text-[10px] font-bold text-slate-300 group-hover:text-indigo-400 transition-colors">Add Image</span>
+                          </>
+                        )}
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handleMainImageUpload(f); }} />
+                      </label>
+                    )}
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Product Image</label>
-                  {form.imageUrl ? (
-                    <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
-                      <Image src={form.imageUrl} alt="Product" width={300} height={300} className="w-full h-full object-cover" />
-                      <div className="absolute bottom-2 left-2 right-2 flex gap-2">
-                        <label className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/90 backdrop-blur text-xs font-black text-slate-700 hover:bg-white cursor-pointer transition-all shadow-sm">
-                          <Edit2 className="w-3.5 h-3.5" /> Change
-                          <input type="file" accept="image/*" className="hidden"
-                            onChange={e => { const f = e.target.files?.[0]; if (f) handleMainImageUpload(f); }} />
-                        </label>
-                        <button type="button" onClick={() => setForm(f => ({ ...f, imageUrl: '' }))}
-                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white/90 backdrop-blur text-xs font-black text-rose-500 hover:bg-white cursor-pointer transition-all shadow-sm">
-                          <Trash2 className="w-3.5 h-3.5" />
+                  {/* Video */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[9px] font-bold text-slate-300 uppercase tracking-wider text-center">Video (optional)</span>
+                    {form.videoUrl ? (
+                      <div className="relative w-36 h-36 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+                        <video src={form.videoUrl} className="w-full h-full object-cover" controls />
+                        <div className="absolute bottom-1.5 left-1.5 right-1.5 flex gap-1.5">
+                          <label className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-white/90 backdrop-blur text-slate-700 hover:bg-white cursor-pointer transition-all shadow-sm">
+                            <Edit2 className="w-3 h-3" />
+                            <input type="file" accept="video/*" className="hidden"
+                              onChange={e => { const f = e.target.files?.[0]; if (f) handleVideoUpload(f); }} />
+                          </label>
+                          <button type="button" onClick={() => setForm(f => ({ ...f, videoUrl: '' }))}
+                            className="flex items-center justify-center px-2 py-1.5 rounded-lg bg-white/90 backdrop-blur text-rose-500 hover:bg-white cursor-pointer transition-all shadow-sm">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-36 h-36 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-300 cursor-pointer overflow-hidden transition-all group">
+                        {uploadingVideo ? (
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500" />
+                        ) : (
+                          <>
+                            <Video className="w-6 h-6 mb-1 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                            <span className="text-[10px] font-bold text-slate-300 group-hover:text-indigo-400 transition-colors">Add Video</span>
+                            <span className="text-[8px] text-slate-300 mt-0.5 px-2 text-center">up to 50MB</span>
+                          </>
+                        )}
+                        <input type="file" accept="video/*" className="hidden"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handleVideoUpload(f); }} />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Gallery images */}
+                  {form.galleryImages.map((img, idx) => (
+                    <div key={idx} className="space-y-1.5">
+                      <span className="block text-[9px] font-bold text-slate-300 uppercase tracking-wider text-center">Gallery {idx + 1}</span>
+                      <div className="relative w-36 h-36 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+                        <Image src={img} alt={`Gallery image ${idx + 1}`} width={144} height={144} className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removeGalleryImage(idx)}
+                          className="absolute bottom-1.5 right-1.5 flex items-center justify-center px-2 py-1.5 rounded-lg bg-white/90 backdrop-blur text-rose-500 hover:bg-white cursor-pointer transition-all shadow-sm">
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    <label className="block w-full aspect-square rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-300 cursor-pointer overflow-hidden transition-all group">
-                      <div className="flex flex-col items-center justify-center h-full text-slate-300 group-hover:text-indigo-400 transition-colors">
-                        {uploadingMainImage ? (
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
-                        ) : (
-                          <>
-                            <Plus className="w-8 h-8 mb-1" />
-                            <span className="text-[11px] font-bold">Upload Image</span>
-                            <span className="text-[10px] text-slate-300 mt-0.5">Click to browse</span>
-                          </>
-                        )}
-                      </div>
-                      <input type="file" accept="image/*" className="hidden"
-                        onChange={e => { const f = e.target.files?.[0]; if (f) handleMainImageUpload(f); }} />
+                  ))}
+
+                  {/* Add gallery images */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[9px] font-bold text-slate-300 uppercase tracking-wider text-center">&nbsp;</span>
+                    <label className="flex flex-col items-center justify-center w-36 h-36 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-300 cursor-pointer overflow-hidden transition-all group">
+                      {uploadingGallery ? (
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500" />
+                      ) : (
+                        <>
+                          <Plus className="w-6 h-6 mb-1 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                          <span className="text-[10px] font-bold text-slate-300 group-hover:text-indigo-400 transition-colors text-center px-2">Add Gallery Images</span>
+                        </>
+                      )}
+                      <input type="file" accept="image/*" multiple className="hidden"
+                        onChange={e => { if (e.target.files && e.target.files.length > 0) handleGalleryImagesUpload(e.target.files); e.target.value = ''; }} />
                     </label>
-                  )}
+                  </div>
                 </div>
               </div>
 
-              <div className="md:col-span-2 lg:col-span-3 space-y-2">
+              <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Short Description</label>
-                <textarea 
-                  rows={2} 
+                <textarea
+                  rows={2}
                   className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-bold placeholder:text-slate-300 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all resize-none"
                   placeholder="Brief summary of your product..."
                   value={form.shortDescription} 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { generateStructuredData } from '@/lib/seo';
 import { Star, CheckCircle, ShieldCheck, RefreshCw, HeartHandshake } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -9,8 +10,20 @@ export const metadata: Metadata = {
 };
 
 export default function BuyerGuarantee() {
+  const faqSchema = generateStructuredData('faq', {
+    items: [
+      {
+        question: 'What Is the Yuumpy Buyer Guarantee?',
+        answer: "The Yuumpy Buyer Guarantee means that when you shop on our platform, you are covered if your order doesn't arrive, arrives damaged, or is significantly different from what was described. We stand behind every transaction made on Yuumpy. Combined with our escrow payment system, the Buyer Guarantee gives you the strongest possible protection when shopping with verified sellers.",
+      },
+    ],
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {faqSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      )}
       <Header />
 
       <main className="container mx-auto px-4 py-16">

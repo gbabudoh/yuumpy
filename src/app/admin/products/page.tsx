@@ -35,6 +35,7 @@ interface Product {
   stock_quantity?: number;
   image_url: string;
   gallery?: string[];
+  video_url?: string;
   colors?: string | string[] | ColorOption[] | null;
   category_name: string;
   category_id?: number;
@@ -158,6 +159,8 @@ export default function ProductsPage() {
   const [loadingSubcategories, setLoadingSubcategories] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   const [bannerAdImagePreview, setBannerAdImagePreview] = useState<string | null>(null);
   const [selectedBannerAdImage, setSelectedBannerAdImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -458,6 +461,7 @@ export default function ProductsPage() {
       const method = editingProduct ? 'PUT' : 'POST';
       
       let imageUrl = imagePreview || '';
+      let videoUrl = videoPreview || '';
       let bannerAdImageUrl = bannerAdImagePreview || '';
       let finalGalleryImages: string[] = [...galleryImages];
       const uploadedGalleryUrls: string[] = [];
@@ -487,6 +491,37 @@ export default function ProductsPage() {
         } catch (uploadError) {
           console.error('Upload error:', uploadError);
           alert(`Failed to upload product image: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+          return;
+        } finally {
+          setUploading(false);
+        }
+      }
+
+      // Upload new product video if selected
+      if (selectedVideo) {
+        setUploading(true);
+        try {
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', selectedVideo);
+          uploadFormData.append('folder', 'yuumpy/products/videos');
+
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: uploadFormData
+          });
+
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+            videoUrl = uploadResult.url;
+            console.log('Product video uploaded successfully:', videoUrl);
+          } else {
+            const errorResult = await uploadResponse.json().catch(() => ({ error: 'Unknown upload error' }));
+            console.error('Video upload API error:', errorResult);
+            throw new Error(errorResult.error || errorResult.details || 'Failed to upload product video');
+          }
+        } catch (uploadError) {
+          console.error('Video upload error:', uploadError);
+          alert(`Failed to upload product video: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
           return;
         } finally {
           setUploading(false);
@@ -560,14 +595,14 @@ export default function ProductsPage() {
         }
       }
       
-      await submitProduct(url, method, imageUrl, bannerAdImageUrl, finalGalleryImages);
+      await submitProduct(url, method, imageUrl, videoUrl, bannerAdImageUrl, finalGalleryImages);
     } catch (error) {
       console.error('Error saving product:', error);
       alert('An error occurred while saving the product');
     }
   };
 
-  const submitProduct = async (url: string, method: string, imageUrl: string, bannerAdImageUrl: string, galleryUrls: string[]) => {
+  const submitProduct = async (url: string, method: string, imageUrl: string, videoUrl: string, bannerAdImageUrl: string, galleryUrls: string[]) => {
     try {
       console.log('Form data before processing:', formData);
 
@@ -633,6 +668,7 @@ export default function ProductsPage() {
         subcategory_id: cleanSubcategoryId, // Use subcategory ID if selected
         brand_id: cleanBrandId,
         image_url: imageUrl?.trim() || null,
+        video_url: videoUrl?.trim() || null,
         gallery: galleryUrls.length > 0 ? JSON.stringify(galleryUrls) : null,
         is_featured: Boolean(formData.is_featured),
         is_bestseller: Boolean(formData.is_bestseller),
@@ -853,6 +889,8 @@ export default function ProductsPage() {
     });
     setImagePreview(product.image_url);
     setSelectedImage(null);
+    setVideoPreview(product.video_url || null);
+    setSelectedVideo(null);
     setBannerAdImagePreview(product.banner_ad_image_url || null);
     setSelectedBannerAdImage(null);
     
@@ -903,13 +941,33 @@ export default function ProductsPage() {
       }
       
       setSelectedImage(file);
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('video/')) {
+        alert('Please select a video file');
+        return;
+      }
+
+      // Validate file size (max 50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        alert('Video size should be less than 50MB');
+        return;
+      }
+
+      setSelectedVideo(file);
+      setVideoPreview(URL.createObjectURL(file));
     }
   };
 
@@ -1004,6 +1062,8 @@ export default function ProductsPage() {
     setLoadingSubcategories(false);
     setImagePreview(null);
     setSelectedImage(null);
+    setVideoPreview(null);
+    setSelectedVideo(null);
     setBannerAdImagePreview(null);
     setSelectedBannerAdImage(null);
     setGalleryImages([]);
@@ -1668,6 +1728,47 @@ export default function ProductsPage() {
                           />
                           <p className="text-xs text-gray-500 mt-1">
                             Upload a product image (JPG, PNG, GIF, max 5MB)
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Product Video (optional)
+                      </label>
+                      <div className="space-y-4">
+                        {/* Video Preview */}
+                        {videoPreview && (
+                          <div className="relative w-48">
+                            <video
+                              src={videoPreview}
+                              controls
+                              className="w-48 h-32 object-cover rounded-lg border border-gray-300"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVideoPreview(null);
+                                setSelectedVideo(null);
+                              }}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+
+                        {/* File Upload */}
+                        <div>
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={handleVideoChange}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Upload a product video (MP4, WebM, MOV, max 50MB)
                           </p>
                         </div>
                       </div>

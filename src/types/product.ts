@@ -44,6 +44,7 @@ export interface Product {
   stock_quantity?: number;
   image_url: string;
   gallery?: string | string[];
+  video_url?: string;
   colors?: string | string[] | ColorOption[];
   category_name: string;
   category_slug: string;

@@ -443,6 +443,7 @@ model products {
   stock_quantity         Int?
   image_url              String?
   gallery                Json?
+  video_url              String?
   category_id            Int?
   brand_id               Int?
   is_featured            Boolean?             @default(false)

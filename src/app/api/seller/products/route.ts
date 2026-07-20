@@ -20,8 +20,26 @@ async function ensureColumns() {
   }
 }
 
+// Separate from ensureColumns() above: that function's first statement uses
+// MySQL-only `AFTER column` syntax, which errors on this Postgres database
+// and short-circuits every statement after it — so a column appended to the
+// end of that list would never actually get created. This one uses valid
+// Postgres syntax instead.
+let videoColumnEnsured = false;
+async function ensureVideoColumn() {
+  if (videoColumnEnsured) return;
+  try {
+    await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS video_url TEXT DEFAULT NULL');
+  } catch (e) {
+    console.warn('video_url column migration failed (may already exist):', e);
+  } finally {
+    videoColumnEnsured = true;
+  }
+}
+
 export async function GET(request: Request) {
   await ensureColumns();
+  await ensureVideoColumn();
   try {
     const seller = await getAuthenticatedSeller(request);
     if (!seller) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -44,6 +62,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  await ensureColumns();
+  await ensureVideoColumn();
   try {
     const seller = await getAuthenticatedSeller(request);
     if (!seller) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -53,7 +73,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description, shortDescription, price, originalPrice, currency, categoryId, brandId, imageUrl, productCondition, stockQuantity, regions, colourVariants, clothingSizes, shoeSizes } = body;
+    const { name, description, shortDescription, price, originalPrice, currency, categoryId, brandId, imageUrl, videoUrl, gallery, productCondition, stockQuantity, regions, colourVariants, clothingSizes, shoeSizes } = body;
 
     if (!name || !price) {
       return NextResponse.json({ error: 'Name and price are required' }, { status: 400 });
@@ -70,15 +90,15 @@ export async function POST(request: Request) {
     const result = await query(
       `INSERT INTO products (name, slug, description, short_description, price, original_price, currency, regions,
         colour_variants, clothing_sizes, shoe_sizes,
-        category_id, brand_id, image_url, product_condition, stock_quantity, 
-        purchase_type, seller_id, seller_approved, affiliate_url, is_active) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'direct', ?, 1, '', 1)`,
+        category_id, brand_id, image_url, video_url, gallery, product_condition, stock_quantity,
+        purchase_type, seller_id, seller_approved, affiliate_url, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'direct', ?, 1, '', 1)`,
       [
         name, slug, description || null, shortDescription || null,
         price, originalPrice || null, currency || 'USD', regionsJson,
         coloursJson, clothingJson, shoeJson,
         categoryId || null, brandId || null,
-        imageUrl || null, productCondition || 'Handcrafted', stockQuantity || null,
+        imageUrl || null, videoUrl || null, gallery || null, productCondition || 'Handcrafted', stockQuantity || null,
         seller.id
       ]
     ) as { insertId: number };
@@ -95,12 +115,14 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  await ensureColumns();
+  await ensureVideoColumn();
   try {
     const seller = await getAuthenticatedSeller(request);
     if (!seller) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
     const body = await request.json();
-    const { id, name, description, shortDescription, price, originalPrice, currency, categoryId, brandId, imageUrl, productCondition, stockQuantity, regions, colourVariants, clothingSizes, shoeSizes } = body;
+    const { id, name, description, shortDescription, price, originalPrice, currency, categoryId, brandId, imageUrl, videoUrl, gallery, productCondition, stockQuantity, regions, colourVariants, clothingSizes, shoeSizes } = body;
 
     if (!id) return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
 
@@ -119,15 +141,15 @@ export async function PUT(request: Request) {
     const shoeJson = shoeSizes && typeof shoeSizes === 'object' && !Array.isArray(shoeSizes) && shoeSizes.sizes?.length > 0 ? JSON.stringify(shoeSizes) : (Array.isArray(shoeSizes) && shoeSizes.length > 0 ? JSON.stringify(shoeSizes) : null);
 
     await query(
-      `UPDATE products SET name = ?, slug = ?, description = ?, short_description = ?, price = ?, 
+      `UPDATE products SET name = ?, slug = ?, description = ?, short_description = ?, price = ?,
         original_price = ?, currency = ?, regions = ?, colour_variants = ?, clothing_sizes = ?, shoe_sizes = ?,
-        category_id = ?, brand_id = ?, image_url = ?, 
+        category_id = ?, brand_id = ?, image_url = ?, video_url = ?, gallery = ?,
         product_condition = ?, stock_quantity = ? WHERE id = ? AND seller_id = ?`,
       [
         name, newSlug, description || null, shortDescription || null, price,
         originalPrice || null, currency || 'USD', regionsJson, coloursJson, clothingJson, shoeJson,
         categoryId || null, brandId || null,
-        imageUrl || null, productCondition || 'Handcrafted', stockQuantity || null,
+        imageUrl || null, videoUrl || null, gallery || null, productCondition || 'Handcrafted', stockQuantity || null,
         id, seller.id
       ]
     );

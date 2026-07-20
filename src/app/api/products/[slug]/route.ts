@@ -7,6 +7,18 @@ interface PartialProduct {
   stock_quantity?: number;
 }
 
+let videoColumnEnsured = false;
+async function ensureVideoColumn() {
+  if (videoColumnEnsured) return;
+  try {
+    await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS video_url TEXT DEFAULT NULL');
+  } catch (e) {
+    console.warn('video_url column migration failed (may already exist):', e);
+  } finally {
+    videoColumnEnsured = true;
+  }
+}
+
 interface CategoryCheck {
   id: number;
   name: string;
@@ -215,10 +227,11 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ slug: string }> }
 ) {
+  await ensureVideoColumn();
   try {
     const { slug: pathSlug } = await context.params;
     const productSlug = pathSlug;
-    
+
     console.log('Product Slug:', productSlug);
     
     // Get the raw body text first to debug JSON parsing issues
@@ -252,6 +265,7 @@ export async function PUT(
       stock_quantity,
       image_url,
       gallery,
+      video_url,
       colors,
       category_id,
       subcategory_id,
@@ -409,7 +423,7 @@ export async function PUT(
       UPDATE products SET
         name = ?, slug = ?, description = ?, short_description = ?, long_description = ?, product_review = ?,
         price = ?, original_price = ?, affiliate_url = ?, affiliate_partner_name = ?, external_purchase_info = ?,
-        purchase_type = ?, product_condition = ?, stock_quantity = ?, image_url = ?, gallery = ?, colors = ?,
+        purchase_type = ?, product_condition = ?, stock_quantity = ?, image_url = ?, gallery = ?, video_url = ?, colors = ?,
         category_id = ?, subcategory_id = ?, brand_id = ?, is_featured = ?, is_bestseller = ?, is_active = ?,
         meta_title = ?, meta_description = ?,
         banner_ad_title = ?, banner_ad_description = ?, banner_ad_image_url = ?, banner_ad_link_url = ?,
@@ -447,6 +461,7 @@ export async function PUT(
       finalStockQuantity,
       image_url || null,
       gallery || null,
+      video_url || null,
       colorsJson,
       category_id || null,
       subcategory_id || null,

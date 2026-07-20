@@ -80,6 +80,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.6 })) : [];
 
+    // Seller storefronts
+    const sellersSql = `
+      SELECT store_slug, updated_at
+      FROM sellers
+      WHERE status = 'approved'
+      ORDER BY updated_at DESC
+    `;
+    const sellers = await query(sellersSql);
+
+    const storePages = Array.isArray(sellers) ? (sellers as {store_slug: string, updated_at: string}[]).map((seller) => ({
+      url: `${baseUrl}/store/${seller.store_slug}`,
+      lastModified: new Date(seller.updated_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6 })) : [];
+
     // Custom pages
     const pagesSql = `
       SELECT slug, updated_at 
@@ -95,7 +110,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.5 })) : [];
 
-    return [...staticPages, ...productPages, ...categoryPages, ...customPages];
+    return [...staticPages, ...productPages, ...categoryPages, ...storePages, ...customPages];
 
   } catch (error) {
     console.error('Error generating sitemap:', error);

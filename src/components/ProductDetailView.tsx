@@ -216,7 +216,7 @@ export default function ProductDetailView({ product }: ProductDetailViewProps) {
 
           {/* LEFT: Product Image */}
           <div className="lg:col-span-5">
-            <ProductImageGallery images={images} productName={product.name} />
+            <ProductImageGallery images={images} productName={product.name} videoUrl={product.video_url} />
           </div>
 
           {/* MIDDLE: Product Details */}

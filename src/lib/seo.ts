@@ -50,7 +50,8 @@ export function generateMetadata(seoData: SEOData, defaultTitle?: string): Metad
     keywords: keywords,
     robots: robots.join(', '),
     alternates: {
-      canonical: canonical || undefined },
+      canonical: canonical || undefined,
+      languages: canonical ? { 'en-GB': canonical } : undefined },
     openGraph: {
       title: ogTitle || finalTitle,
       description: ogDescription || finalDescription,
@@ -71,7 +72,10 @@ export function generateMetadata(seoData: SEOData, defaultTitle?: string): Metad
       description: twitterDescription || finalDescription,
       images: [twitterImage || finalOgImage] },
     verification: {
-      google: process.env.GOOGLE_SITE_VERIFICATION } };
+      google: process.env.GOOGLE_SITE_VERIFICATION,
+      other: process.env.BING_SITE_VERIFICATION
+        ? { 'msvalidate.01': process.env.BING_SITE_VERIFICATION }
+        : undefined } };
 }
 
 interface StructuredProductData {
@@ -91,7 +95,38 @@ interface StructuredBreadcrumbData {
   items: { name: string; url: string }[];
 }
 
-export function generateStructuredData(type: 'product' | 'organization' | 'breadcrumb', data?: StructuredProductData | StructuredBreadcrumbData) {
+interface StructuredLocalBusinessData {
+  name: string;
+  description?: string;
+  url: string;
+  image?: string;
+  city?: string;
+  region?: string;
+  country?: string;
+  rating?: number;
+  reviewCount?: number;
+}
+
+interface StructuredCollectionPageData {
+  name: string;
+  description?: string;
+  url: string;
+  items: { name: string; url: string; image?: string }[];
+}
+
+interface StructuredFAQData {
+  items: { question: string; answer: string }[];
+}
+
+interface StructuredOrganizationData {
+  city?: string;
+  country?: string;
+}
+
+export function generateStructuredData(
+  type: 'product' | 'organization' | 'breadcrumb' | 'localBusiness' | 'collectionPage' | 'faq',
+  data?: StructuredProductData | StructuredBreadcrumbData | StructuredLocalBusinessData | StructuredCollectionPageData | StructuredFAQData | StructuredOrganizationData
+) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://yuumpy.com';
 
   switch (type) {
@@ -119,7 +154,8 @@ export function generateStructuredData(type: 'product' | 'organization' | 'bread
           reviewCount: p.review_count || 1 } : undefined };
     }
 
-    case 'organization':
+    case 'organization': {
+      const o = data as StructuredOrganizationData | undefined;
       return {
         '@context': 'https://schema.org',
         '@type': 'Organization',
@@ -127,11 +163,16 @@ export function generateStructuredData(type: 'product' | 'organization' | 'bread
         url: baseUrl,
         logo: `${baseUrl}/logo.png`,
         description: 'Discover amazing products from our curated collection',
+        address: o?.city || o?.country ? {
+          '@type': 'PostalAddress',
+          addressLocality: o?.city,
+          addressCountry: o?.country || 'United Kingdom' } : undefined,
         sameAs: [
           process.env.FACEBOOK_URL,
           process.env.TWITTER_URL,
           process.env.INSTAGRAM_URL,
         ].filter(Boolean) };
+    }
 
     case 'breadcrumb': {
       const b = data as StructuredBreadcrumbData;
@@ -143,6 +184,57 @@ export function generateStructuredData(type: 'product' | 'organization' | 'bread
           position: index + 1,
           name: item.name,
           item: item.url })) };
+    }
+
+    case 'localBusiness': {
+      const l = data as StructuredLocalBusinessData;
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'Store',
+        name: l.name,
+        description: l.description,
+        url: l.url,
+        image: l.image,
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: l.city || undefined,
+          addressRegion: l.region || undefined,
+          addressCountry: l.country || 'United Kingdom' },
+        aggregateRating: l.rating ? {
+          '@type': 'AggregateRating',
+          ratingValue: l.rating,
+          reviewCount: l.reviewCount || 1 } : undefined };
+    }
+
+    case 'collectionPage': {
+      const c = data as StructuredCollectionPageData;
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: c.name,
+        description: c.description,
+        url: c.url,
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListElement: c.items.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: item.name,
+            url: item.url,
+            image: item.image })) } };
+    }
+
+    case 'faq': {
+      const f = data as StructuredFAQData;
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: f.items.map((item) => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: item.answer } })) };
     }
 
     default:

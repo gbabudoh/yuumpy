@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface FooterSetting {
@@ -138,6 +138,15 @@ export default function Footer() {
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Direct Support</p>
                   <p className="text-gray-700 font-bold">{settings.contact_phone}</p>
+                </div>
+              </div>
+              <div className="group flex items-center gap-4">
+                <div className="w-12 h-12 rounded-3xl bg-white shadow-sm flex items-center justify-center border border-gray-200 group-hover:scale-110 transition-transform">
+                  <MapPin className="w-5 h-5 text-gray-500 group-hover:text-gray-900" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Based In</p>
+                  <p className="text-gray-700 font-bold">{settings.contact_location}</p>
                 </div>
               </div>
             </div>

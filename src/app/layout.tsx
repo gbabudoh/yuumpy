@@ -6,6 +6,7 @@ import CookieBanner from "@/components/CookieBanner";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { CartProvider } from "@/hooks/useCart";
 import { generateMetadata as generateSEOMetadata, generateStructuredData } from "@/lib/seo";
+import { query } from "@/lib/database";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,15 +50,33 @@ export const viewport: Viewport = {
   userScalable: true,
   themeColor: '#2563eb' };
 
-export default function RootLayout({
+async function getContactLocation(): Promise<string> {
+  try {
+    const result = await query(
+      "SELECT value FROM settings WHERE key_name = 'contact_location'"
+    );
+    return Array.isArray(result) && result.length > 0 && result[0].value
+      ? result[0].value
+      : 'London, UK';
+  } catch {
+    return 'London, UK';
+  }
+}
+
+export default async function RootLayout({
   children }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const organizationSchema = generateStructuredData('organization');
+  const contactLocation = await getContactLocation();
+  const [city, country] = contactLocation.split(',').map(s => s.trim());
+  const organizationSchema = generateStructuredData('organization', { city, country });
 
   return (
-    <html lang="en">
-      <head />
+    <html lang="en-GB">
+      <head>
+        <meta name="geo.region" content="GB" />
+        <meta name="geo.placename" content="United Kingdom" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

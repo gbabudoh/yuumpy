@@ -1,0 +1,31 @@
+# Yuumpy
+
+> Yuumpy is an online marketplace connecting buyers with verified, independent
+> sellers in the United Kingdom. Every purchase is protected by escrow payments
+> and the Yuumpy Buyer Guarantee — funds are held securely until the buyer
+> confirms the order arrived as described.
+
+## Key facts
+
+- Marketplace model: independent sellers list and fulfil their own products;
+  Yuumpy provides escrow payment protection, buyer/seller verification, and
+  dispute resolution.
+- Currency: GBP (£). Primary market: United Kingdom.
+- Buyer protection: the Yuumpy Buyer Guarantee covers items not received, not
+  as described, damaged in transit, or counterfeit.
+- Sellers are verified before their storefront and products go live.
+
+## Key pages
+
+- [All Products](https://yuumpy.com/products): browse the full product catalogue.
+- [Categories](https://yuumpy.com/products/categories): browse by product category.
+- [Sell on Yuumpy](https://yuumpy.com/sell-on-yuumpy): how to become a verified seller.
+- [Buyer Guarantee](https://yuumpy.com/support/buyer-guarantee): what buyer protection covers.
+- [Escrow Policy](https://yuumpy.com/support/escrow-policy): how escrow payments work.
+- [Seller Verification](https://yuumpy.com/support/seller-verification): how sellers are vetted.
+- [Dispute Resolution](https://yuumpy.com/support/dispute-resolution): how order disputes are handled.
+- [About Yuumpy](https://yuumpy.com/about): company overview.
+
+## Sitemap
+
+Full, up-to-date list of pages: https://yuumpy.com/sitemap.xml
