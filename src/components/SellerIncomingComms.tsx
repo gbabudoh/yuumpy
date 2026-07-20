@@ -295,13 +295,28 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
           }
         } catch (publishErr) {
           console.warn('Initial track publish failed, retrying...', publishErr);
-          // One retry after another short delay
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          if (request.mode === 'voice' || request.mode === 'video') {
-            await room.localParticipant.setMicrophoneEnabled(true);
-          }
-          if (request.mode === 'video') {
-            await room.localParticipant.setCameraEnabled(true);
+          try {
+            // One retry after another short delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            if (request.mode === 'voice' || request.mode === 'video') {
+              await room.localParticipant.setMicrophoneEnabled(true);
+            }
+            if (request.mode === 'video') {
+              await room.localParticipant.setCameraEnabled(true);
+            }
+          } catch (retryErr) {
+            // The room connection itself is already established at this
+            // point — don't tear down a working call just because enabling
+            // mic/camera failed twice. Surface it as a non-fatal warning
+            // instead of disconnecting (that was the regression: an outer
+            // catch previously killed the whole call for this exact case).
+            console.error('Failed to publish audio/video after retry:', retryErr);
+            const isPermissionDenied = retryErr instanceof Error && retryErr.name === 'NotAllowedError';
+            setCallError(
+              isPermissionDenied
+                ? `${request.mode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. The call is connected, but the buyer may not hear/see you until you allow access.`
+                : "Couldn't enable your microphone/camera, but the call is still connected."
+            );
           }
         }
       };
@@ -414,6 +429,15 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
           <div className="p-8 text-center">
             <div className="w-8 h-8 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin mx-auto mb-3" />
             <p className="text-sm text-gray-400">Connecting...</p>
+          </div>
+        )}
+
+        {callError && (
+          <div className="px-4 py-2.5 flex items-start justify-between gap-2" style={{ background: 'rgba(244,63,94,0.15)', borderBottom: '1px solid rgba(244,63,94,0.2)' }}>
+            <p className="text-xs text-rose-300 leading-snug">{callError}</p>
+            <button onClick={() => setCallError(null)} className="p-0.5 -m-0.5 text-rose-300/70 hover:text-rose-300 shrink-0 cursor-pointer">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 

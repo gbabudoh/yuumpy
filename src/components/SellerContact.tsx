@@ -269,13 +269,28 @@ export default function SellerContact({ sellerName, sellerSlug, buyerName }: Sel
           }
         } catch (publishErr) {
           console.warn('Initial track publish failed, retrying...', publishErr);
-          // One retry after another short delay
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          if (contactMode === 'voice' || contactMode === 'video') {
-            await room.localParticipant.setMicrophoneEnabled(true);
-          }
-          if (contactMode === 'video') {
-            await room.localParticipant.setCameraEnabled(true);
+          try {
+            // One retry after another short delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            if (contactMode === 'voice' || contactMode === 'video') {
+              await room.localParticipant.setMicrophoneEnabled(true);
+            }
+            if (contactMode === 'video') {
+              await room.localParticipant.setCameraEnabled(true);
+            }
+          } catch (retryErr) {
+            // The room connection itself is already established at this
+            // point — don't tear down a working call just because enabling
+            // mic/camera failed twice. Surface it as a non-fatal warning
+            // instead of disconnecting (that was the regression: an outer
+            // catch previously killed the whole call for this exact case).
+            console.error('Failed to publish audio/video after retry:', retryErr);
+            const isPermissionDenied = retryErr instanceof Error && retryErr.name === 'NotAllowedError';
+            setError(
+              isPermissionDenied
+                ? `${contactMode === 'video' ? 'Camera and microphone' : 'Microphone'} access was blocked. The call is connected, but the seller may not hear/see you until you allow access.`
+                : "Couldn't enable your microphone/camera, but the call is still connected."
+            );
           }
         }
       };
