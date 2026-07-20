@@ -528,7 +528,7 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
           </span>
         )}
         {isListening && (
-          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-900" />
+          <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white shadow-sm" />
         )}
       </button>
     </div>
