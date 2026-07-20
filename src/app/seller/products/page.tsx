@@ -258,6 +258,35 @@ function SellerProductsPageInner() {
     } catch { } finally { setUploadingMainImage(false); }
   };
 
+  const getRegions = (product: Product): string[] => {
+    if (!product.regions) return [];
+    if (Array.isArray(product.regions)) return product.regions;
+    try { return JSON.parse(product.regions); } catch { return []; }
+  };
+
+  const getStatus = (product: Product): 'active' | 'pending' | 'disabled' => {
+    if (!product.is_active) return 'disabled';
+    return product.seller_approved ? 'active' : 'pending';
+  };
+
+  const statusStyles = {
+    active: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+    pending: 'bg-amber-50 border-amber-200 text-amber-700',
+    disabled: 'bg-slate-50 border-slate-200 text-slate-500',
+  };
+
+  const currencySymbol = (currency: string) =>
+    currency === 'GBP' ? '£' : currency === 'EUR' ? '€' : currency === 'CAD' ? 'C$' : '$';
+
+  const updateProductStatus = async (id: number, status: string) => {
+    await fetch('/api/seller/products', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+    fetchProducts();
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -807,7 +836,103 @@ function SellerProductsPageInner() {
         </div>
       ) : (
         <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden animate-in zoom-in-95 duration-500">
-          <div className="overflow-x-auto">
+          {/* Mobile: stacked cards */}
+          <div className="lg:hidden divide-y divide-gray-50">
+            {products.map(product => {
+              const status = getStatus(product);
+              const regions = getRegions(product);
+              return (
+                <div key={product.id} className="p-5 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden border border-slate-50 shrink-0">
+                      {product.image_url ? (
+                        <Image src={product.image_url} alt="" width={56} height={56} className="w-full h-full object-cover" />
+                      ) : (
+                        <Package className="w-6 h-6" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-slate-900 font-black text-sm uppercase tracking-tight truncate">{product.name}</p>
+                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5 truncate">
+                        ID: {product.id} · {product.category_name || 'Electronics'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="w-9 h-9 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 flex items-center justify-center transition-all"
+                        title="Edit Product"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="w-9 h-9 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-rose-600 hover:border-rose-100 flex items-center justify-center transition-all"
+                        title="Remove Product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 rounded-xl p-3">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Price</p>
+                      <p className="text-slate-900 text-sm font-black tracking-tight">
+                        {currencySymbol(product.currency)}{parseFloat(product.price).toFixed(2)}
+                      </p>
+                      {product.original_price && (
+                        <p className="text-slate-400 text-[11px] line-through">
+                          {currencySymbol(product.currency)}{parseFloat(product.original_price).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Inventory</p>
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          (product.stock_quantity ?? 0) > 10 ? 'bg-emerald-500' : (product.stock_quantity ?? 0) > 0 ? 'bg-amber-500' : 'bg-red-500'
+                        }`} />
+                        <span className="text-slate-900 font-bold text-sm tracking-tight">{product.stock_quantity ?? 'UNLIMITED'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap gap-1 min-w-0">
+                      {regions.length > 0 ? (
+                        <>
+                          {regions.slice(0, 2).map(r => (
+                            <span key={r} className="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500">{r}</span>
+                          ))}
+                          {regions.length > 2 && (
+                            <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-[10px] font-bold text-indigo-500">+{regions.length - 2}</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-[10px] font-bold text-slate-300">All regions</span>
+                      )}
+                    </div>
+                    <div className="relative shrink-0">
+                      <select
+                        value={status}
+                        onChange={(e) => updateProductStatus(product.id, e.target.value)}
+                        className={`appearance-none pl-3 pr-8 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border cursor-pointer outline-none transition-all ${statusStyles[status]}`}
+                      >
+                        <option value="active">✓ Active</option>
+                        <option value="pending">◷ Pending</option>
+                        <option value="disabled">✕ Disabled</option>
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-50" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop: full table */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-50/50 border-bottom border-gray-50">
@@ -821,118 +946,100 @@ function SellerProductsPageInner() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {products.map(product => (
-                  <tr key={product.id} className="group hover:bg-indigo-50/30 transition-colors">
-                    <td className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden border border-slate-50 group-hover:scale-105 transition-transform">
-                          {product.image_url ? (
-                            <Image src={product.image_url} alt="" width={48} height={48} className="w-full h-full object-cover" />
-                          ) : (
-                            <Package className="w-6 h-6" />
+                {products.map(product => {
+                  const status = getStatus(product);
+                  const regions = getRegions(product);
+                  return (
+                    <tr key={product.id} className="group hover:bg-indigo-50/30 transition-colors">
+                      <td className="p-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden border border-slate-50 group-hover:scale-105 transition-transform">
+                            {product.image_url ? (
+                              <Image src={product.image_url} alt="" width={48} height={48} className="w-full h-full object-cover" />
+                            ) : (
+                              <Package className="w-6 h-6" />
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <p className="text-slate-900 font-black text-sm group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{product.name}</p>
+                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">ID: {product.id}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-6">
+                        <span className="text-slate-600 text-[13px] font-bold">{product.category_name || 'Electronics'}</span>
+                      </td>
+                      <td className="p-6">
+                        <div className="flex flex-col">
+                          <span className="text-slate-900 text-sm font-black tracking-tight">
+                            {currencySymbol(product.currency)}{parseFloat(product.price).toFixed(2)}
+                          </span>
+                          {product.original_price && (
+                            <span className="text-slate-400 text-[11px] line-through">
+                              {currencySymbol(product.currency)}{parseFloat(product.original_price).toFixed(2)}
+                            </span>
                           )}
                         </div>
-                        <div className="flex flex-col">
-                          <p className="text-slate-900 font-black text-sm group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{product.name}</p>
-                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">ID: {product.id}</p>
+                      </td>
+                      <td className="p-6">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-1.5 h-1.5 rounded-full ${
+                            (product.stock_quantity ?? 0) > 10 ? 'bg-emerald-500' : (product.stock_quantity ?? 0) > 0 ? 'bg-amber-500' : 'bg-red-500'
+                          }`} />
+                          <span className="text-slate-900 font-bold text-sm tracking-tight">{product.stock_quantity ?? 'UNLIMITED'}</span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-6">
-                      <span className="text-slate-600 text-[13px] font-bold">{product.category_name || 'Electronics'}</span>
-                    </td>
-                    <td className="p-6">
-                      <div className="flex flex-col">
-                        <span className="text-slate-900 text-sm font-black tracking-tight">
-                          {product.currency === 'GBP' ? '£' : product.currency === 'EUR' ? '€' : product.currency === 'CAD' ? 'C$' : '$'}
-                          {parseFloat(product.price).toFixed(2)}
-                        </span>
-                        {product.original_price && (
-                          <span className="text-slate-400 text-[11px] line-through">
-                            {product.currency === 'GBP' ? '£' : product.currency === 'EUR' ? '€' : product.currency === 'CAD' ? 'C$' : '$'}
-                            {parseFloat(product.original_price).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-6">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          (product.stock_quantity ?? 0) > 10 ? 'bg-emerald-500' : (product.stock_quantity ?? 0) > 0 ? 'bg-amber-500' : 'bg-red-500'
-                        }`} />
-                        <span className="text-slate-900 font-bold text-sm tracking-tight">{product.stock_quantity ?? 'UNLIMITED'}</span>
-                      </div>
-                    </td>
-                    <td className="p-6">
-                      <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {(() => {
-                          let regions: string[] = [];
-                          if (product.regions) {
-                            if (Array.isArray(product.regions)) regions = product.regions;
-                            else if (typeof product.regions === 'string') {
-                              try { regions = JSON.parse(product.regions); } catch { regions = []; }
-                            }
-                          }
-                          return regions.length > 0 ? regions.slice(0, 3).map(r => (
-                            <span key={r} className="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500">{r}</span>
-                          )).concat(regions.length > 3 ? [<span key="more" className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-[10px] font-bold text-indigo-500">+{regions.length - 3}</span>] : []) : (
+                      </td>
+                      <td className="p-6">
+                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                          {regions.length > 0 ? (
+                            <>
+                              {regions.slice(0, 3).map(r => (
+                                <span key={r} className="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500">{r}</span>
+                              ))}
+                              {regions.length > 3 && (
+                                <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-[10px] font-bold text-indigo-500">+{regions.length - 3}</span>
+                              )}
+                            </>
+                          ) : (
                             <span className="text-[10px] font-bold text-slate-300">All regions</span>
-                          );
-                        })()}
-                      </div>
-                    </td>
-                    <td className="p-6">
-                      {(() => {
-                        const currentStatus = !product.is_active ? 'disabled' : product.seller_approved ? 'active' : 'pending';
-                        const statusStyles = {
-                          active: 'bg-emerald-50 border-emerald-200 text-emerald-700',
-                          pending: 'bg-amber-50 border-amber-200 text-amber-700',
-                          disabled: 'bg-slate-50 border-slate-200 text-slate-500',
-                        };
-                        return (
-                          <div className="relative">
-                            <select
-                              value={currentStatus}
-                              onChange={async (e) => {
-                                const newStatus = e.target.value;
-                                await fetch('/api/seller/products', {
-                                  method: 'PATCH',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ id: product.id, status: newStatus }),
-                                });
-                                fetchProducts();
-                              }}
-                              className={`appearance-none pl-3 pr-8 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border cursor-pointer outline-none transition-all ${statusStyles[currentStatus as keyof typeof statusStyles]}`}
-                            >
-                              <option value="active">✓ Active</option>
-                              <option value="pending">◷ Pending</option>
-                              <option value="disabled">✕ Disabled</option>
-                            </select>
-                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-50" />
-                          </div>
-                        );
-                      })()}
-                    </td>
-                    <td className="p-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => handleEdit(product)} 
-                          className="w-10 h-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-500/10 flex items-center justify-center transition-all"
-                          title="Edit Product"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(product.id)} 
-                          className="w-10 h-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-rose-600 hover:border-rose-100 hover:shadow-lg hover:shadow-rose-500/10 flex items-center justify-center transition-all"
-                          title="Remove Product"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-6">
+                        <div className="relative">
+                          <select
+                            value={status}
+                            onChange={(e) => updateProductStatus(product.id, e.target.value)}
+                            className={`appearance-none pl-3 pr-8 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border cursor-pointer outline-none transition-all ${statusStyles[status]}`}
+                          >
+                            <option value="active">✓ Active</option>
+                            <option value="pending">◷ Pending</option>
+                            <option value="disabled">✕ Disabled</option>
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-50" />
+                        </div>
+                      </td>
+                      <td className="p-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(product)}
+                            className="w-10 h-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-500/10 flex items-center justify-center transition-all"
+                            title="Edit Product"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="w-10 h-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-rose-600 hover:border-rose-100 hover:shadow-lg hover:shadow-rose-500/10 flex items-center justify-center transition-all"
+                            title="Remove Product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
