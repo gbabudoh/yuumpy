@@ -230,13 +230,15 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
       const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
       if (!livekitUrl) throw new Error('LiveKit URL not configured');
 
-      // Disconnect listener for this mode to avoid duplicate
+      // Disconnect listener for this mode to avoid duplicate — awaited so the
+      // old listener connection is fully torn down on the server before the
+      // new one joins the same room, instead of letting the two overlap.
       const listenerIdx = listenerRoomsRef.current.findIndex(r =>
         r.name === request.roomName
       );
       if (listenerIdx >= 0) {
-        listenerRoomsRef.current[listenerIdx].disconnect();
-        listenerRoomsRef.current.splice(listenerIdx, 1);
+        const [listenerRoom] = listenerRoomsRef.current.splice(listenerIdx, 1);
+        await listenerRoom.disconnect();
       }
 
       const room = new Room({
