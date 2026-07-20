@@ -517,8 +517,8 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
         style={{
           background: totalIncoming > 0
             ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-            : 'rgba(15,23,42,0.95)',
-          border: '1px solid rgba(255,255,255,0.15)',
+            : 'rgba(250,250,249,0.98)',
+          border: '1px solid rgba(0,0,0,0.08)',
           backdropFilter: 'blur(12px)',
         }}
       >
