@@ -1,14 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, Settings, Shield, BarChart3, Target, Check } from 'lucide-react';
-
-interface CookiePreferences {
-  necessary: boolean;
-  analytics: boolean;
-  marketing: boolean;
-  functional: boolean;
-}
+import { useCookieConsent, CookiePreferences } from '@/hooks/useCookieConsent';
 
 interface CookieBannerProps {
   onAccept?: (preferences: CookiePreferences) => void;
@@ -16,21 +10,17 @@ interface CookieBannerProps {
 }
 
 export default function CookieBanner({ onAccept, onReject }: CookieBannerProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const { hasConsent, isLoading, updatePreferences: commitConsent } = useCookieConsent();
+  const [dismissed, setDismissed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  // Draft preferences for the settings panel — only written to the shared
+  // consent state (and localStorage) once the user actually confirms a
+  // choice via Accept All / Reject All / Save Preferences below.
   const [preferences, setPreferences] = useState<CookiePreferences>({
     necessary: true, // Always true, can't be disabled
     analytics: false,
     marketing: false,
     functional: false });
-
-  useEffect(() => {
-    // Check if user has already made a choice
-    const cookieConsent = localStorage.getItem('cookie-consent');
-    if (!cookieConsent) {
-      setIsVisible(true);
-    }
-  }, []);
 
   const handleAcceptAll = () => {
     const allAccepted = {
@@ -38,17 +28,10 @@ export default function CookieBanner({ onAccept, onReject }: CookieBannerProps) 
       analytics: true,
       marketing: true,
       functional: true };
-    
-    localStorage.setItem('cookie-consent', JSON.stringify(allAccepted));
-    localStorage.setItem('cookie-consent-date', new Date().toISOString());
-    
-    setIsVisible(false);
+
+    commitConsent(allAccepted);
     onAccept?.(allAccepted);
-    
-    // Initialize analytics if accepted
-    if (allAccepted.analytics) {
-      initializeAnalytics();
-    }
+    initializeAnalytics();
   };
 
   const handleRejectAll = () => {
@@ -57,36 +40,31 @@ export default function CookieBanner({ onAccept, onReject }: CookieBannerProps) 
       analytics: false,
       marketing: false,
       functional: false };
-    
-    localStorage.setItem('cookie-consent', JSON.stringify(onlyNecessary));
-    localStorage.setItem('cookie-consent-date', new Date().toISOString());
-    
-    setIsVisible(false);
+
+    commitConsent(onlyNecessary);
     onReject?.();
   };
 
   const handleSavePreferences = () => {
-    localStorage.setItem('cookie-consent', JSON.stringify(preferences));
-    localStorage.setItem('cookie-consent-date', new Date().toISOString());
-    
-    setIsVisible(false);
+    commitConsent(preferences);
     onAccept?.(preferences);
-    
-    // Initialize analytics if accepted
+
     if (preferences.analytics) {
       initializeAnalytics();
     }
   };
 
   const initializeAnalytics = () => {
-    // Initialize Google Analytics
+    // Belt-and-suspenders consent-mode update for Google's own consent API —
+    // the actual activation now comes from the shared context state change
+    // above causing Analytics.tsx to render the GA/Matomo scripts for the
+    // first time, not from this call (window.gtag may not exist yet here).
     if (typeof window !== 'undefined' && window.gtag) {
       (window as any).gtag('consent', 'update', {
         analytics_storage: 'granted',
         ad_storage: 'granted' });
     }
-    
-    // Initialize Matomo
+
     if (typeof window !== 'undefined' && window._paq) {
       window._paq.push(['setConsentGiven']);
     }
@@ -97,7 +75,7 @@ export default function CookieBanner({ onAccept, onReject }: CookieBannerProps) 
     setPreferences(prev => ({ ...prev, [key]: value }));
   };
 
-  if (!isVisible) return null;
+  if (isLoading || hasConsent || dismissed) return null;
 
   return (
     <>
@@ -119,7 +97,7 @@ export default function CookieBanner({ onAccept, onReject }: CookieBannerProps) 
                     </div>
                   </div>
                   <button
-                    onClick={() => setIsVisible(false)}
+                    onClick={() => setDismissed(true)}
                     className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <X className="w-5 h-5" />

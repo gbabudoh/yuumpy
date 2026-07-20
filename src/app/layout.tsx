@@ -5,6 +5,7 @@ import Analytics from "@/components/Analytics";
 import CookieBanner from "@/components/CookieBanner";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { CartProvider } from "@/hooks/useCart";
+import { CookieConsentProvider } from "@/hooks/useCookieConsent";
 import { generateMetadata as generateSEOMetadata, generateStructuredData } from "@/lib/seo";
 import { query } from "@/lib/database";
 
@@ -88,10 +89,12 @@ export default async function RootLayout({
           />
         )}
         <CartProvider>
-          <Analytics />
-          <ServiceWorkerRegister />
-          {children}
-          <CookieBanner />
+          <CookieConsentProvider>
+            <Analytics />
+            <ServiceWorkerRegister />
+            {children}
+            <CookieBanner />
+          </CookieConsentProvider>
         </CartProvider>
       </body>
     </html>

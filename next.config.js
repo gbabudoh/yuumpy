@@ -66,11 +66,11 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://www.googletagmanager.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: http://149.102.155.247:9000 http://149.102.155.247:8080 https://images.unsplash.com https://res.cloudinary.com https://upload.wikimedia.org https://www.vectorlogo.zone",
               "font-src 'self'",
-              "connect-src 'self' https://api.stripe.com wss://livekit.feendesk.com https://www.google-analytics.com",
+              "connect-src 'self' https://api.stripe.com wss://livekit.feendesk.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms",
               "frame-src https://js.stripe.com https://hooks.stripe.com",
               "media-src 'self' blob: http://149.102.155.247:9000",
               "object-src 'none'",
