@@ -44,11 +44,17 @@ export default function GoogleSignInButton({ onCredential }: GoogleSignInButtonP
       client_id: clientId,
       callback: (response) => onCredential(response.credential),
     });
+    // Google's button is drawn at a fixed pixel width, not a responsive one —
+    // a hardcoded value overflows the card on narrow screens. Measure the
+    // actual container instead, clamped to Google's documented 200-400 range.
+    buttonRef.current.innerHTML = '';
+    const measuredWidth = buttonRef.current.offsetWidth || 360;
+    const width = Math.max(200, Math.min(measuredWidth, 400));
     window.google.accounts.id.renderButton(buttonRef.current, {
       type: 'standard',
       theme: 'outline',
       size: 'large',
-      width: 360,
+      width,
       text: 'signin_with',
       shape: 'pill',
     });
@@ -56,6 +62,10 @@ export default function GoogleSignInButton({ onCredential }: GoogleSignInButtonP
 
   useEffect(() => {
     if (clientId && window.google) renderButton();
+
+    const handleResize = () => renderButton();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
