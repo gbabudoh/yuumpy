@@ -84,8 +84,24 @@ export default function Header() {
 
   // Native-app-style back navigation for mobile — falls back to home when
   // there's no in-app history to go back to (e.g. a shared link opened fresh).
+  // window.history.length is unreliable for this: it also counts entries
+  // from before the SPA loaded (redirects, an initial about:blank, etc.),
+  // so on real mobile browsers it's often >1 even when the user landed
+  // directly on this page — router.back() then tries to leave the app and
+  // visibly does nothing. Tracking whether we've actually navigated
+  // client-side during this session is the reliable signal.
+  const hasNavigatedRef = useRef(false);
+  const isFirstPathRender = useRef(true);
+  useEffect(() => {
+    if (isFirstPathRender.current) {
+      isFirstPathRender.current = false;
+      return;
+    }
+    hasNavigatedRef.current = true;
+  }, [pathname]);
+
   const handleBack = () => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
+    if (hasNavigatedRef.current) {
       router.back();
     } else {
       router.push('/');
