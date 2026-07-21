@@ -15,6 +15,7 @@ export default function CustomerRegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationSentTo, setVerificationSentTo] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -52,13 +53,43 @@ export default function CustomerRegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Registration failed');
-      router.push('/account');
+      setVerificationSentTo(formData.email);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally { setLoading(false); }
   };
 
   const inputClass = "w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 focus:bg-white transition-all";
+
+  if (verificationSentTo) {
+    return (
+      <div className="min-h-screen bg-[#f8f8fa]">
+        <Header />
+        <div className="flex items-center justify-center px-4 py-12 sm:py-16">
+          <div className="w-full max-w-[420px] text-center">
+            <Link href="/" className="inline-block mb-6">
+              <Image src="/logo.png" alt="Yuumpy" width={120} height={48} className="h-10 w-auto mx-auto" priority />
+            </Link>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7 sm:p-8">
+              <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center mx-auto mb-4">
+                <Mail className="w-6 h-6 text-purple-600" />
+              </div>
+              <h1 className="text-xl font-semibold text-gray-900 mb-2">Check your email</h1>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                We&apos;ve sent a verification link to <strong className="text-gray-900">{verificationSentTo}</strong>.
+                Click the link to confirm your account before signing in.
+              </p>
+            </div>
+            <p className="text-center text-[13px] text-gray-500 mt-6">
+              Already verified?{' '}
+              <Link href="/account/login" className="text-gray-900 font-semibold hover:underline">Sign in</Link>
+            </p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f8fa]">

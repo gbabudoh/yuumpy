@@ -743,7 +743,7 @@ export async function sendPasswordResetEmail(
     `;
 
     await transporter.sendMail({
-      from: `"Yuumpy" <${process.env.SMTP_FROM || 'orders@yuumpy.com'}>`,
+      from: `"Yuumpy" <${process.env.SMTP_FROM_NOREPLY || 'noreply@yuumpy.com'}>`,
       to: customerEmail,
       subject: 'Reset your Yuumpy password',
       html,
@@ -753,6 +753,76 @@ export async function sendPasswordResetEmail(
     return true;
   } catch (error) {
     console.error('Error sending password reset email:', error);
+    return false;
+  }
+}
+
+export async function sendVerificationEmail(
+  customerEmail: string,
+  customerName: string,
+  verifyUrl: string
+): Promise<boolean> {
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verify Your Yuumpy Email</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">Verify Your Email</h1>
+          <p style="color: rgba(255,255,255,0.85); margin: 10px 0 0 0;">One more step to activate your Yuumpy account</p>
+        </div>
+
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="font-size: 16px;">Hi <strong>${customerName}</strong>,</p>
+          <p>Thanks for creating a Yuumpy account. Click the button below to confirm your email address. This link expires in <strong>24 hours</strong>.</p>
+
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${verifyUrl}"
+               style="display: inline-block; background: #4f46e5; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; letter-spacing: 0.3px;">
+              Verify My Email
+            </a>
+          </div>
+
+          <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #e5e7eb;">
+            <p style="margin: 0; font-size: 13px; color: #6b7280;">
+              If the button doesn't work, copy and paste this link into your browser:
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #4f46e5; word-break: break-all;">${verifyUrl}</p>
+          </div>
+
+          <div style="background: #fef3c7; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <p style="margin: 0; font-size: 13px; color: #92400e;">
+              <strong>Didn't create this account?</strong> If you didn't sign up for Yuumpy, you can safely ignore this email.
+            </p>
+          </div>
+        </div>
+
+        <div style="background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+          <p style="margin: 0; color: #6b7280; font-size: 13px;">
+            Questions? Contact us at <a href="mailto:support@yuumpy.com" style="color: #4f46e5;">support@yuumpy.com</a>
+          </p>
+          <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px;">© ${new Date().getFullYear()} Yuumpy. All rights reserved.</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"Yuumpy" <${process.env.SMTP_FROM_NOREPLY || 'noreply@yuumpy.com'}>`,
+      to: customerEmail,
+      subject: 'Verify your Yuumpy email',
+      html,
+    });
+
+    console.log(`Verification email sent to ${customerEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending verification email:', error);
     return false;
   }
 }

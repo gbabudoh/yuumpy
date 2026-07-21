@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/database';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { sendVerificationEmail } from '@/lib/email';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? (() => { throw new Error('JWT_SECRET environment variable is not set'); })();
+let verificationColumnsEnsured = false;
+async function ensureVerificationColumns() {
+  if (verificationColumnsEnsured) return;
+  try {
+    await query('ALTER TABLE customers ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255) DEFAULT NULL');
+    await query('ALTER TABLE customers ADD COLUMN IF NOT EXISTS email_verification_token_expiry TIMESTAMP DEFAULT NULL');
+  } catch (e) {
+    console.warn('email_verification column migration failed (may already exist):', e);
+  } finally {
+    verificationColumnsEnsured = true;
+  }
+}
 
 export async function POST(request: NextRequest) {
+  await ensureVerificationColumns();
+
   const ip = getClientIp(request);
   const { allowed, retryAfterMs } = await rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
   if (!allowed) {
@@ -61,55 +75,30 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create customer
+    // Generate email verification token (24 hour expiry)
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    // Create customer — email_verified defaults to false; no session is
+    // issued until the email is confirmed via the verification link.
     const result = await query(
-      `INSERT INTO customers (email, password_hash, first_name, last_name, phone)
-       VALUES (?, ?, ?, ?, ?)`,
-      [email, passwordHash, firstName, lastName, phone || null]
+      `INSERT INTO customers (email, password_hash, first_name, last_name, phone, email_verification_token, email_verification_token_expiry)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [email, passwordHash, firstName, lastName, phone || null, verificationToken, verificationTokenExpiry]
     );
 
     const customerId = (result as any).insertId;
 
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        customerId,
-        email,
-        firstName,
-        lastName
-      },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://yuumpy.com';
+    const verifyUrl = `${appUrl}/account/verify-email?token=${verificationToken}`;
+    await sendVerificationEmail(email, firstName, verifyUrl);
 
-    // Store session in database
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await query(
-      'INSERT INTO customer_sessions (customer_id, token, expires_at) VALUES (?, ?, ?)',
-      [customerId, token, expiresAt]
-    );
-
-    // Create response with cookie
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
-      customer: {
-        id: customerId,
-        email,
-        firstName,
-        lastName
-      }
+      requiresVerification: true,
+      email,
+      customerId,
     });
-
-    // Set HTTP-only cookie
-    response.cookies.set('customer_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60,
-      path: '/'
-    });
-
-    return response;
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(

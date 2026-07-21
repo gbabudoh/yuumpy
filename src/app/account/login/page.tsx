@@ -26,10 +26,14 @@ function CustomerLoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [requiresVerification, setRequiresVerification] = useState(false);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setRequiresVerification(false);
+    setResendStatus('idle');
     setLoading(true);
     try {
       const res = await fetch('/api/customer/auth/login', {
@@ -38,11 +42,27 @@ function CustomerLoginForm() {
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login failed');
+      if (!res.ok) {
+        setRequiresVerification(Boolean(data.requiresVerification));
+        throw new Error(data.error || 'Login failed');
+      }
       router.push(redirectUrl || '/account');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally { setLoading(false); }
+  };
+
+  const handleResendVerification = async () => {
+    setResendStatus('sending');
+    try {
+      await fetch('/api/customer/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } finally {
+      setResendStatus('sent');
+    }
   };
 
   const handleGoogleCredential = async (credential: string) => {
@@ -81,9 +101,21 @@ function CustomerLoginForm() {
           {/* Card */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7 sm:p-8">
             {error && (
-              <div className="flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl mb-6">
-                <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl mb-6">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+                {requiresVerification && (
+                  resendStatus === 'sent' ? (
+                    <p className="text-[12px] text-red-600 mt-2 ml-4">If that account needs verifying, a new link is on its way.</p>
+                  ) : (
+                    <button type="button" onClick={handleResendVerification} disabled={resendStatus === 'sending'}
+                      className="text-[12px] text-red-700 font-semibold underline mt-2 ml-4 disabled:opacity-50 cursor-pointer">
+                      {resendStatus === 'sending' ? 'Sending...' : 'Resend verification email'}
+                    </button>
+                  )
+                )}
               </div>
             )}
 

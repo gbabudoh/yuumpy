@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Find customer by email
     const customerResult = await query(
-      'SELECT id, email, password_hash, first_name, last_name, is_active FROM customers WHERE email = ?',
+      'SELECT id, email, password_hash, first_name, last_name, is_active, email_verified FROM customers WHERE email = ?',
       [email]
     );
 
@@ -55,6 +55,19 @@ export async function POST(request: NextRequest) {
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
+
+    // Require email confirmation before allowing login (accounts created via
+    // Google sign-in are verified separately from Google's own claim, so
+    // this only ever blocks password-based registrations that never
+    // confirmed their email). Checked after password verification so an
+    // unauthenticated request can't use this to probe which emails are
+    // registered-but-unverified.
+    if (!customer.email_verified) {
+      return NextResponse.json(
+        { error: 'Please verify your email before logging in.', requiresVerification: true },
         { status: 401 }
       );
     }
