@@ -234,7 +234,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       <div className="min-h-screen bg-slate-50">
         <SellerSidebar seller={seller} />
         <main className="lg:ml-72 min-h-screen">
-          <div className="pt-20 px-4 pb-6 sm:px-6 lg:p-8 lg:pt-8">
+          <div className="pt-[calc(5rem+env(safe-area-inset-top))] px-4 pb-6 sm:px-6 lg:p-8 lg:pt-8">
             {children}
           </div>
         </main>
