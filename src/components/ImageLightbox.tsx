@@ -137,7 +137,7 @@ export default function ImageLightbox({ images, initialIndex, productName, onClo
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={handleClose}
-        className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer touch-manipulation"
+        className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-[calc(1rem+env(safe-area-inset-right))] z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer touch-manipulation"
         aria-label="Close"
       >
         <X className="w-6 h-6" />
