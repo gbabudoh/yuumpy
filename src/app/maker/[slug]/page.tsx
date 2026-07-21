@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import { MakerProfile } from '@/components/MakerProfile';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 async function getArtisanData(slug: string) {
   // Use absolute URL for server-side fetch or use a direct library call
@@ -23,5 +25,11 @@ export default async function ArtisanPage({ params }: { params: Promise<{ slug: 
     notFound();
   }
 
-  return <MakerProfile seller={data.seller} products={data.products} />;
+  return (
+    <>
+      <Header />
+      <MakerProfile seller={data.seller} products={data.products} />
+      <Footer />
+    </>
+  );
 }
