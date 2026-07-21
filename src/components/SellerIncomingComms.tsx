@@ -449,7 +449,9 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
   // Active session UI
   if (activeMode && (isConnecting || isConnected)) {
     return (
-      <div className="fixed bottom-4 right-4 z-50 w-96 rounded-2xl overflow-hidden shadow-2xl" style={{
+      <div className="fixed z-50 w-96 rounded-2xl overflow-hidden shadow-2xl" style={{
+        bottom: 'calc(1rem + env(safe-area-inset-bottom))',
+        right: 'calc(1rem + env(safe-area-inset-right))',
         background: 'rgba(15,12,41,0.98)',
         border: '1px solid rgba(255,255,255,0.1)',
         backdropFilter: 'blur(20px)',
@@ -585,7 +587,10 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
 
   // Floating notification panel
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed z-50" style={{
+      bottom: 'calc(1rem + env(safe-area-inset-bottom))',
+      right: 'calc(1rem + env(safe-area-inset-right))',
+    }}>
       {callError && (
         <div className="mb-3 w-72 rounded-2xl overflow-hidden shadow-2xl bg-white border border-rose-100 p-4">
           <div className="flex items-start justify-between gap-2">
@@ -624,7 +629,7 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
                   <p className="text-sm text-white font-medium truncate">{req.buyerName}</p>
                   <p className="text-xs text-gray-500 capitalize">{req.mode} request</p>
                 </div>
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5 no-select">
                   <button onClick={() => acceptRequest(req)}
                     className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer">
                     Accept
@@ -643,7 +648,7 @@ export default function SellerIncomingComms({ sellerId, storeSlug }: SellerIncom
       {/* Floating button */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all cursor-pointer hover:scale-105"
+        className="relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all cursor-pointer hover:scale-105 no-select"
         style={{
           background: totalIncoming > 0
             ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'

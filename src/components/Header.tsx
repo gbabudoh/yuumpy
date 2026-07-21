@@ -225,7 +225,7 @@ export default function Header() {
   };
 
   return (
-    <header className="glass sticky top-0 z-50">
+    <header className="glass sticky top-0 z-50 safe-top no-select">
       <div className="w-full px-6 md:px-12 lg:px-16">
         <div className="flex items-center h-20">
           {/* Left Side Navigation (Logo + Links) */}

@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     ] },
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'Yuumpy' },
   other: {
     'msapplication-TileColor': '#2563eb',
@@ -47,8 +47,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
   themeColor: '#2563eb' };
 
 async function getContactLocation(): Promise<string> {
