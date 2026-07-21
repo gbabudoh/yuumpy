@@ -41,9 +41,18 @@ export default function ImageLightbox({ images, initialIndex, productName, onClo
     setIndex((next + images.length) % images.length);
   }, [images.length, resetZoom]);
 
+  const handleClose = useCallback(() => {
+    pointers.current.clear();
+    lastDistance.current = null;
+    dragStart.current = null;
+    setIsInteracting(false);
+    resetZoom();
+    onClose();
+  }, [onClose, resetZoom]);
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
       if (e.key === 'ArrowRight') goTo(index + 1);
       if (e.key === 'ArrowLeft') goTo(index - 1);
     };
@@ -54,7 +63,7 @@ export default function ImageLightbox({ images, initialIndex, productName, onClo
       window.removeEventListener('keydown', handleKey);
       document.body.style.overflow = previousOverflow;
     };
-  }, [index, goTo, onClose]);
+  }, [index, goTo, handleClose]);
 
   const toggleZoom = () => {
     if (scale > 1) resetZoom();
@@ -123,11 +132,12 @@ export default function ImageLightbox({ images, initialIndex, productName, onClo
   return (
     <div
       className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center select-none"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={handleClose}
+        className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer touch-manipulation"
         aria-label="Close"
       >
         <X className="w-6 h-6" />
@@ -136,15 +146,17 @@ export default function ImageLightbox({ images, initialIndex, productName, onClo
       {images.length > 1 && (
         <>
           <button
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => goTo(index - 1)}
-            className="absolute left-2 sm:left-6 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            className="absolute left-2 sm:left-6 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer touch-manipulation"
             aria-label="Previous image"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
           <button
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => goTo(index + 1)}
-            className="absolute right-2 sm:right-6 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            className="absolute right-2 sm:right-6 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer touch-manipulation"
             aria-label="Next image"
           >
             <ChevronRight className="w-6 h-6" />
