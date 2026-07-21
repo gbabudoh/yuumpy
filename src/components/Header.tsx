@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Menu,
   X,
+  ChevronLeft,
   Tag,
   Building2,
   User,
@@ -78,7 +79,18 @@ export default function Header() {
   const categoriesLinkRef = useRef<HTMLDivElement>(null);
   
   const router = useRouter();
+  const pathname = usePathname();
   const { cartCount } = useCart();
+
+  // Native-app-style back navigation for mobile — falls back to home when
+  // there's no in-app history to go back to (e.g. a shared link opened fresh).
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  };
 
   // Check customer authentication status
   useEffect(() => {
@@ -218,6 +230,15 @@ export default function Header() {
         <div className="flex items-center h-20">
           {/* Left Side Navigation (Logo + Links) */}
           <div className="flex items-center flex-1">
+            {pathname !== '/' && (
+              <button
+                onClick={handleBack}
+                aria-label="Go back"
+                className="md:hidden -ml-2 mr-1 p-2 text-gray-500 hover:text-[#020617] transition-colors"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
             <div className="flex-shrink-0">
               <Link href="/" className="flex items-center group mr-16">
                 <div className="relative">

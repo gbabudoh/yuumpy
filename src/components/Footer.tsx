@@ -153,16 +153,16 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="pt-12 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-gray-400 font-bold text-sm">
+        <div className="pt-10 md:pt-12 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-5 md:gap-6">
+          <p className="text-gray-400 font-bold text-sm text-center md:text-left">
             © 2025 Yuumpy. <span className="text-indigo-500/50 italic">Crafted for Excellence.</span>
           </p>
-          <div className="flex gap-10">
-            <Link href="/privacy" className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Privacy</Link>
-            <Link href="/terms" className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Terms</Link>
-            <Link href="/cookies" className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Cookies</Link>
-            <Link href="/safe-trading" className="text-xs font-black uppercase tracking-widest text-amber-500 hover:text-amber-700 transition-colors cursor-pointer">Safe Trading</Link>
-            <Link href="/customs-advisory" className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Customs & Tax</Link>
+          <div className="flex flex-wrap justify-center md:justify-end gap-x-5 gap-y-2.5">
+            <Link href="/privacy" className="whitespace-nowrap text-[11px] md:text-xs font-black uppercase tracking-wider md:tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Privacy</Link>
+            <Link href="/terms" className="whitespace-nowrap text-[11px] md:text-xs font-black uppercase tracking-wider md:tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Terms</Link>
+            <Link href="/cookies" className="whitespace-nowrap text-[11px] md:text-xs font-black uppercase tracking-wider md:tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Cookies</Link>
+            <Link href="/safe-trading" className="whitespace-nowrap text-[11px] md:text-xs font-black uppercase tracking-wider md:tracking-widest text-amber-500 hover:text-amber-700 transition-colors cursor-pointer">Safe Trading</Link>
+            <Link href="/customs-advisory" className="whitespace-nowrap text-[11px] md:text-xs font-black uppercase tracking-wider md:tracking-widest text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Customs & Tax</Link>
           </div>
         </div>
       </div>

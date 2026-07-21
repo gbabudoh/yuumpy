@@ -211,9 +211,9 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
             {isDirectSale ? (
               <Link
                 href={productUrl}
-                className="w-full bg-purple-600 text-white py-4 rounded-2xl font-black transition-all duration-300 flex items-center justify-center space-x-2 text-xs hover:scale-105 active:scale-95 shadow-xl cursor-pointer"
+                className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-1.5 text-[10px] whitespace-nowrap hover:bg-purple-700 hover:scale-[1.02] active:scale-95 shadow-lg shadow-purple-600/20 cursor-pointer"
               >
-                <Eye className="w-4 h-4" />
+                <Eye className="w-3.5 h-3.5 shrink-0" />
                 <span>VIEW DETAILS</span>
               </Link>
             ) : (
@@ -221,10 +221,10 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
                 href={product.affiliate_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black transition-all duration-300 flex items-center justify-center space-x-2 text-xs hover:scale-105 active:scale-95 shadow-xl cursor-pointer"
+                className="w-full bg-amber-500 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-1.5 text-[10px] whitespace-nowrap hover:bg-amber-600 hover:scale-[1.02] active:scale-95 shadow-lg shadow-amber-500/20 cursor-pointer"
               >
                 <span>VIEW DEAL</span>
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
               </a>
             )}
         </div>
