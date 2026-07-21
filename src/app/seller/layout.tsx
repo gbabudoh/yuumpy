@@ -47,8 +47,13 @@ function SellerSidebar({ seller }: { seller: Seller | null }) {
       {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-5 left-5 z-50 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/20"
-        style={{ background: 'rgba(79, 70, 229, 0.9)', backdropFilter: 'blur(8px)' }}
+        className="lg:hidden fixed z-50 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/20 touch-manipulation"
+        style={{
+          top: 'calc(1.25rem + env(safe-area-inset-top))',
+          left: 'calc(1.25rem + env(safe-area-inset-left))',
+          background: 'rgba(79, 70, 229, 0.9)',
+          backdropFilter: 'blur(8px)',
+        }}
         aria-label="Toggle menu"
       >
         {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
