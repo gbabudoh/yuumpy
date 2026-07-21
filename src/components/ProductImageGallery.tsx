@@ -17,6 +17,13 @@ export default function ProductImageGallery({ images, productName, videoUrl }: P
   const [isZooming, setIsZooming] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  // Thumbnails and the main viewer request different optimized image sizes,
+  // so selecting a thumbnail for the first time used to mean a fresh
+  // fetch+decode of the full-size image (the visible delay). Once the
+  // initially-shown main image has loaded, quietly warm the browser cache
+  // for the full-size version of every other gallery image in the
+  // background so later clicks are instant.
+  const [mainImageLoaded, setMainImageLoaded] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
@@ -116,6 +123,7 @@ export default function ProductImageGallery({ images, productName, videoUrl }: P
               className="w-full h-full object-cover transition-transform duration-200 ease-out"
               style={isZooming ? { transform: 'scale(2)', transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%` } : undefined}
               priority
+              onLoad={() => setMainImageLoaded(true)}
             />
             <div className="absolute bottom-3 right-3 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover/zoom:opacity-100 transition-opacity pointer-events-none">
               <ZoomIn className="w-4 h-4" />
@@ -161,6 +169,18 @@ export default function ProductImageGallery({ images, productName, videoUrl }: P
           </div>
         )}
       </div>
+
+      {/* Invisible full-size preload — not shown, just lets the browser cache
+          the other images at main-viewer resolution ahead of time */}
+      {mainImageLoaded && (
+        <div className="hidden" aria-hidden="true">
+          {displayImages.map((image, index) => (
+            index === currentImageIndex ? null : (
+              <Image key={image} src={image} alt="" width={600} height={600} priority />
+            )
+          ))}
+        </div>
+      )}
 
       {lightboxOpen && (
         <ImageLightbox
